@@ -50,6 +50,7 @@ interface ResumenMensual {
   vencidas: number;
   parciales: number;
   porcentaje_cumplimiento: number;
+  porcentaje_recaudo?: number;
 }
 
 @Component({

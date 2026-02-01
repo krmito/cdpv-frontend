@@ -34,7 +34,7 @@ interface Jugador {
 interface Mensualidad {
   id: number;
   mes: number;
-  año: number;
+  anio: number;
   monto: number;
   monto_pagado: number;
   saldo_pendiente: number;
@@ -536,7 +536,7 @@ export class PagosComponent implements OnInit {
       this.formatDateTime(pago.fecha_pago),
       `${pago.jugador.nombre} ${pago.jugador.apellido}`,
       pago.jugador.documento,
-      `${this.getNombreMes(pago.mensualidad.mes)} ${pago.mensualidad.año}`,
+      `${this.getNombreMes(pago.mensualidad.mes)} ${pago.mensualidad.anio}`,
       pago.monto_pagado,
       pago.metodo_pago,
       pago.anulado ? 'Anulado' : 'Activo',
