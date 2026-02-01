@@ -223,8 +223,8 @@ interface CreateJugadorDto {
 
           <!-- Modal Nuevo Jugador -->
           @if (showNewForm) {
-            <div class="modal-overlay" (click)="closeNewForm()">
-              <div class="modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-overlay">
+              <div class="modal-card">
                 <div class="modal-header">
                   <h2>➕ Nuevo Jugador</h2>
                   <button class="btn-close" (click)="closeNewForm()">✕</button>
@@ -390,8 +390,8 @@ interface CreateJugadorDto {
 
           <!-- Modal Editar Jugador -->
           @if (showEditForm && editingJugador) {
-            <div class="modal-overlay" (click)="closeEditForm()">
-              <div class="modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-overlay">
+              <div class="modal-card">
                 <div class="modal-header">
                   <h2>✏️ Editar Jugador</h2>
                   <button class="btn-close" (click)="closeEditForm()">✕</button>
@@ -585,8 +585,8 @@ interface CreateJugadorDto {
 
           <!-- Modal Historial de Pagos -->
           @if (showHistorialModal && jugadorHistorial) {
-            <div class="modal-overlay" (click)="closeHistorialModal()">
-              <div class="modal-card modal-historial" (click)="$event.stopPropagation()">
+            <div class="modal-overlay">
+              <div class="modal-card modal-historial">
                 <div class="modal-header">
                   <h2>📋 Historial de Pagos</h2>
                   <button class="btn-close" (click)="closeHistorialModal()">✕</button>

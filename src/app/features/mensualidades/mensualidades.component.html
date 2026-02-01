@@ -413,8 +413,8 @@
 
         <!-- Modal de Edición -->
         @if (editandoMensualidad) {
-          <div class="modal-overlay" (click)="cancelarEdicion()">
-            <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-overlay">
+            <div class="modal-content">
               <h3>✏️ Editar Fecha de Vencimiento</h3>
               <p class="modal-subtitle">
                 {{ editandoMensualidad.jugador.nombre }} {{ editandoMensualidad.jugador.apellido }} -
@@ -448,8 +448,8 @@
 
         <!-- Modal de Confirmación de Eliminación -->
         @if (eliminandoMensualidad) {
-          <div class="modal-overlay" (click)="cancelarEliminar()">
-            <div class="modal-content" (click)="$event.stopPropagation()">
+          <div class="modal-overlay">
+            <div class="modal-content">
               <h3>🗑️ Eliminar Mensualidad</h3>
               <p class="modal-subtitle">
                 {{ eliminandoMensualidad.jugador.nombre }} {{ eliminandoMensualidad.jugador.apellido }} -
