@@ -1,0 +1,489 @@
+<div class="layout">
+  <app-navbar/>
+  <div class="main-container">
+    <app-sidebar/>
+    <main class="content">
+      <div class="mensualidades-container">
+        <div class="header">
+          <h1>📅 Gestión de Mensualidades</h1>
+          <p class="subtitle">Genera, consulta y administra las mensualidades del club</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+          <button 
+            class="tab" 
+            [class.active]="activeTab === 'generar'"
+            (click)="activeTab = 'generar'"
+          >
+            🎯 Generar Mensualidades
+          </button>
+          <button 
+            class="tab" 
+            [class.active]="activeTab === 'listado'"
+            (click)="changeTab('listado')"
+          >
+            📋 Listado
+          </button>
+          <button 
+            class="tab" 
+            [class.active]="activeTab === 'resumen'"
+            (click)="changeTab('resumen')"
+          >
+            📊 Resumen
+          </button>
+        </div>
+
+        <!-- TAB: GENERAR MENSUALIDADES -->
+        @if (activeTab === 'generar') {
+          <div class="tab-content">
+            <div class="card">
+              <h2>🎯 Generar Mensualidades del Mes</h2>
+              <p class="description">Crea automáticamente las mensualidades para todos los jugadores activos del mes seleccionado.</p>
+
+              <form (ngSubmit)="generarMensualidades()" class="generar-form">
+                @if (generarError) {
+                  <div class="alert alert-danger">
+                    {{ generarError }}
+                  </div>
+                }
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Mes <span class="required">*</span></label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="generarData.mes"
+                      name="mes"
+                      (ngModelChange)="onGenerarMesAnioChange()"
+                      required
+                    >
+                      @for (mes of meses; track mes.value) {
+                        <option [value]="mes.value">{{ mes.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Año <span class="required">*</span></label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      [(ngModel)]="generarData.anio"
+                      name="anio"
+                      (ngModelChange)="onGenerarMesAnioChange()"
+                      required
+                      min="2020"
+                      max="2030"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Fecha de Vencimiento</label>
+                    <input
+                      type="date"
+                      class="form-control"
+                      [(ngModel)]="generarData.fecha_vencimiento"
+                      name="fecha_vencimiento"
+                    />
+                    <small class="form-hint">Por defecto: 30 días desde hoy</small>
+                  </div>
+                </div>
+
+                <div class="info-box">
+                  <div class="info-item">
+                    <span class="info-icon">👥</span>
+                    <div class="info-content">
+                      <span class="info-label">Jugadores Activos:</span>
+                      <span class="info-value">{{ jugadoresActivos }}</span>
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-icon">✅</span>
+                    <div class="info-content">
+                      <span class="info-label">Ya Generadas:</span>
+                      <span class="info-value">{{ mensualidadesYaGeneradas }}</span>
+                    </div>
+                  </div>
+                  <div class="info-item">
+                    <span class="info-icon">📋</span>
+                    <div class="info-content">
+                      <span class="info-label">Faltantes por Generar:</span>
+                      <span class="info-value" [class.zero]="mensualidadesFaltantes === 0">{{ mensualidadesFaltantes }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="alert alert-info">
+                  @if (mensualidadesFaltantes > 0) {
+                    <strong>ℹ️ Nota:</strong> Se crearán {{ mensualidadesFaltantes }} mensualidades nuevas para los jugadores que no tienen mensualidad en este mes.
+                  } @else {
+                    <strong>✓ Completo:</strong> Ya se generaron todas las mensualidades para este mes. No hay mensualidades pendientes por generar.
+                  }
+                </div>
+
+                <div class="form-footer">
+                  <button 
+                    type="submit" 
+                    class="btn btn-primary btn-large"
+                    [disabled]="generando || mensualidadesFaltantes === 0"
+                  >
+                    {{ generando ? '⏳ Generando...' : mensualidadesFaltantes === 0 ? '✓ Ya Generadas' : '✓ Generar Mensualidades' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        }
+
+        <!-- TAB: LISTADO -->
+        @if (activeTab === 'listado') {
+          <div class="tab-content">
+            <div class="card">
+              <h2>📋 Listado de Mensualidades</h2>
+
+              <!-- Filtros -->
+              <div class="filters-section">
+                <div class="filters-row">
+                  <div class="form-group">
+                    <label>Mes</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="filtrosMensualidades.mes"
+                      (ngModelChange)="onFiltroChange()"
+                    >
+                      @for (mes of meses; track mes.value) {
+                        <option [value]="mes.value">{{ mes.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Año</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      [(ngModel)]="filtrosMensualidades.anio"
+                      (ngModelChange)="onFiltroChange()"
+                      min="2020"
+                      max="2030"
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label>Estado</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="filtrosMensualidades.estado"
+                      (ngModelChange)="onFiltroChange()"
+                    >
+                      <option [ngValue]="null">Todos</option>
+                      <option value="pendiente">Pendiente</option>
+                      <option value="vencido">Vencido</option>
+                      <option value="parcial">Parcial</option>
+                      <option value="pagado">Pagado</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Jugador</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [(ngModel)]="filtrosMensualidades.jugador"
+                      (ngModelChange)="onFiltroChange()"
+                      placeholder="Nombre o documento..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tabla -->
+              @if (loadingMensualidades) {
+                <div class="loading-state">
+                  <p>🔄 Cargando mensualidades...</p>
+                </div>
+              } @else if (mensualidades.length === 0) {
+                <div class="empty-state">
+                  <p>No hay mensualidades registradas</p>
+                  <small>Genera mensualidades desde el tab "Generar"</small>
+                </div>
+              } @else {
+                <div class="table-responsive">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Jugador</th>
+                        <th>Documento</th>
+                        <th>Categoría</th>
+                        <th>Monto</th>
+                        <th>Pagado</th>
+                        <th>Pendiente</th>
+                        <th>Vencimiento</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (mens of mensualidades; track mens.id) {
+                        <tr>
+                          <td>
+                            <strong>{{ mens.jugador.nombre }} {{ mens.jugador.apellido }}</strong>
+                          </td>
+                          <td>{{ mens.jugador.documento }}</td>
+                          <td>{{ mens.jugador.categoria.nombre }}</td>
+                          <td class="amount">\${{ formatNumber(mens.monto) }}</td>
+                          <td class="amount paid">\${{ formatNumber(mens.monto_pagado) }}</td>
+                          <td class="amount pending">\${{ formatNumber(mens.saldo_pendiente) }}</td>
+                          <td>{{ formatDate(mens.fecha_vencimiento) }}</td>
+                          <td>
+                            <span class="estado-badge" [class]="'estado-' + mens.estado">
+                              {{ getEstadoLabel(mens.estado) }}
+                            </span>
+                          </td>
+                          <td class="actions-cell">
+                            <button
+                              class="btn btn-small btn-edit"
+                              (click)="editarMensualidad(mens)"
+                              title="Editar fecha de vencimiento"
+                            >
+                              ✏️
+                            </button>
+                            @if (puedeEliminar(mens)) {
+                              <button
+                                class="btn btn-small btn-delete"
+                                (click)="confirmarEliminar(mens)"
+                                title="Eliminar mensualidad"
+                              >
+                                🗑️
+                              </button>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Paginación -->
+                <div class="pagination">
+                  <button 
+                    class="btn btn-secondary"
+                    (click)="cambiarPagina(currentPage - 1)"
+                    [disabled]="currentPage === 1"
+                  >
+                    ← Anterior
+                  </button>
+                  <span class="page-info">
+                    Página {{ currentPage }} de {{ totalPages }} ({{ totalMensualidades }} mensualidades)
+                  </span>
+                  <button 
+                    class="btn btn-secondary"
+                    (click)="cambiarPagina(currentPage + 1)"
+                    [disabled]="currentPage === totalPages"
+                  >
+                    Siguiente →
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- TAB: RESUMEN -->
+        @if (activeTab === 'resumen') {
+          <div class="tab-content">
+            <div class="card">
+              <h2>📊 Resumen Mensual</h2>
+
+              <!-- Selector de mes/año -->
+              <div class="resumen-filters">
+                <div class="form-group">
+                  <label>Mes</label>
+                  <select
+                    class="form-control"
+                    [(ngModel)]="mesResumen"
+                    (ngModelChange)="onResumenChange()"
+                  >
+                    @for (mes of meses; track mes.value) {
+                      <option [value]="mes.value">{{ mes.label }}</option>
+                    }
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label>Año</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    [(ngModel)]="anioResumen"
+                    (ngModelChange)="onResumenChange()"
+                    min="2020"
+                    max="2030"
+                  />
+                </div>
+              </div>
+
+              @if (loadingResumen) {
+                <div class="loading-state">
+                  <p>🔄 Cargando resumen...</p>
+                </div>
+              } @else if (!resumen) {
+                <div class="empty-state">
+                  <p>⚠️ No se pudo cargar el resumen</p>
+                  <small>Verifica que el endpoint <code>/mensualidades/resumen</code> esté implementado en el backend</small>
+                </div>
+              } @else {
+                <!-- Grid de estadísticas -->
+                <div class="stats-grid">
+                  <div class="stat-card primary clickable" (click)="verListadoTodas()" title="Ver todas las mensualidades">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-content">
+                      <div class="stat-label">Total Jugadores</div>
+                      <div class="stat-value">{{ resumen.total_mensualidades || 0 }}</div>
+                    </div>
+                    <div class="stat-arrow">→</div>
+                  </div>
+
+                  <div class="stat-card success clickable" (click)="verListadoPorEstado('pagado')" title="Ver mensualidades pagadas">
+                    <div class="stat-icon">✓</div>
+                    <div class="stat-content">
+                      <div class="stat-label">Pagadas</div>
+                      <div class="stat-value">{{ resumen.estados.pagadas || 0 }}</div>
+                    </div>
+                    <div class="stat-arrow">→</div>
+                  </div>
+
+                  <div class="stat-card warning clickable" (click)="verListadoPorEstado('pendiente')" title="Ver mensualidades pendientes">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-content">
+                      <div class="stat-label">Pendientes</div>
+                      <div class="stat-value">{{ resumen.estados.pendientes || 0 }}</div>
+                    </div>
+                    <div class="stat-arrow">→</div>
+                  </div>
+
+                  <div class="stat-card danger clickable" (click)="verListadoPorEstado('vencido')" title="Ver mensualidades vencidas">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-content">
+                      <div class="stat-label">Vencidas</div>
+                      <div class="stat-value">{{ resumen.estados.vencidas || 0 }}</div>
+                    </div>
+                    <div class="stat-arrow">→</div>
+                  </div>
+
+                  <div class="stat-card info">
+                    <div class="stat-content">
+                      <div class="stat-label">Total Esperado</div>
+                      <div class="stat-value">${{ formatNumber(resumen.total_esperado || 0) }}</div>
+                    </div>
+                  </div>
+
+                  <div class="stat-card success">
+                    <div class="stat-content">
+                      <div class="stat-label">Total Recaudado</div>
+                      <div class="stat-value">${{ formatNumber(resumen.total_recaudado || 0) }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Barra de progreso -->
+                <div class="progress-section clickable-section" (click)="verListadoTodas()" title="Ver todas las mensualidades">
+                  <h3>Porcentaje de Cumplimiento</h3>
+                  <div class="progress-bar-container">
+                    <div 
+                      class="progress-bar" 
+                      [class]="'progress-' + getPorcentajeColor(resumen.porcentaje_recaudo || 0)"
+                      [style.width.%]="resumen.porcentaje_recaudo || 0"
+                    >
+                      {{ resumen.porcentaje_recaudo || 0 }}%
+                    </div>
+                  </div>
+                  <p class="progress-text">
+                    {{ resumen.pagadas || 0 }} de {{ resumen.total_mensualidades || 0 }} mensualidades pagadas
+                  </p>
+                  <div class="click-hint">
+                    <small>👆 Click para ver el listado completo</small>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Modal de Edición -->
+        @if (editandoMensualidad) {
+          <div class="modal-overlay" (click)="cancelarEdicion()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+              <h3>✏️ Editar Fecha de Vencimiento</h3>
+              <p class="modal-subtitle">
+                {{ editandoMensualidad.jugador.nombre }} {{ editandoMensualidad.jugador.apellido }} -
+                {{ getNombreMes(editandoMensualidad.mes) }} {{ editandoMensualidad.anio }}
+              </p>
+
+              <div class="form-group">
+                <label>Nueva Fecha de Vencimiento</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  [(ngModel)]="editFechaVencimiento"
+                />
+              </div>
+
+              <div class="modal-actions">
+                <button class="btn btn-secondary" (click)="cancelarEdicion()">
+                  Cancelar
+                </button>
+                <button
+                  class="btn btn-primary"
+                  (click)="guardarEdicion()"
+                  [disabled]="guardandoEdicion || !editFechaVencimiento"
+                >
+                  {{ guardandoEdicion ? 'Guardando...' : 'Guardar' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Modal de Confirmación de Eliminación -->
+        @if (eliminandoMensualidad) {
+          <div class="modal-overlay" (click)="cancelarEliminar()">
+            <div class="modal-content" (click)="$event.stopPropagation()">
+              <h3>🗑️ Eliminar Mensualidad</h3>
+              <p class="modal-subtitle">
+                {{ eliminandoMensualidad.jugador.nombre }} {{ eliminandoMensualidad.jugador.apellido }} -
+                {{ getNombreMes(eliminandoMensualidad.mes) }} {{ eliminandoMensualidad.anio }}
+              </p>
+
+              <div class="alert alert-danger">
+                <strong>⚠️ Atención:</strong> Esta acción no se puede deshacer.
+                ¿Está seguro que desea eliminar esta mensualidad?
+              </div>
+
+              <div class="modal-actions">
+                <button class="btn btn-secondary" (click)="cancelarEliminar()">
+                  Cancelar
+                </button>
+                <button
+                  class="btn btn-danger"
+                  (click)="eliminarMensualidad()"
+                  [disabled]="eliminando"
+                >
+                  {{ eliminando ? 'Eliminando...' : 'Eliminar' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Mensaje de Éxito -->
+        @if (successMessage) {
+          <div class="alert alert-success success-float">
+            {{ successMessage }}
+          </div>
+        }
+      </div>
+    </main>
+  </div>
+</div>

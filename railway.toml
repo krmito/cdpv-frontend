@@ -1,0 +1,5 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npx serve dist/club-deportivo-frontend -s -l $PORT"

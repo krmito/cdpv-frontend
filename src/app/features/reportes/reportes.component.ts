@@ -1,0 +1,776 @@
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { NgChartsModule } from 'ng2-charts';
+import { ChartConfiguration, ChartData, Chart, registerables } from 'chart.js';
+
+// Register Chart.js components
+Chart.register(...registerables);
+import { ApiService } from '../../core/services/api.service';
+import { NavbarComponent } from '../../shared/components/navbar.component';
+import { SidebarComponent } from '../../shared/components/sidebar.component';
+
+interface EstadisticasGenerales {
+  jugadores: { total: number; activos: number; inactivos: number };
+  mes_actual: { recaudado: number; total_pagos: number };
+  mensualidades: { pendientes: number; vencidas: number };
+}
+
+interface ReporteCaja {
+  periodo: { desde: string; hasta: string };
+  total_pagos: number;
+  total_recaudado: number;
+  agrupado: Record<string, { pagos: any[]; total: number }>;
+}
+
+interface Moroso {
+  jugador: {
+    id: number;
+    nombre: string;
+    apellido: string;
+    documento: string;
+    telefono: string;
+    categoria?: { nombre: string };
+  };
+  mensualidades_vencidas: any[];
+  total_deuda: number;
+}
+
+interface ReporteMorosos {
+  total_morosos: number;
+  deuda_total: number;
+  morosos: Moroso[];
+}
+
+interface ProyeccionIngresos {
+  mes: number;
+  anio: number;
+  total_esperado: number;
+  total_recaudado: number;
+  total_pendiente: number;
+  porcentaje_cumplimiento: number;
+  mensualidades: { total: number; pagadas: number; pendientes: number; vencidas: number };
+}
+
+interface CumplimientoCategoria {
+  categoria: string;
+  total_mensualidades: number;
+  pagadas: number;
+  pendientes: number;
+  vencidas: number;
+  esperado: number;
+  recaudado: number;
+  porcentaje_cumplimiento: number;
+}
+
+@Component({
+  selector: 'app-reportes',
+  standalone: true,
+  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent, NgChartsModule],
+  template: `
+    <div class="layout">
+      <app-navbar/>
+      <div class="main-container">
+        <app-sidebar/>
+        <main class="content">
+          <div class="header">
+            <h1>📈 Reportes y Estadísticas</h1>
+          </div>
+
+          <!-- Tabs -->
+          <div class="tabs">
+            <button class="tab" [class.active]="activeTab === 'dashboard'" (click)="changeTab('dashboard')">
+              📊 Dashboard
+            </button>
+            <button class="tab" [class.active]="activeTab === 'caja'" (click)="changeTab('caja')">
+              💰 Reporte de Caja
+            </button>
+            <button class="tab" [class.active]="activeTab === 'morosos'" (click)="changeTab('morosos')">
+              ⚠️ Morosos
+            </button>
+            <button class="tab" [class.active]="activeTab === 'proyeccion'" (click)="changeTab('proyeccion')">
+              📅 Proyección
+            </button>
+            <button class="tab" [class.active]="activeTab === 'categorias'" (click)="changeTab('categorias')">
+              🏷️ Por Categoría
+            </button>
+          </div>
+
+          <!-- TAB: DASHBOARD -->
+          @if (activeTab === 'dashboard') {
+            <div class="tab-content">
+              @if (loadingStats) {
+                <div class="loading">Cargando estadísticas...</div>
+              } @else {
+                <!-- KPIs -->
+                <div class="kpi-grid">
+                  <div class="kpi-card blue">
+                    <div class="kpi-icon">👥</div>
+                    <div class="kpi-content">
+                      <span class="kpi-value">{{ estadisticas?.jugadores?.activos || 0 }}</span>
+                      <span class="kpi-label">Jugadores Activos</span>
+                    </div>
+                  </div>
+                  <div class="kpi-card green">
+                    <div class="kpi-icon">💰</div>
+                    <div class="kpi-content">
+                      <span class="kpi-value">\${{ formatNumber(estadisticas?.mes_actual?.recaudado || 0) }}</span>
+                      <span class="kpi-label">Recaudado este Mes</span>
+                    </div>
+                  </div>
+                  <div class="kpi-card yellow">
+                    <div class="kpi-icon">⏳</div>
+                    <div class="kpi-content">
+                      <span class="kpi-value">{{ estadisticas?.mensualidades?.pendientes || 0 }}</span>
+                      <span class="kpi-label">Mensualidades Pendientes</span>
+                    </div>
+                  </div>
+                  <div class="kpi-card red">
+                    <div class="kpi-icon">⚠️</div>
+                    <div class="kpi-content">
+                      <span class="kpi-value">{{ estadisticas?.mensualidades?.vencidas || 0 }}</span>
+                      <span class="kpi-label">Mensualidades Vencidas</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Resumen -->
+                <div class="cards-row">
+                  <div class="card">
+                    <h3>Resumen de Jugadores</h3>
+                    <div class="stat-list">
+                      <div class="stat-item">
+                        <span>Total registrados</span>
+                        <strong>{{ estadisticas?.jugadores?.total || 0 }}</strong>
+                      </div>
+                      <div class="stat-item">
+                        <span>Activos</span>
+                        <strong class="text-green">{{ estadisticas?.jugadores?.activos || 0 }}</strong>
+                      </div>
+                      <div class="stat-item">
+                        <span>Inactivos</span>
+                        <strong class="text-red">{{ estadisticas?.jugadores?.inactivos || 0 }}</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card">
+                    <h3>Mensualidades del Mes</h3>
+                    <div class="stat-list">
+                      <div class="stat-item">
+                        <span>Mensualidades pagadas</span>
+                        <strong>{{ estadisticas?.mes_actual?.total_pagos || 0 }}</strong>
+                      </div>
+                      <div class="stat-item">
+                        <span>Monto recaudado</span>
+                        <strong class="text-green">\${{ formatNumber(estadisticas?.mes_actual?.recaudado || 0) }}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- TAB: REPORTE DE CAJA -->
+          @if (activeTab === 'caja') {
+            <div class="tab-content">
+              <div class="card">
+                <div class="card-header">
+                  <h3>💰 Reporte de Caja</h3>
+                  <div class="filters-inline">
+                    <input type="date" class="form-control" [(ngModel)]="filtrosCaja.desde" />
+                    <input type="date" class="form-control" [(ngModel)]="filtrosCaja.hasta" />
+                    <button class="btn btn-primary" (click)="cargarReporteCaja()">Consultar</button>
+                  </div>
+                </div>
+
+                @if (loadingCaja) {
+                  <div class="loading">Cargando reporte...</div>
+                } @else if (reporteCaja) {
+                  <div class="caja-resumen">
+                    <div class="resumen-item">
+                      <span class="label">Período</span>
+                      <span class="value">{{ reporteCaja.periodo.desde }} al {{ reporteCaja.periodo.hasta }}</span>
+                    </div>
+                    <div class="resumen-item">
+                      <span class="label">Total de Pagos</span>
+                      <span class="value">{{ reporteCaja.total_pagos }}</span>
+                    </div>
+                    <div class="resumen-item highlight">
+                      <span class="label">Total Recaudado</span>
+                      <span class="value">\${{ formatNumber(reporteCaja.total_recaudado) }}</span>
+                    </div>
+                  </div>
+
+                  @if (cajaChartData.datasets[0].data.length > 0) {
+                    <div class="chart-container">
+                      <canvas baseChart
+                        [data]="cajaChartData"
+                        [type]="'bar'"
+                        [options]="barChartOptions">
+                      </canvas>
+                    </div>
+                  }
+
+                  <div class="table-container">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>Fecha</th>
+                          <th>Cantidad</th>
+                          <th>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of cajaItems; track item.fecha) {
+                          <tr>
+                            <td>{{ item.fecha }}</td>
+                            <td>{{ item.cantidad }}</td>
+                            <td class="monto">\${{ formatNumber(item.total) }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- TAB: MOROSOS -->
+          @if (activeTab === 'morosos') {
+            <div class="tab-content">
+              <div class="card">
+                <div class="card-header">
+                  <h3>⚠️ Listado de Morosos</h3>
+                  <button class="btn btn-secondary" (click)="exportarMorosos()">📥 Exportar</button>
+                </div>
+
+                @if (loadingMorosos) {
+                  <div class="loading">Cargando morosos...</div>
+                } @else if (reporteMorosos) {
+                  <div class="morosos-resumen">
+                    <div class="resumen-item red">
+                      <span class="label">Total Morosos</span>
+                      <span class="value">{{ reporteMorosos.total_morosos }}</span>
+                    </div>
+                    <div class="resumen-item red">
+                      <span class="label">Deuda Total</span>
+                      <span class="value">\${{ formatNumber(reporteMorosos.deuda_total) }}</span>
+                    </div>
+                  </div>
+
+                  @if (reporteMorosos.morosos.length === 0) {
+                    <div class="empty-state success">
+                      <p>🎉 No hay jugadores morosos</p>
+                      <small>Todos los pagos están al día</small>
+                    </div>
+                  } @else {
+                    <div class="table-container">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>Jugador</th>
+                            <th>Documento</th>
+                            <th>Teléfono</th>
+                            <th>Categoría</th>
+                            <th>Meses Vencidos</th>
+                            <th>Deuda Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (moroso of reporteMorosos.morosos; track moroso.jugador.id) {
+                            <tr>
+                              <td><strong>{{ moroso.jugador.nombre }} {{ moroso.jugador.apellido }}</strong></td>
+                              <td>{{ moroso.jugador.documento }}</td>
+                              <td>{{ moroso.jugador.telefono }}</td>
+                              <td>{{ moroso.jugador.categoria?.nombre || 'N/A' }}</td>
+                              <td>{{ moroso.mensualidades_vencidas.length }}</td>
+                              <td class="monto red">\${{ formatNumber(moroso.total_deuda) }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          }
+
+          <!-- TAB: PROYECCIÓN -->
+          @if (activeTab === 'proyeccion') {
+            <div class="tab-content">
+              <div class="card">
+                <div class="card-header">
+                  <h3>📅 Proyección de Ingresos</h3>
+                  <div class="filters-inline">
+                    <select class="form-control" [(ngModel)]="filtrosProyeccion.mes">
+                      @for (m of meses; track m.value) {
+                        <option [value]="m.value">{{ m.label }}</option>
+                      }
+                    </select>
+                    <select class="form-control" [(ngModel)]="filtrosProyeccion.anio">
+                      @for (a of anios; track a) {
+                        <option [value]="a">{{ a }}</option>
+                      }
+                    </select>
+                    <button class="btn btn-primary" (click)="cargarProyeccion()">Consultar</button>
+                  </div>
+                </div>
+
+                @if (loadingProyeccion) {
+                  <div class="loading">Cargando proyección...</div>
+                } @else if (proyeccion) {
+                  <div class="proyeccion-grid">
+                    <div class="proyeccion-card">
+                      <span class="label">Total Esperado</span>
+                      <span class="value">\${{ formatNumber(proyeccion.total_esperado) }}</span>
+                    </div>
+                    <div class="proyeccion-card green">
+                      <span class="label">Total Recaudado</span>
+                      <span class="value">\${{ formatNumber(proyeccion.total_recaudado) }}</span>
+                    </div>
+                    <div class="proyeccion-card yellow">
+                      <span class="label">Pendiente</span>
+                      <span class="value">\${{ formatNumber(proyeccion.total_pendiente) }}</span>
+                    </div>
+                    <div class="proyeccion-card blue">
+                      <span class="label">Cumplimiento</span>
+                      <span class="value">{{ proyeccion.porcentaje_cumplimiento.toFixed(1) }}%</span>
+                    </div>
+                  </div>
+
+                  <div class="chart-container">
+                    <canvas baseChart
+                      [data]="proyeccionChartData"
+                      [type]="'doughnut'"
+                      [options]="doughnutChartOptions">
+                    </canvas>
+                  </div>
+
+                  <div class="mensualidades-stats">
+                    <h4>Desglose de Mensualidades</h4>
+                    <div class="stats-bar">
+                      <div class="stat-segment green" [style.width.%]="getPercent(proyeccion.mensualidades.pagadas, proyeccion.mensualidades.total)">
+                        {{ proyeccion.mensualidades.pagadas }} Pagadas
+                      </div>
+                      <div class="stat-segment yellow" [style.width.%]="getPercent(proyeccion.mensualidades.pendientes, proyeccion.mensualidades.total)">
+                        {{ proyeccion.mensualidades.pendientes }} Pendientes
+                      </div>
+                      <div class="stat-segment red" [style.width.%]="getPercent(proyeccion.mensualidades.vencidas, proyeccion.mensualidades.total)">
+                        {{ proyeccion.mensualidades.vencidas }} Vencidas
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- TAB: CUMPLIMIENTO POR CATEGORÍA -->
+          @if (activeTab === 'categorias') {
+            <div class="tab-content">
+              <div class="card">
+                <div class="card-header">
+                  <h3>🏷️ Cumplimiento por Categoría</h3>
+                  <div class="filters-inline">
+                    <select class="form-control" [(ngModel)]="filtrosCategorias.mes">
+                      @for (m of meses; track m.value) {
+                        <option [value]="m.value">{{ m.label }}</option>
+                      }
+                    </select>
+                    <select class="form-control" [(ngModel)]="filtrosCategorias.anio">
+                      @for (a of anios; track a) {
+                        <option [value]="a">{{ a }}</option>
+                      }
+                    </select>
+                    <button class="btn btn-primary" (click)="cargarCumplimiento()">Consultar</button>
+                  </div>
+                </div>
+
+                @if (loadingCategorias) {
+                  <div class="loading">Cargando cumplimiento...</div>
+                } @else if (cumplimientoCategorias.length > 0) {
+                  <div class="chart-container">
+                    <canvas baseChart
+                      [data]="categoriasChartData"
+                      [type]="'bar'"
+                      [options]="categoriasChartOptions">
+                    </canvas>
+                  </div>
+
+                  <div class="table-container">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>Categoría</th>
+                          <th>Total</th>
+                          <th>Pagadas</th>
+                          <th>Pendientes</th>
+                          <th>Vencidas</th>
+                          <th>Esperado</th>
+                          <th>Recaudado</th>
+                          <th>Cumplimiento</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (cat of cumplimientoCategorias; track cat.categoria) {
+                          <tr>
+                            <td><strong>{{ cat.categoria }}</strong></td>
+                            <td>{{ cat.total_mensualidades }}</td>
+                            <td class="text-green">{{ cat.pagadas }}</td>
+                            <td class="text-yellow">{{ cat.pendientes }}</td>
+                            <td class="text-red">{{ cat.vencidas }}</td>
+                            <td>\${{ formatNumber(cat.esperado) }}</td>
+                            <td class="monto">\${{ formatNumber(cat.recaudado) }}</td>
+                            <td>
+                              <span class="progress-badge" [class]="getProgressClass(cat.porcentaje_cumplimiento)">
+                                {{ cat.porcentaje_cumplimiento.toFixed(1) }}%
+                              </span>
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </main>
+      </div>
+    </div>
+  `,
+  styles: [`
+    .layout { display: flex; flex-direction: column; height: 100vh; }
+    .main-container { display: flex; flex: 1; overflow: hidden; }
+    .content { flex: 1; padding: 32px; overflow-y: auto; background: #f5f7fa; }
+    .header { margin-bottom: 24px; }
+    .header h1 { margin: 0; color: #111827; font-size: 28px; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 2px solid #e5e7eb; flex-wrap: wrap; }
+    .tab { padding: 12px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 14px; font-weight: 500; color: #6b7280; transition: all 0.2s; }
+    .tab:hover { color: #4f46e5; background: #f3f4f6; }
+    .tab.active { color: #4f46e5; border-bottom-color: #4f46e5; font-weight: 600; }
+
+    .tab-content { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 24px; }
+    .kpi-card { background: white; border-radius: 12px; padding: 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .kpi-card.blue { border-left: 4px solid #3b82f6; }
+    .kpi-card.green { border-left: 4px solid #10b981; }
+    .kpi-card.yellow { border-left: 4px solid #f59e0b; }
+    .kpi-card.red { border-left: 4px solid #ef4444; }
+    .kpi-icon { font-size: 32px; }
+    .kpi-content { display: flex; flex-direction: column; }
+    .kpi-value { font-size: 24px; font-weight: 700; color: #111827; }
+    .kpi-label { font-size: 13px; color: #6b7280; }
+
+    .cards-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .card h3 { margin: 0 0 16px 0; color: #111827; font-size: 18px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+
+    .stat-list { display: flex; flex-direction: column; gap: 12px; }
+    .stat-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
+    .stat-item:last-child { border-bottom: none; }
+    .text-green { color: #10b981; }
+    .text-yellow { color: #f59e0b; }
+    .text-red { color: #ef4444; }
+
+    .filters-inline { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .form-control { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+    .form-control:focus { outline: none; border-color: #4f46e5; }
+
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #4f46e5; color: white; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-secondary { background: #6b7280; color: white; }
+    .btn-secondary:hover { background: #4b5563; }
+
+    .loading { text-align: center; padding: 40px; color: #6b7280; }
+
+    .caja-resumen, .morosos-resumen, .proyeccion-grid { display: flex; gap: 20px; margin-bottom: 24px; flex-wrap: wrap; }
+    .resumen-item { background: #f9fafb; padding: 16px 24px; border-radius: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .resumen-item.highlight { background: #d1fae5; }
+    .resumen-item.red { background: #fee2e2; }
+    .resumen-item .label { font-size: 12px; color: #6b7280; text-transform: uppercase; }
+    .resumen-item .value { font-size: 20px; font-weight: 700; color: #111827; }
+
+    .proyeccion-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .proyeccion-card { background: #f9fafb; padding: 20px; border-radius: 8px; text-align: center; }
+    .proyeccion-card.green { background: #d1fae5; }
+    .proyeccion-card.yellow { background: #fef3c7; }
+    .proyeccion-card.blue { background: #dbeafe; }
+    .proyeccion-card .label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+    .proyeccion-card .value { font-size: 24px; font-weight: 700; color: #111827; }
+
+    .chart-container { max-width: 600px; margin: 24px auto; }
+
+    .table-container { overflow-x: auto; margin-top: 20px; }
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th { background: #4f46e5; color: white; padding: 12px; text-align: left; font-size: 13px; }
+    .data-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+    .data-table tbody tr:hover { background: #f9fafb; }
+    .monto { font-weight: 600; color: #10b981; }
+    .monto.red { color: #ef4444; }
+
+    .empty-state { text-align: center; padding: 40px; }
+    .empty-state.success { background: #d1fae5; border-radius: 8px; }
+    .empty-state p { font-size: 18px; margin: 0 0 8px; color: #065f46; }
+    .empty-state small { color: #047857; }
+
+    .mensualidades-stats { margin-top: 24px; }
+    .mensualidades-stats h4 { margin: 0 0 12px; color: #374151; }
+    .stats-bar { display: flex; height: 40px; border-radius: 8px; overflow: hidden; }
+    .stat-segment { display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: 600; min-width: 60px; }
+    .stat-segment.green { background: #10b981; }
+    .stat-segment.yellow { background: #f59e0b; }
+    .stat-segment.red { background: #ef4444; }
+
+    .progress-badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .progress-badge.high { background: #d1fae5; color: #065f46; }
+    .progress-badge.medium { background: #fef3c7; color: #92400e; }
+    .progress-badge.low { background: #fee2e2; color: #991b1b; }
+  `]
+})
+export class ReportesComponent implements OnInit {
+  private api = inject(ApiService);
+
+  activeTab: 'dashboard' | 'caja' | 'morosos' | 'proyeccion' | 'categorias' = 'dashboard';
+
+  // Dashboard
+  estadisticas: EstadisticasGenerales | null = null;
+  loadingStats = false;
+
+  // Reporte de Caja
+  reporteCaja: ReporteCaja | null = null;
+  loadingCaja = false;
+  filtrosCaja = {
+    desde: this.getFirstDayOfMonth(),
+    hasta: this.getToday()
+  };
+  cajaItems: { fecha: string; cantidad: number; total: number }[] = [];
+
+  // Morosos
+  reporteMorosos: ReporteMorosos | null = null;
+  loadingMorosos = false;
+
+  // Proyección
+  proyeccion: ProyeccionIngresos | null = null;
+  loadingProyeccion = false;
+  filtrosProyeccion = {
+    mes: new Date().getMonth() + 1,
+    anio: new Date().getFullYear()
+  };
+
+  // Cumplimiento por categoría
+  cumplimientoCategorias: CumplimientoCategoria[] = [];
+  loadingCategorias = false;
+  filtrosCategorias = {
+    mes: new Date().getMonth() + 1,
+    anio: new Date().getFullYear()
+  };
+
+  // Opciones de filtros
+  meses = [
+    { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
+    { value: 4, label: 'Abril' }, { value: 5, label: 'Mayo' }, { value: 6, label: 'Junio' },
+    { value: 7, label: 'Julio' }, { value: 8, label: 'Agosto' }, { value: 9, label: 'Septiembre' },
+    { value: 10, label: 'Octubre' }, { value: 11, label: 'Noviembre' }, { value: 12, label: 'Diciembre' }
+  ];
+  anios = [2024, 2025, 2026, 2027];
+
+  // Chart configurations
+  barChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    plugins: { legend: { display: false } }
+  };
+
+  doughnutChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    plugins: { legend: { position: 'bottom' } }
+  };
+
+  categoriasChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: { y: { beginAtZero: true } }
+  };
+
+  cajaChartData: ChartData<'bar'> = {
+    labels: [],
+    datasets: [{ data: [], label: 'Recaudado', backgroundColor: '#4f46e5' }]
+  };
+
+  proyeccionChartData: ChartData<'doughnut'> = {
+    labels: ['Recaudado', 'Pendiente'],
+    datasets: [{ data: [0, 0], backgroundColor: ['#10b981', '#f59e0b'] }]
+  };
+
+  categoriasChartData: ChartData<'bar'> = {
+    labels: [],
+    datasets: [
+      { data: [], label: 'Esperado', backgroundColor: '#94a3b8' },
+      { data: [], label: 'Recaudado', backgroundColor: '#10b981' }
+    ]
+  };
+
+  ngOnInit() {
+    this.cargarEstadisticas();
+  }
+
+  changeTab(tab: 'dashboard' | 'caja' | 'morosos' | 'proyeccion' | 'categorias') {
+    this.activeTab = tab;
+    if (tab === 'dashboard' && !this.estadisticas) this.cargarEstadisticas();
+    if (tab === 'caja' && !this.reporteCaja) this.cargarReporteCaja();
+    if (tab === 'morosos' && !this.reporteMorosos) this.cargarMorosos();
+    if (tab === 'proyeccion' && !this.proyeccion) this.cargarProyeccion();
+    if (tab === 'categorias' && this.cumplimientoCategorias.length === 0) this.cargarCumplimiento();
+  }
+
+  cargarEstadisticas() {
+    this.loadingStats = true;
+    this.api.get<EstadisticasGenerales>('reportes/estadisticas-generales').subscribe({
+      next: (data) => {
+        this.estadisticas = data;
+        this.loadingStats = false;
+      },
+      error: () => this.loadingStats = false
+    });
+  }
+
+  cargarReporteCaja() {
+    this.loadingCaja = true;
+    const params = `fechaInicio=${this.filtrosCaja.desde}&fechaFin=${this.filtrosCaja.hasta}`;
+    this.api.get<ReporteCaja>(`reportes/caja?${params}`).subscribe({
+      next: (data) => {
+        this.reporteCaja = data;
+        this.procesarDatosCaja(data);
+        this.loadingCaja = false;
+      },
+      error: () => this.loadingCaja = false
+    });
+  }
+
+  procesarDatosCaja(data: ReporteCaja) {
+    const items: { fecha: string; cantidad: number; total: number }[] = [];
+    const labels: string[] = [];
+    const values: number[] = [];
+
+    for (const [fecha, info] of Object.entries(data.agrupado)) {
+      items.push({ fecha, cantidad: info.pagos.length, total: info.total });
+      labels.push(fecha);
+      values.push(info.total);
+    }
+
+    this.cajaItems = items;
+    this.cajaChartData = {
+      labels,
+      datasets: [{ data: values, label: 'Recaudado', backgroundColor: '#4f46e5' }]
+    };
+  }
+
+  cargarMorosos() {
+    this.loadingMorosos = true;
+    this.api.get<ReporteMorosos>('reportes/morosos').subscribe({
+      next: (data) => {
+        this.reporteMorosos = data;
+        this.loadingMorosos = false;
+      },
+      error: () => this.loadingMorosos = false
+    });
+  }
+
+  cargarProyeccion() {
+    this.loadingProyeccion = true;
+    const params = `mes=${this.filtrosProyeccion.mes}&anio=${this.filtrosProyeccion.anio}`;
+    this.api.get<ProyeccionIngresos>(`reportes/proyeccion-ingresos?${params}`).subscribe({
+      next: (data) => {
+        this.proyeccion = data;
+        this.proyeccionChartData = {
+          labels: ['Recaudado', 'Pendiente'],
+          datasets: [{
+            data: [data.total_recaudado, data.total_pendiente],
+            backgroundColor: ['#10b981', '#f59e0b']
+          }]
+        };
+        this.loadingProyeccion = false;
+      },
+      error: () => this.loadingProyeccion = false
+    });
+  }
+
+  cargarCumplimiento() {
+    this.loadingCategorias = true;
+    const params = `mes=${this.filtrosCategorias.mes}&anio=${this.filtrosCategorias.anio}`;
+    this.api.get<{ categorias: CumplimientoCategoria[] }>(`reportes/cumplimiento-categoria?${params}`).subscribe({
+      next: (data) => {
+        this.cumplimientoCategorias = data.categorias || [];
+        this.actualizarGraficoCategorias();
+        this.loadingCategorias = false;
+      },
+      error: () => this.loadingCategorias = false
+    });
+  }
+
+  actualizarGraficoCategorias() {
+    const labels = this.cumplimientoCategorias.map(c => c.categoria);
+    const esperado = this.cumplimientoCategorias.map(c => c.esperado);
+    const recaudado = this.cumplimientoCategorias.map(c => c.recaudado);
+
+    this.categoriasChartData = {
+      labels,
+      datasets: [
+        { data: esperado, label: 'Esperado', backgroundColor: '#94a3b8' },
+        { data: recaudado, label: 'Recaudado', backgroundColor: '#10b981' }
+      ]
+    };
+  }
+
+  exportarMorosos() {
+    if (!this.reporteMorosos) return;
+
+    const headers = ['Jugador', 'Documento', 'Telefono', 'Categoria', 'Meses Vencidos', 'Deuda Total'];
+    const rows = this.reporteMorosos.morosos.map(m => [
+      `${m.jugador.nombre} ${m.jugador.apellido}`,
+      m.jugador.documento,
+      m.jugador.telefono,
+      m.jugador.categoria?.nombre || 'N/A',
+      m.mensualidades_vencidas.length,
+      m.total_deuda
+    ]);
+
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `morosos_${this.getToday()}.csv`;
+    link.click();
+  }
+
+  getPercent(value: number, total: number): number {
+    return total > 0 ? (value / total) * 100 : 0;
+  }
+
+  getProgressClass(percent: number): string {
+    if (percent >= 75) return 'high';
+    if (percent >= 50) return 'medium';
+    return 'low';
+  }
+
+  formatNumber(num: number): string {
+    return new Intl.NumberFormat('es-CO').format(num);
+  }
+
+  getToday(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  getFirstDayOfMonth(): string {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  }
+}
