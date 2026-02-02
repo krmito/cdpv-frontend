@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
 interface Categoria {
   id: number;
@@ -35,17 +36,21 @@ interface PaginatedResponse {
 @Component({
   selector: 'app-categorias',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent, PageHeaderComponent],
   template: `
     <div class="layout">
       <app-navbar/>
       <div class="main-container">
         <app-sidebar/>
         <main class="content">
-          <div class="header">
-            <h1>📁 Categorias</h1>
-            <button class="btn btn-primary" (click)="openNewForm()">
-              + Nueva Categoria
+          <app-page-header
+            title="Categorías"
+            subtitle="Administra las categorías del club"
+            icon="📁"
+          />
+          <div class="header-actions">
+            <button class="btn btn-primary btn-new" (click)="openNewForm()">
+              <span>➕</span> Nueva Categoría
             </button>
           </div>
 

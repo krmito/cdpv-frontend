@@ -5,6 +5,7 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
 // Interfaces
 interface Jugador {
@@ -115,7 +116,7 @@ interface Estadisticas {
 @Component({
   selector: 'app-pagos',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent, PageHeaderComponent],
   templateUrl: './pagos.component.html',
   styleUrls: ['./pagos.component.css']
 })

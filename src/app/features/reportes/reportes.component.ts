@@ -9,6 +9,7 @@ Chart.register(...registerables);
 import { ApiService } from '../../core/services/api.service';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
 interface EstadisticasGenerales {
   jugadores: { total: number; activos: number; inactivos: number };
@@ -66,16 +67,18 @@ interface CumplimientoCategoria {
 @Component({
   selector: 'app-reportes',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent, NgChartsModule],
+  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent, PageHeaderComponent, NgChartsModule],
   template: `
     <div class="layout">
       <app-navbar/>
       <div class="main-container">
         <app-sidebar/>
         <main class="content">
-          <div class="header">
-            <h1>📈 Reportes y Estadísticas</h1>
-          </div>
+          <app-page-header
+            title="Reportes y Estadísticas"
+            subtitle="Analiza el rendimiento financiero del club"
+            icon="📈"
+          />
 
           <!-- Tabs -->
           <div class="tabs">

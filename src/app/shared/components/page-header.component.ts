@@ -1,0 +1,152 @@
+import { Component, Input } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-page-header',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="page-header">
+      <div class="header-bg"></div>
+      <div class="header-content">
+        <div class="header-logo">
+          <img src="assets/escudo.jpg" alt="Escudo" class="escudo" />
+        </div>
+        <div class="header-text">
+          <h1>
+            <span class="header-icon">{{ icon }}</span>
+            {{ title }}
+          </h1>
+          <p class="header-subtitle">{{ subtitle }}</p>
+        </div>
+      </div>
+      <div class="header-decoration">
+        <div class="line l1"></div>
+        <div class="line l2"></div>
+      </div>
+    </div>
+  `,
+  styles: [`
+    :host {
+      --primary-blue: #1a3a5c;
+      --primary-yellow: #ffde00;
+      --dark-blue: #0d1f33;
+    }
+
+    .page-header {
+      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(26, 58, 92, 0.25);
+    }
+
+    .header-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M20 20h20v20H20zM0 0h20v20H0z'/%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .header-logo {
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 12px;
+      padding: 4px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      flex-shrink: 0;
+    }
+
+    .escudo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .header-text h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-icon {
+      font-size: 28px;
+    }
+
+    .header-subtitle {
+      margin: 6px 0 0;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .header-decoration {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 150px;
+      pointer-events: none;
+    }
+
+    .line {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 222, 0, 0.3), transparent);
+      border-radius: 1px;
+    }
+
+    .l1 {
+      width: 100px;
+      top: 30%;
+      right: 20px;
+    }
+
+    .l2 {
+      width: 60px;
+      bottom: 30%;
+      right: 40px;
+    }
+
+    @media (max-width: 640px) {
+      .page-header {
+        padding: 20px;
+      }
+
+      .header-logo {
+        width: 50px;
+        height: 50px;
+      }
+
+      .header-text h1 {
+        font-size: 20px;
+      }
+
+      .header-decoration {
+        display: none;
+      }
+    }
+  `]
+})
+export class PageHeaderComponent {
+  @Input() title: string = '';
+  @Input() subtitle: string = '';
+  @Input() icon: string = '';
+}

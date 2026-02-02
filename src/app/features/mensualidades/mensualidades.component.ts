@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
+import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
 // Interfaces
 interface Jugador {
@@ -56,7 +57,7 @@ interface ResumenMensual {
 @Component({
   selector: 'app-mensualidades',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, SidebarComponent, PageHeaderComponent],
   templateUrl: './mensualidades.component.html',
   styleUrls: ['./mensualidades.component.css']
 })
