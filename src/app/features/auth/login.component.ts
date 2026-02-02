@@ -98,6 +98,17 @@ import { AuthService } from '../../core/services/auth.service';
           Sistema activo y protegido
         </div>
       </div>
+
+      <!-- Mensaje de éxito flotante -->
+      @if (successMessage) {
+        <div class="success-toast">
+          <div class="toast-icon">✓</div>
+          <div class="toast-content">
+            <span class="toast-title">¡Bienvenido!</span>
+            <span class="toast-message">{{ successMessage }}</span>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -520,6 +531,93 @@ import { AuthService } from '../../core/services/auth.service';
         font-size: 18px;
       }
     }
+
+    /* === TOAST DE ÉXITO === */
+    .success-toast {
+      position: fixed;
+      top: 30px;
+      right: 30px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 20px 28px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow:
+        0 10px 40px rgba(16, 185, 129, 0.4),
+        0 0 30px rgba(16, 185, 129, 0.2);
+      z-index: 1000;
+      animation: toast-slide-in 0.5s ease-out, toast-pulse 2s infinite ease-in-out 0.5s;
+    }
+
+    @keyframes toast-slide-in {
+      0% {
+        opacity: 0;
+        transform: translateX(100px) scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+      }
+    }
+
+    @keyframes toast-pulse {
+      0%, 100% {
+        box-shadow:
+          0 10px 40px rgba(16, 185, 129, 0.4),
+          0 0 30px rgba(16, 185, 129, 0.2);
+      }
+      50% {
+        box-shadow:
+          0 10px 50px rgba(16, 185, 129, 0.5),
+          0 0 50px rgba(16, 185, 129, 0.3);
+      }
+    }
+
+    .toast-icon {
+      width: 45px;
+      height: 45px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      animation: icon-bounce 0.6s ease-out 0.3s;
+    }
+
+    @keyframes icon-bounce {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    .toast-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .toast-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .toast-message {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    @media (max-width: 480px) {
+      .success-toast {
+        top: 20px;
+        right: 20px;
+        left: 20px;
+        padding: 16px 20px;
+      }
+    }
   `]
 })
 export class LoginComponent {
@@ -533,15 +631,23 @@ export class LoginComponent {
 
   loading = false;
   errorMessage = '';
+  successMessage = '';
 
   onSubmit() {
     this.loading = true;
     this.errorMessage = '';
+    this.successMessage = '';
 
     this.authService.login(this.credentials).subscribe({
       next: () => {
         this.loading = false;
-        this.router.navigate(['/dashboard']);
+        const userName = this.authService.currentUser()?.nombre || 'Usuario';
+        this.successMessage = `Ingresando como ${userName}...`;
+
+        // Esperar un momento para mostrar el mensaje antes de redirigir
+        setTimeout(() => {
+          this.router.navigate(['/dashboard']);
+        }, 1500);
       },
       error: (error) => {
         this.loading = false;
