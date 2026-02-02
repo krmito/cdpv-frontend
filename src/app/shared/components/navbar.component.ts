@@ -10,46 +10,222 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <nav class="navbar">
       <div class="navbar-brand">
-        <h2>⚽ Club Deportivo Pancho Villegas</h2>
+        <div class="logo-wrapper">
+          <img src="assets/escudo.jpg" alt="Escudo" class="navbar-logo" />
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Club Deportivo</span>
+          <span class="brand-name">Pancho Villegas</span>
+        </div>
       </div>
+
+      <div class="navbar-center">
+        <span class="system-title">Sistema de Gestión</span>
+      </div>
+
       <div class="navbar-user">
-        <span>{{ authService.currentUser()?.nombre }}</span>
-        <span class="badge">{{ authService.currentUser()?.rol }}</span>
-        <button class="btn btn-sm" (click)="logout()">Salir</button>
+        <div class="user-info">
+          <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
+          <span class="user-role">{{ authService.currentUser()?.rol }}</span>
+        </div>
+        <div class="user-avatar">
+          {{ getInitials() }}
+        </div>
+        <button class="btn-logout" (click)="logout()">
+          <span class="btn-icon">⏻</span>
+          <span class="btn-text">Salir</span>
+        </button>
       </div>
     </nav>
   `,
   styles: [`
+    :host {
+      --primary-blue: #1a3a5c;
+      --primary-yellow: #ffde00;
+      --dark-blue: #0d1f33;
+    }
+
     .navbar {
-      background: white;
-      padding: 16px 24px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      background: linear-gradient(90deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
+      padding: 12px 24px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      position: relative;
+      z-index: 100;
     }
-    .navbar-brand h2 {
-      margin: 0;
-      color: #4f46e5;
-      font-size: 24px;
+
+    /* === BRAND === */
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
+
+    .logo-wrapper {
+      width: 45px;
+      height: 45px;
+      border-radius: 10px;
+      background: white;
+      padding: 3px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    .logo-wrapper:hover {
+      transform: scale(1.05);
+      box-shadow:
+        0 6px 20px rgba(0, 0, 0, 0.3),
+        0 0 15px rgba(255, 222, 0, 0.3);
+    }
+
+    .navbar-logo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .brand-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      line-height: 1.2;
+    }
+
+    .brand-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary-yellow);
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+    }
+
+    /* === CENTER === */
+    .navbar-center {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .system-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.6);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 8px 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* === USER === */
     .navbar-user {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
     }
-    .badge {
-      background: #dbeafe;
-      color: #1e40af;
-      padding: 4px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 500;
-      text-transform: capitalize;
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
     }
-    .btn-sm {
-      padding: 6px 16px;
+
+    .user-name {
       font-size: 14px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .user-role {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--primary-yellow);
+      text-transform: capitalize;
+      padding: 2px 10px;
+      background: rgba(255, 222, 0, 0.15);
+      border-radius: 10px;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary-yellow) 0%, #ffc107 100%);
+      color: var(--dark-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(255, 222, 0, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .user-avatar:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 222, 0, 0.4);
+    }
+
+    .btn-logout {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      color: white;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-logout:hover {
+      background: rgba(239, 68, 68, 0.9);
+      border-color: rgba(239, 68, 68, 0.9);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-icon {
+      font-size: 16px;
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 768px) {
+      .navbar-center {
+        display: none;
+      }
+
+      .brand-text {
+        display: none;
+      }
+
+      .user-info {
+        display: none;
+      }
+
+      .btn-text {
+        display: none;
+      }
+
+      .btn-logout {
+        padding: 10px;
+      }
     }
   `]
 })
@@ -58,5 +234,14 @@ export class NavbarComponent {
 
   logout() {
     this.authService.logout();
+  }
+
+  getInitials(): string {
+    const nombre = this.authService.currentUser()?.nombre || '';
+    const parts = nombre.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return nombre.substring(0, 2).toUpperCase();
   }
 }
