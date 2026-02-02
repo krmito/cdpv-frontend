@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -99,13 +99,24 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
       </div>
 
-      <!-- Mensaje de éxito flotante -->
+      <!-- Mensaje de éxito flotante (login) -->
       @if (successMessage) {
         <div class="success-toast">
           <div class="toast-icon">✓</div>
           <div class="toast-content">
             <span class="toast-title">¡Bienvenido!</span>
             <span class="toast-message">{{ successMessage }}</span>
+          </div>
+        </div>
+      }
+
+      <!-- Mensaje de despedida flotante (logout) -->
+      @if (logoutMessage) {
+        <div class="logout-toast">
+          <div class="toast-icon">👋</div>
+          <div class="toast-content">
+            <span class="toast-title">¡Hasta pronto!</span>
+            <span class="toast-message">{{ logoutMessage }}</span>
           </div>
         </div>
       }
@@ -620,9 +631,10 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   credentials = {
     usuario: '',
@@ -632,6 +644,25 @@ export class LoginComponent {
   loading = false;
   errorMessage = '';
   successMessage = '';
+  logoutMessage = '';
+
+  ngOnInit() {
+    // Verificar si viene de un logout
+    this.route.queryParams.subscribe(params => {
+      if (params['logout'] === 'success') {
+        const name = params['name'] || 'Usuario';
+        this.logoutMessage = `Sesión de ${name} cerrada correctamente`;
+
+        // Ocultar el mensaje después de 4 segundos
+        setTimeout(() => {
+          this.logoutMessage = '';
+        }, 4000);
+
+        // Limpiar los query params de la URL
+        this.router.navigate([], { queryParams: {} });
+      }
+    });
+  }
 
   onSubmit() {
     this.loading = true;

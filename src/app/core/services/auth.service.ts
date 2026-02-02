@@ -51,10 +51,11 @@ export class AuthService {
   }
 
   logout(): void {
+    const userName = this.currentUser()?.nombre || '';
     this.storage.clear();
     this.currentUser.set(null);
     this.isAuthenticated.set(false);
-    this.router.navigate(['/login']);
+    this.router.navigate(['/login'], { queryParams: { logout: 'success', name: userName } });
   }
 
   getToken(): string | null {
