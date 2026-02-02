@@ -90,13 +90,6 @@ interface Estadisticas {
                 </button>
               </div>
             </div>
-
-            <div class="info-card">
-              <h3>✅ Sistema Funcionando Correctamente</h3>
-              <p>El frontend está conectado al backend en: <code>http://localhost:3000/api/v1</code></p>
-              <p>Usuario: <strong>{{ authService.currentUser()?.nombre }}</strong></p>
-              <p>Rol: <strong>{{ authService.currentUser()?.rol }}</strong></p>
-            </div>
           }
         </main>
       </div>
