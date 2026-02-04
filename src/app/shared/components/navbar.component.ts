@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { UiService } from '../../core/services/ui.service';
 
 @Component({
   selector: 'app-navbar',
@@ -9,13 +10,20 @@ import { AuthService } from '../../core/services/auth.service';
   imports: [CommonModule, RouterLink],
   template: `
     <nav class="navbar">
-      <div class="navbar-brand">
-        <div class="logo-wrapper">
-          <img src="assets/escudo.jpg" alt="Escudo" class="navbar-logo" />
-        </div>
-        <div class="brand-text">
-          <span class="brand-title">Club Deportivo</span>
-          <span class="brand-name">Pancho Villegas</span>
+      <div class="navbar-left">
+        <button class="menu-toggle" (click)="uiService.toggleSidebar()">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+        <div class="navbar-brand">
+          <div class="logo-wrapper">
+            <img src="assets/escudo.jpg" alt="Escudo" class="navbar-logo" />
+          </div>
+          <div class="brand-text">
+            <span class="brand-title">Club Deportivo</span>
+            <span class="brand-name">Pancho Villegas</span>
+          </div>
         </div>
       </div>
 
@@ -54,6 +62,40 @@ import { AuthService } from '../../core/services/auth.service';
       align-items: center;
       position: relative;
       z-index: 100;
+    }
+
+    /* === LEFT === */
+    .navbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .menu-toggle {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      gap: 5px;
+      width: 40px;
+      height: 40px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .menu-toggle:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .hamburger-line {
+      width: 100%;
+      height: 2px;
+      background: white;
+      border-radius: 2px;
+      transition: all 0.3s ease;
     }
 
     /* === BRAND === */
@@ -207,6 +249,14 @@ import { AuthService } from '../../core/services/auth.service';
 
     /* === RESPONSIVE === */
     @media (max-width: 768px) {
+      .navbar {
+        padding: 10px 16px;
+      }
+
+      .menu-toggle {
+        display: flex;
+      }
+
       .navbar-center {
         display: none;
       }
@@ -226,11 +276,23 @@ import { AuthService } from '../../core/services/auth.service';
       .btn-logout {
         padding: 10px;
       }
+
+      .logo-wrapper {
+        width: 38px;
+        height: 38px;
+      }
+
+      .user-avatar {
+        width: 36px;
+        height: 36px;
+        font-size: 12px;
+      }
     }
   `]
 })
 export class NavbarComponent {
   authService = inject(AuthService);
+  uiService = inject(UiService);
 
   logout() {
     this.authService.logout();

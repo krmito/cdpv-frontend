@@ -2,13 +2,21 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { UiService } from '../../core/services/ui.service';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
-    <aside class="sidebar">
+    <!-- Overlay para cerrar el menú en móvil -->
+    <div
+      class="sidebar-overlay"
+      [class.active]="uiService.sidebarOpen()"
+      (click)="uiService.closeSidebar()">
+    </div>
+
+    <aside class="sidebar" [class.open]="uiService.sidebarOpen()">
       <!-- Logo del club -->
       <div class="logo-section">
         <div class="logo-container">
@@ -23,31 +31,31 @@ import { AuthService } from '../../core/services/auth.service';
       <div class="menu-divider"></div>
 
       <nav class="menu">
-        <a routerLink="/dashboard" routerLinkActive="active" class="menu-item">
+        <a routerLink="/dashboard" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
           <span class="menu-icon">📊</span>
           <span class="menu-text">Dashboard</span>
         </a>
-        <a routerLink="/jugadores" routerLinkActive="active" class="menu-item">
+        <a routerLink="/jugadores" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
           <span class="menu-icon">👥</span>
           <span class="menu-text">Jugadores</span>
         </a>
         @if (canAccessCategorias()) {
-          <a routerLink="/categorias" routerLinkActive="active" class="menu-item">
+          <a routerLink="/categorias" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
             <span class="menu-icon">📁</span>
             <span class="menu-text">Categorías</span>
           </a>
         }
         @if (canAccessPagos()) {
-          <a routerLink="/pagos" routerLinkActive="active" class="menu-item">
+          <a routerLink="/pagos" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
             <span class="menu-icon">💰</span>
             <span class="menu-text">Pagos</span>
           </a>
         }
-        <a routerLink="/mensualidades" routerLinkActive="active" class="menu-item">
+        <a routerLink="/mensualidades" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
           <span class="menu-icon">📅</span>
           <span class="menu-text">Mensualidades</span>
         </a>
-        <a routerLink="/reportes" routerLinkActive="active" class="menu-item">
+        <a routerLink="/reportes" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
           <span class="menu-icon">📈</span>
           <span class="menu-text">Reportes</span>
         </a>
@@ -61,6 +69,24 @@ import { AuthService } from '../../core/services/auth.service';
       --dark-blue: #0d1f33;
     }
 
+    /* === OVERLAY === */
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 199;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar-overlay.active {
+      opacity: 1;
+    }
+
     .sidebar {
       width: 260px;
       background: linear-gradient(180deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
@@ -69,6 +95,7 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      flex-shrink: 0;
     }
 
     /* === LOGO SECTION === */
@@ -236,10 +263,63 @@ import { AuthService } from '../../core/services/auth.service';
     .menu::-webkit-scrollbar-thumb:hover {
       background: rgba(255, 222, 0, 0.5);
     }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 768px) {
+      .sidebar-overlay {
+        display: block;
+        pointer-events: none;
+      }
+
+      .sidebar-overlay.active {
+        pointer-events: auto;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 200;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .logo-section {
+        padding: 20px 16px;
+      }
+
+      .logo-container {
+        width: 60px;
+        height: 60px;
+      }
+
+      .club-name {
+        margin-top: 12px;
+      }
+
+      .name-line {
+        font-size: 11px;
+      }
+
+      .name-line.primary {
+        font-size: 13px;
+      }
+
+      .menu-item {
+        padding: 12px 20px;
+        margin: 3px 10px;
+      }
+    }
   `]
 })
 export class SidebarComponent {
   authService = inject(AuthService);
+  uiService = inject(UiService);
 
   canAccessPagos(): boolean {
     return this.authService.hasRole(['administrador', 'tesorero']);
@@ -247,5 +327,11 @@ export class SidebarComponent {
 
   canAccessCategorias(): boolean {
     return this.authService.hasRole(['administrador', 'tesorero']);
+  }
+
+  onMenuItemClick(): void {
+    if (window.innerWidth <= 768) {
+      this.uiService.closeSidebar();
+    }
   }
 }
