@@ -364,6 +364,15 @@
                     <div class="stat-arrow">→</div>
                   </div>
 
+                  <div class="stat-card partial clickable" (click)="verListadoPorEstado('parcial')" title="Ver mensualidades parciales">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                      <div class="stat-label">Parciales</div>
+                      <div class="stat-value">{{ resumen.parciales || 0 }}</div>
+                    </div>
+                    <div class="stat-arrow">→</div>
+                  </div>
+
                   <div class="stat-card danger clickable" (click)="verListadoPorEstado('vencido')" title="Ver mensualidades vencidas">
                     <div class="stat-icon">⚠️</div>
                     <div class="stat-content">

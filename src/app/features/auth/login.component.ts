@@ -629,6 +629,59 @@ import { AuthService } from '../../core/services/auth.service';
         padding: 16px 20px;
       }
     }
+
+    /* === TOAST DE LOGOUT === */
+    .logout-toast {
+      position: fixed;
+      top: 30px;
+      right: 30px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      padding: 20px 28px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow:
+        0 10px 40px rgba(59, 130, 246, 0.4),
+        0 0 30px rgba(59, 130, 246, 0.2);
+      z-index: 1000;
+      animation: toast-slide-in 0.5s ease-out, toast-pulse-blue 2s infinite ease-in-out 0.5s;
+    }
+
+    @keyframes toast-pulse-blue {
+      0%, 100% {
+        box-shadow:
+          0 10px 40px rgba(59, 130, 246, 0.4),
+          0 0 30px rgba(59, 130, 246, 0.2);
+      }
+      50% {
+        box-shadow:
+          0 10px 50px rgba(59, 130, 246, 0.5),
+          0 0 50px rgba(59, 130, 246, 0.3);
+      }
+    }
+
+    .logout-toast .toast-icon {
+      width: 45px;
+      height: 45px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      animation: icon-bounce 0.6s ease-out 0.3s;
+    }
+
+    @media (max-width: 480px) {
+      .logout-toast {
+        top: 20px;
+        right: 20px;
+        left: 20px;
+        padding: 16px 20px;
+      }
+    }
   `]
 })
 export class LoginComponent implements OnInit {
