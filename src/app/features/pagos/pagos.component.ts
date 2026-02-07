@@ -126,9 +126,14 @@ export class PagosComponent implements OnInit {
 
   // Tab Registrar - Búsqueda de jugador
   documentoBusqueda = '';
+  busquedaNombre = '';
   buscando = false;
   errorBusqueda = '';
   jugadorSeleccionado: Jugador | null = null;
+  sugerenciasJugadores: Jugador[] = [];
+  mostrarSugerencias = false;
+  buscandoSugerencias = false;
+  searchSugerenciasTimeout: any;
 
   // Tab Registrar - Mensualidades
   mensualidadesPendientes: Mensualidad[] = [];
@@ -260,6 +265,58 @@ export class PagosComponent implements OnInit {
     });
   }
 
+  buscarSugerencias() {
+    const texto = this.busquedaNombre.trim();
+
+    if (texto.length < 2) {
+      this.sugerenciasJugadores = [];
+      this.mostrarSugerencias = false;
+      return;
+    }
+
+    if (this.searchSugerenciasTimeout) {
+      clearTimeout(this.searchSugerenciasTimeout);
+    }
+
+    this.searchSugerenciasTimeout = setTimeout(() => {
+      this.buscandoSugerencias = true;
+      this.mostrarSugerencias = true;
+
+      this.api.get<any>(`jugadores?search=${encodeURIComponent(texto)}&activo=true&limit=10`).subscribe({
+        next: (response) => {
+          this.sugerenciasJugadores = response.data || response;
+          this.buscandoSugerencias = false;
+        },
+        error: () => {
+          this.sugerenciasJugadores = [];
+          this.buscandoSugerencias = false;
+        }
+      });
+    }, 300);
+  }
+
+  seleccionarJugadorSugerencia(jugador: Jugador) {
+    this.jugadorSeleccionado = jugador;
+    this.busquedaNombre = `${jugador.nombre} ${jugador.apellido}`;
+    this.sugerenciasJugadores = [];
+    this.mostrarSugerencias = false;
+    this.errorBusqueda = '';
+    this.cargarMensualidadesPendientes();
+  }
+
+  onInputBlur() {
+    // Delay para permitir click en sugerencia antes de cerrar
+    setTimeout(() => {
+      this.mostrarSugerencias = false;
+    }, 200);
+  }
+
+  onInputFocus() {
+    if (this.busquedaNombre.trim().length >= 2 && this.sugerenciasJugadores.length > 0) {
+      this.mostrarSugerencias = true;
+    }
+  }
+
   cargarMensualidadesPendientes() {
     if (!this.jugadorSeleccionado) return;
 
@@ -288,11 +345,14 @@ export class PagosComponent implements OnInit {
 
   limpiarBusqueda() {
     this.documentoBusqueda = '';
+    this.busquedaNombre = '';
     this.jugadorSeleccionado = null;
     this.mensualidadesPendientes = [];
     this.mensualidadSeleccionada = null;
     this.showPagoForm = false;
     this.errorBusqueda = '';
+    this.sugerenciasJugadores = [];
+    this.mostrarSugerencias = false;
   }
 
   // ===== TAB REGISTRAR - FORMULARIO PAGO =====

@@ -41,26 +41,37 @@
       <!-- Búsqueda de Jugador -->
       <div class="search-section card">
         <h2>🔍 Buscar Jugador</h2>
-        
+
         <div class="search-form">
           <div class="form-group">
-            <label>Documento del Jugador</label>
-            <div class="search-input-group">
+            <label>Buscar Jugador</label>
+            <div class="search-container">
               <input
                 type="text"
                 class="form-control"
-                [(ngModel)]="documentoBusqueda"
-                (keyup.enter)="buscarJugador()"
-                placeholder="Ingrese el documento..."
-                [disabled]="buscando"
+                [(ngModel)]="busquedaNombre"
+                (input)="buscarSugerencias()"
+                (blur)="onInputBlur()"
+                (focus)="onInputFocus()"
+                placeholder="Buscar por nombre o documento..."
+                [disabled]="!!jugadorSeleccionado"
               />
-              <button 
-                class="btn btn-primary"
-                (click)="buscarJugador()"
-                [disabled]="!documentoBusqueda || buscando"
-              >
-                {{ buscando ? '🔄 Buscando...' : '🔍 Buscar' }}
-              </button>
+              @if (mostrarSugerencias) {
+                <div class="sugerencias-dropdown">
+                  @if (buscandoSugerencias) {
+                    <div class="sugerencia-loading">🔄 Buscando...</div>
+                  } @else if (sugerenciasJugadores.length === 0) {
+                    <div class="sugerencia-empty">No se encontraron jugadores</div>
+                  } @else {
+                    @for (jugador of sugerenciasJugadores; track jugador.id) {
+                      <div class="sugerencia-item" (mousedown)="seleccionarJugadorSugerencia(jugador)">
+                        <span class="sugerencia-nombre">{{ jugador.nombre }} {{ jugador.apellido }}</span>
+                        <span class="sugerencia-detalle">{{ jugador.documento }} · {{ jugador.categoria?.nombre }}</span>
+                      </div>
+                    }
+                  }
+                </div>
+              }
             </div>
           </div>
         </div>
