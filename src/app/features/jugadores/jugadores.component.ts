@@ -26,6 +26,7 @@ interface Jugador {
   categoria: Categoria;
   activo: boolean;
   fecha_registro: string;
+  foto_url?: string;
 }
 
 interface PaginatedResponse {
@@ -158,6 +159,7 @@ interface CreateJugadorDto {
                   <table>
                     <thead>
                       <tr>
+                        <th>Foto</th>
                         <th>Documento</th>
                         <th>Nombre Completo</th>
                         <th>Categoría</th>
@@ -170,6 +172,15 @@ interface CreateJugadorDto {
                     <tbody>
                       @for (jugador of jugadores; track jugador.id) {
                         <tr>
+                          <td>
+                            @if (jugador.foto_url) {
+                              <img [src]="getFotoUrl(jugador.foto_url)" class="avatar-sm" alt="Foto">
+                            } @else {
+                              <div class="avatar-sm avatar-initials" [style.background-color]="getAvatarColor(jugador.nombre)">
+                                {{ getInitials(jugador.nombre, jugador.apellido) }}
+                              </div>
+                            }
+                          </td>
                           <td><strong>{{ jugador.documento }}</strong></td>
                           <td>{{ jugador.nombre }} {{ jugador.apellido }}</td>
                           <td>
@@ -414,9 +425,28 @@ interface CreateJugadorDto {
                       <p>Editando jugador: <strong>{{ editingJugador.nombre }} {{ editingJugador.apellido }}</strong></p>
                     </div>
 
+                    <div class="foto-upload-section">
+                      @if (fotoPreview) {
+                        <img [src]="fotoPreview" class="foto-preview" alt="Preview">
+                      } @else if (editingJugador.foto_url) {
+                        <img [src]="getFotoUrl(editingJugador.foto_url)" class="foto-preview" alt="Foto actual">
+                      } @else {
+                        <div class="avatar-lg avatar-initials" [style.background-color]="getAvatarColor(editingJugador.nombre)">
+                          {{ getInitials(editingJugador.nombre, editingJugador.apellido) }}
+                        </div>
+                      }
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="fotoInput.click()" [disabled]="subiendoFoto">
+                        {{ subiendoFoto ? 'Subiendo...' : 'Cambiar foto' }}
+                      </button>
+                      <input #fotoInput type="file" accept="image/jpeg,image/png" (change)="onFotoSelected($event)" style="display:none">
+                      @if (fotoPreview) {
+                        <small class="foto-hint">La foto se guardará al guardar cambios</small>
+                      }
+                    </div>
+
                     <div class="form-section">
                       <h3>Datos Personales</h3>
-                      
+
                       <div class="form-row">
                         <div class="form-group">
                           <label>Nombre <span class="required">*</span></label>
@@ -600,6 +630,15 @@ interface CreateJugadorDto {
                 <div class="modal-body">
                   <!-- Información del jugador -->
                   <div class="jugador-info-card">
+                    <div class="info-row" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+                      @if (jugadorHistorial.foto_url) {
+                        <img [src]="getFotoUrl(jugadorHistorial.foto_url)" class="avatar" alt="Foto">
+                      } @else {
+                        <div class="avatar avatar-initials" [style.background-color]="getAvatarColor(jugadorHistorial.nombre)">
+                          {{ getInitials(jugadorHistorial.nombre, jugadorHistorial.apellido) }}
+                        </div>
+                      }
+                    </div>
                     <div class="info-row">
                       <span class="label">Jugador:</span>
                       <span class="value">{{ jugadorHistorial.nombre }} {{ jugadorHistorial.apellido }}</span>
@@ -646,51 +685,59 @@ interface CreateJugadorDto {
                         <h3>Pagos Registrados ({{ historialPagos.length }})</h3>
                         
                         @for (pago of historialPagos; track pago.id) {
-                          <div class="historial-item">
+                          <div class="historial-item" [class.pago-anulado]="pago.anulado">
                             <div class="pago-header">
                               <div class="pago-fecha">
                                 <span class="fecha-icon">📅</span>
                                 <span>{{ pago.fecha_pago | date: 'dd/MM/yyyy' }}</span>
+                                @if (pago.anulado) {
+                                  <span class="badge-anulado">Anulado</span>
+                                }
                               </div>
-                              <div class="pago-monto">
-                                <strong>\${{ formatNumber(pago.monto) }}</strong>
+                              <div class="pago-monto" [class.monto-anulado]="pago.anulado">
+                                <strong>\${{ formatNumber(pago.monto_pagado) }}</strong>
                               </div>
                             </div>
-                            
+
                             <div class="pago-details">
                               <div class="detail-row">
-                                <span class="detail-label">Concepto:</span>
-                                <span class="detail-value">{{ pago.concepto }}</span>
+                                <span class="detail-label">Periodo:</span>
+                                <span class="detail-value">
+                                  @if (pago.mensualidad) {
+                                    {{ getMesNombre(pago.mensualidad.mes) }} {{ pago.mensualidad.anio }}
+                                  } @else {
+                                    N/A
+                                  }
+                                </span>
                               </div>
-                              
+
                               @if (pago.metodo_pago) {
                                 <div class="detail-row">
                                   <span class="detail-label">Método:</span>
-                                  <span class="detail-value">{{ pago.metodo_pago }}</span>
+                                  <span class="detail-value">
+                                    <span class="badge-metodo" [attr.data-metodo]="pago.metodo_pago">{{ pago.metodo_pago }}</span>
+                                  </span>
                                 </div>
                               }
-                              
-                              @if (pago.referencia) {
+
+                              @if (pago.numero_recibo) {
                                 <div class="detail-row">
-                                  <span class="detail-label">Referencia:</span>
-                                  <span class="detail-value">{{ pago.referencia }}</span>
+                                  <span class="detail-label">Recibo:</span>
+                                  <span class="detail-value">{{ pago.numero_recibo }}</span>
                                 </div>
                               }
-                              
+
                               @if (pago.observaciones) {
                                 <div class="detail-row">
                                   <span class="detail-label">Observaciones:</span>
                                   <span class="detail-value">{{ pago.observaciones }}</span>
                                 </div>
                               }
-                              
+
                               <div class="detail-row">
                                 <span class="detail-label">Registrado por:</span>
                                 <span class="detail-value">
                                   {{ pago.registrado_por?.nombre || 'Sistema' }}
-                                  @if (pago.fecha_registro) {
-                                    <small>({{ pago.fecha_registro | date: 'dd/MM/yyyy HH:mm' }})</small>
-                                  }
                                 </span>
                               </div>
                             </div>
@@ -1164,6 +1211,109 @@ interface CreateJugadorDto {
       font-size: 13px;
       color: #6b7280;
     }
+
+    /* Avatares */
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      overflow: hidden;
+    }
+    .avatar-sm {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      overflow: hidden;
+    }
+    .avatar-lg {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      overflow: hidden;
+    }
+    .avatar-initials {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .avatar-lg.avatar-initials {
+      font-size: 28px;
+    }
+
+    /* Foto upload */
+    .foto-upload-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .foto-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #3b82f6;
+    }
+    .foto-hint {
+      color: #6b7280;
+      font-size: 12px;
+    }
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 13px;
+    }
+
+    /* Badges pago */
+    .badge-anulado {
+      background: #fef2f2;
+      color: #dc2626;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    .pago-anulado {
+      opacity: 0.7;
+      border-left: 3px solid #dc2626;
+    }
+    .monto-anulado {
+      color: #dc2626 !important;
+      text-decoration: line-through;
+    }
+    .badge-metodo {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: capitalize;
+    }
+    .badge-metodo[data-metodo="efectivo"] {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .badge-metodo[data-metodo="nequi"] {
+      background: #e8d5f5;
+      color: #6b21a8;
+    }
+    .badge-metodo[data-metodo="transferencia"] {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .badge-metodo[data-metodo="otro"] {
+      background: #f3f4f6;
+      color: #374151;
+    }
   `]
 })
 export class JugadoresComponent implements OnInit {
@@ -1215,7 +1365,14 @@ export class JugadoresComponent implements OnInit {
   loadingHistorial = false;
   historialError = '';
 
+  // Foto de perfil
+  fotoFile: File | null = null;
+  fotoPreview: string | null = null;
+  subiendoFoto = false;
+  apiBaseUrl = '';
+
   ngOnInit() {
+    this.apiBaseUrl = this.api.getBaseUrl();
     this.loadCategorias();
     this.loadJugadores();
   }
@@ -1409,6 +1566,8 @@ export class JugadoresComponent implements OnInit {
     };
     this.showEditForm = true;
     this.formError = '';
+    this.fotoFile = null;
+    this.fotoPreview = null;
   }
 
   closeEditForm() {
@@ -1416,6 +1575,8 @@ export class JugadoresComponent implements OnInit {
     this.editingJugador = null;
     this.editJugadorData = {};
     this.formError = '';
+    this.fotoFile = null;
+    this.fotoPreview = null;
   }
 
   isEditFormValid(): boolean {
@@ -1446,27 +1607,49 @@ export class JugadoresComponent implements OnInit {
 
     console.log('Actualizando jugador:', dataToSend);
 
-    this.api.patch<Jugador>(`jugadores/${this.editingJugador.id}`, dataToSend).subscribe({
-      next: (jugador) => {
-        this.saving = false;
-        this.successMessage = `Jugador ${jugador.nombre} ${jugador.apellido} actualizado exitosamente`;
-        
-        // Cerrar modal primero
-        this.showEditForm = false;
-        this.closeEditForm();
-        
-        // Asegurar que currentPage tiene valor antes de recargar
-        if (!this.currentPage || this.currentPage < 1) {
-          this.currentPage = 1;
+    const jugadorId = this.editingJugador.id;
+
+    this.api.patch<any>(`jugadores/${jugadorId}`, dataToSend).subscribe({
+      next: (response) => {
+        const jugador = response.data || response;
+
+        // Si hay foto nueva, subirla
+        if (this.fotoFile) {
+          this.subiendoFoto = true;
+          const formData = new FormData();
+          formData.append('foto', this.fotoFile);
+
+          this.api.postFile(`jugadores/${jugadorId}/foto`, formData).subscribe({
+            next: () => {
+              this.subiendoFoto = false;
+              this.saving = false;
+              this.successMessage = `Jugador ${jugador.nombre} ${jugador.apellido} actualizado exitosamente`;
+              this.showEditForm = false;
+              this.closeEditForm();
+              if (!this.currentPage || this.currentPage < 1) this.currentPage = 1;
+              this.loadJugadores();
+              setTimeout(() => { this.successMessage = ''; }, 5000);
+            },
+            error: (err) => {
+              this.subiendoFoto = false;
+              this.saving = false;
+              // Datos guardados pero foto falló
+              this.successMessage = `Jugador actualizado, pero hubo un error al subir la foto`;
+              this.showEditForm = false;
+              this.closeEditForm();
+              this.loadJugadores();
+              setTimeout(() => { this.successMessage = ''; }, 5000);
+            }
+          });
+        } else {
+          this.saving = false;
+          this.successMessage = `Jugador ${jugador.nombre} ${jugador.apellido} actualizado exitosamente`;
+          this.showEditForm = false;
+          this.closeEditForm();
+          if (!this.currentPage || this.currentPage < 1) this.currentPage = 1;
+          this.loadJugadores();
+          setTimeout(() => { this.successMessage = ''; }, 5000);
         }
-        
-        // Luego recargar la lista
-        this.loadJugadores();
-        
-        // Ocultar mensaje después de 5 segundos
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
       },
       error: (err) => {
         this.saving = false;
@@ -1493,23 +1676,14 @@ export class JugadoresComponent implements OnInit {
     this.historialError = '';
     this.historialPagos = [];
 
-    console.log('🔍 Cargando historial de pagos para jugador ID:', jugadorId);
-
-    // Endpoint para obtener el historial de pagos del jugador
-    const endpoint = `pagos/jugador/${jugadorId}`;
-
-    this.api.get<any[]>(endpoint).subscribe({
-      next: (pagos) => {
-        this.historialPagos = pagos;
+    this.api.get<any>(`jugadores/${jugadorId}/historial-pagos`).subscribe({
+      next: (response) => {
+        this.historialPagos = response.historial_pagos || [];
         this.loadingHistorial = false;
-        console.log('✅ Historial cargado:', pagos.length, 'pagos');
       },
       error: (err) => {
         this.loadingHistorial = false;
-        console.error('❌ Error cargando historial:', err);
-        
         if (err.status === 404) {
-          // No hay pagos, no es un error
           this.historialPagos = [];
         } else {
           this.historialError = 'Error al cargar el historial de pagos';
@@ -1526,6 +1700,49 @@ export class JugadoresComponent implements OnInit {
   }
 
   getTotalPagado(): number {
-    return this.historialPagos.reduce((total, pago) => total + Number(pago.monto), 0);
+    return this.historialPagos
+      .filter(p => !p.anulado)
+      .reduce((total, pago) => total + Number(pago.monto_pagado), 0);
+  }
+
+  // Foto helpers
+  getFotoUrl(fotoUrl: string): string {
+    return `${this.apiBaseUrl}${fotoUrl}`;
+  }
+
+  getInitials(nombre: string, apellido: string): string {
+    return (nombre?.charAt(0) || '').toUpperCase() + (apellido?.charAt(0) || '').toUpperCase();
+  }
+
+  getAvatarColor(nombre: string): string {
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+    let hash = 0;
+    for (let i = 0; i < (nombre || '').length; i++) {
+      hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  }
+
+  onFotoSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      if (file.size > 2 * 1024 * 1024) {
+        this.formError = 'La foto no puede superar 2MB';
+        return;
+      }
+      this.fotoFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.fotoPreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  getMesNombre(mes: number): string {
+    const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return meses[mes] || `Mes ${mes}`;
   }
 }

@@ -29,4 +29,13 @@ export class ApiService {
   delete<T>(endpoint: string): Observable<T> {
     return this.http.delete<T>(`${this.apiUrl}/${endpoint}`);
   }
+
+  postFile<T>(endpoint: string, formData: FormData): Observable<T> {
+    return this.http.post<T>(`${this.apiUrl}/${endpoint}`, formData);
+  }
+
+  getBaseUrl(): string {
+    // Extraer base URL sin el prefijo /api/v1
+    return this.apiUrl.replace(/\/api\/v1$/, '');
+  }
 }
