@@ -174,7 +174,7 @@ interface CreateJugadorDto {
                         <tr>
                           <td>
                             @if (jugador.foto_url) {
-                              <img [src]="getFotoUrl(jugador.foto_url)" class="avatar-sm" alt="Foto">
+                              <img [src]="getFotoUrl(jugador.foto_url)" class="avatar-sm clickable" (click)="openFotoViewer(jugador)" alt="Foto">
                             } @else {
                               <div class="avatar-sm avatar-initials" [style.background-color]="getAvatarColor(jugador.nombre)">
                                 {{ getInitials(jugador.nombre, jugador.apellido) }}
@@ -632,7 +632,7 @@ interface CreateJugadorDto {
                   <div class="jugador-info-card">
                     <div class="info-row" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
                       @if (jugadorHistorial.foto_url) {
-                        <img [src]="getFotoUrl(jugadorHistorial.foto_url)" class="avatar" alt="Foto">
+                        <img [src]="getFotoUrl(jugadorHistorial.foto_url)" class="avatar clickable" (click)="openFotoViewer(jugadorHistorial)" alt="Foto">
                       } @else {
                         <div class="avatar avatar-initials" [style.background-color]="getAvatarColor(jugadorHistorial.nombre)">
                           {{ getInitials(jugadorHistorial.nombre, jugadorHistorial.apellido) }}
@@ -765,6 +765,18 @@ interface CreateJugadorDto {
                     Cerrar
                   </button>
                 </div>
+              </div>
+            </div>
+          }
+          <!-- Lightbox foto -->
+          @if (fotoViewerUrl) {
+            <div class="foto-viewer-overlay" (click)="closeFotoViewer()">
+              <div class="foto-viewer-content" (click)="$event.stopPropagation()">
+                <button class="foto-viewer-close" (click)="closeFotoViewer()">✕</button>
+                <img [src]="fotoViewerUrl" class="foto-viewer-img" alt="Foto del jugador">
+                @if (fotoViewerNombre) {
+                  <p class="foto-viewer-nombre">{{ fotoViewerNombre }}</p>
+                }
               </div>
             </div>
           }
@@ -1314,6 +1326,76 @@ interface CreateJugadorDto {
       background: #f3f4f6;
       color: #374151;
     }
+
+    /* Clickable photos */
+    .clickable {
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .clickable:hover {
+      transform: scale(1.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Foto viewer lightbox */
+    .foto-viewer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: fadeIn 0.2s ease;
+    }
+    .foto-viewer-content {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+      text-align: center;
+    }
+    .foto-viewer-img {
+      max-width: 500px;
+      max-height: 500px;
+      width: auto;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      object-fit: contain;
+    }
+    .foto-viewer-close {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: white;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      z-index: 1;
+    }
+    .foto-viewer-close:hover {
+      background: #f3f4f6;
+    }
+    .foto-viewer-nombre {
+      color: white;
+      margin-top: 12px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
   `]
 })
 export class JugadoresComponent implements OnInit {
@@ -1370,6 +1452,10 @@ export class JugadoresComponent implements OnInit {
   fotoPreview: string | null = null;
   subiendoFoto = false;
   apiBaseUrl = '';
+
+  // Foto viewer
+  fotoViewerUrl: string | null = null;
+  fotoViewerNombre: string | null = null;
 
   ngOnInit() {
     this.apiBaseUrl = this.api.getBaseUrl();
@@ -1738,6 +1824,18 @@ export class JugadoresComponent implements OnInit {
       };
       reader.readAsDataURL(file);
     }
+  }
+
+  openFotoViewer(jugador: Jugador) {
+    if (jugador.foto_url) {
+      this.fotoViewerUrl = this.getFotoUrl(jugador.foto_url);
+      this.fotoViewerNombre = `${jugador.nombre} ${jugador.apellido}`;
+    }
+  }
+
+  closeFotoViewer() {
+    this.fotoViewerUrl = null;
+    this.fotoViewerNombre = null;
   }
 
   getMesNombre(mes: number): string {
