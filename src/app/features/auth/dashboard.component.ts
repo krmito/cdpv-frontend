@@ -40,8 +40,8 @@ interface Estadisticas {
                 <img src="assets/escudo.jpg" alt="Escudo" class="escudo" />
               </div>
               <div class="banner-text">
-                <h1>Bienvenido al Sistema</h1>
-                <p class="welcome-name">{{ authService.currentUser()?.nombre }}</p>
+                <h1>{{ getGreeting() }}, {{ getFirstName() }}</h1>
+                <p class="welcome-subtitle">Panel de control del club</p>
                 <span class="welcome-date">{{ getCurrentDate() }}</span>
               </div>
             </div>
@@ -107,25 +107,98 @@ interface Estadisticas {
                 <span class="header-icon">⚡</span>
                 Acciones Rápidas
               </div>
-              <div class="actions-grid">
-                <button class="action-btn btn-jugadores" (click)="navigate('/jugadores')">
-                  <span class="btn-icon">👥</span>
-                  <span class="btn-label">Ver Jugadores</span>
-                </button>
+              <div class="actions-section">
                 @if (canAccessPagos()) {
-                  <button class="action-btn btn-pagos" (click)="navigate('/pagos')">
-                    <span class="btn-icon">💰</span>
-                    <span class="btn-label">Registrar Pago</span>
+                  <button class="action-btn-primary" (click)="navigate('/pagos')">
+                    <span class="btn-icon-lg">💰</span>
+                    <div class="btn-primary-text">
+                      <span class="btn-label-main">Registrar Pago</span>
+                      <span class="btn-label-sub">Registrar un nuevo pago de mensualidad</span>
+                    </div>
+                    <span class="btn-arrow">→</span>
                   </button>
                 }
-                <button class="action-btn btn-mensualidades" (click)="navigate('/mensualidades')">
-                  <span class="btn-icon">📅</span>
-                  <span class="btn-label">Mensualidades</span>
-                </button>
-                <button class="action-btn btn-reportes" (click)="navigate('/reportes')">
-                  <span class="btn-icon">📈</span>
-                  <span class="btn-label">Ver Reportes</span>
-                </button>
+                <div class="actions-grid-secondary">
+                  <button class="action-btn-sec" (click)="navigate('/jugadores')">
+                    <span class="btn-icon">👥</span>
+                    <span class="btn-label">Jugadores</span>
+                  </button>
+                  <button class="action-btn-sec" (click)="navigate('/mensualidades')">
+                    <span class="btn-icon">📅</span>
+                    <span class="btn-label">Mensualidades</span>
+                  </button>
+                  <button class="action-btn-sec" (click)="navigate('/reportes')">
+                    <span class="btn-icon">📈</span>
+                    <span class="btn-label">Reportes</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actividad Reciente -->
+            <div class="activity-grid">
+              <!-- Últimos pagos -->
+              <div class="card activity-card">
+                <div class="card-header">
+                  <span class="header-icon">💰</span>
+                  Últimos Pagos
+                </div>
+                @if (loadingActivity) {
+                  <div class="activity-loading">Cargando...</div>
+                } @else if (ultimosPagos.length === 0) {
+                  <div class="activity-empty">No hay pagos recientes</div>
+                } @else {
+                  <div class="activity-list">
+                    @for (pago of ultimosPagos; track pago.id) {
+                      <div class="activity-item">
+                        <div class="activity-icon activity-icon-pago">💰</div>
+                        <div class="activity-info">
+                          <span class="activity-title">{{ pago.jugador?.nombre }} {{ pago.jugador?.apellido }}</span>
+                          <span class="activity-detail">
+                            \${{ formatNumber(pago.monto_pagado) }} - {{ pago.metodo_pago }}
+                          </span>
+                        </div>
+                        <span class="activity-time">{{ getTimeAgo(pago.fecha_pago) }}</span>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+
+              <!-- Alertas -->
+              <div class="card activity-card">
+                <div class="card-header">
+                  <span class="header-icon">⚠️</span>
+                  Alertas
+                </div>
+                @if (loadingActivity) {
+                  <div class="activity-loading">Cargando...</div>
+                } @else if (alertas.length === 0) {
+                  <div class="activity-empty activity-ok">
+                    <span class="ok-icon">✓</span>
+                    Todo al día, sin alertas pendientes
+                  </div>
+                } @else {
+                  <div class="activity-list">
+                    @for (alerta of alertas; track alerta.id) {
+                      <div class="activity-item activity-item-alert">
+                        <div class="activity-icon activity-icon-alert">⚠️</div>
+                        <div class="activity-info">
+                          <span class="activity-title">{{ alerta.jugador?.nombre }} {{ alerta.jugador?.apellido }}</span>
+                          <span class="activity-detail activity-detail-alert">
+                            {{ getMesNombre(alerta.mes) }} {{ alerta.anio }} - Saldo: \${{ formatNumber(alerta.saldo_pendiente) }}
+                          </span>
+                        </div>
+                        <span class="badge-vencida">Vencida</span>
+                      </div>
+                    }
+                  </div>
+                  @if (totalVencidas > 5) {
+                    <button class="ver-todas-btn" (click)="navigate('/mensualidades')">
+                      Ver todas ({{ totalVencidas }}) →
+                    </button>
+                  }
+                }
               </div>
             </div>
           }
@@ -219,11 +292,11 @@ interface Estadisticas {
       letter-spacing: 0.5px;
     }
 
-    .welcome-name {
+    .welcome-subtitle {
       margin: 6px 0 0;
-      font-size: 18px;
-      color: var(--primary-yellow);
-      font-weight: 600;
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 400;
     }
 
     .welcome-date {
@@ -357,6 +430,7 @@ interface Estadisticas {
       padding: 28px;
       border-radius: 16px;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      margin-bottom: 28px;
     }
 
     .card-header {
@@ -373,71 +447,247 @@ interface Estadisticas {
       font-size: 22px;
     }
 
-    .actions-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 14px;
-    }
-
-    .action-btn {
+    .actions-section {
       display: flex;
       flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Primary action */
+    .action-btn-primary {
+      display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 20px;
+      gap: 16px;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
       border: none;
       border-radius: 14px;
       cursor: pointer;
       transition: all 0.3s ease;
-      font-weight: 600;
+      width: 100%;
+      text-align: left;
     }
 
-    .action-btn .btn-icon {
-      font-size: 28px;
-    }
-
-    .action-btn .btn-label {
-      font-size: 14px;
-    }
-
-    .btn-jugadores {
-      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-      color: white;
-    }
-
-    .btn-jugadores:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-    }
-
-    .btn-pagos {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-    }
-
-    .btn-pagos:hover {
+    .action-btn-primary:hover {
       transform: translateY(-3px);
       box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
     }
 
-    .btn-mensualidades {
-      background: linear-gradient(135deg, var(--primary-yellow) 0%, #ffc107 100%);
-      color: var(--dark-blue);
+    .btn-icon-lg {
+      font-size: 36px;
+      flex-shrink: 0;
     }
 
-    .btn-mensualidades:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(255, 222, 0, 0.4);
+    .btn-primary-text {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
     }
 
-    .btn-reportes {
-      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-      color: white;
+    .btn-label-main {
+      font-size: 18px;
+      font-weight: 700;
     }
 
-    .btn-reportes:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+    .btn-label-sub {
+      font-size: 13px;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+
+    .btn-arrow {
+      font-size: 24px;
+      opacity: 0.7;
+      transition: transform 0.2s;
+    }
+
+    .action-btn-primary:hover .btn-arrow {
+      transform: translateX(4px);
+      opacity: 1;
+    }
+
+    /* Secondary actions */
+    .actions-grid-secondary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .action-btn-sec {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .action-btn-sec .btn-icon {
+      font-size: 22px;
+    }
+
+    .action-btn-sec .btn-label {
+      font-size: 14px;
+    }
+
+    .action-btn-sec:hover {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* === ACTIVITY GRID === */
+    .activity-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .activity-card {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .activity-loading {
+      text-align: center;
+      padding: 32px;
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    .activity-empty {
+      text-align: center;
+      padding: 32px;
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    .activity-ok {
+      color: #10b981;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ok-icon {
+      font-size: 28px;
+      width: 48px;
+      height: 48px;
+      background: #ecfdf5;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+    }
+
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 8px;
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+
+    .activity-item:hover {
+      background: #f9fafb;
+    }
+
+    .activity-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .activity-icon-pago {
+      background: #ecfdf5;
+    }
+
+    .activity-icon-alert {
+      background: #fef2f2;
+    }
+
+    .activity-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .activity-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1f2937;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .activity-detail {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .activity-detail-alert {
+      color: #dc2626;
+    }
+
+    .activity-time {
+      font-size: 12px;
+      color: #9ca3af;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .badge-vencida {
+      background: #fef2f2;
+      color: #dc2626;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .ver-todas-btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      background: none;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      color: #6b7280;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .ver-todas-btn:hover {
+      background: #f9fafb;
+      color: #374151;
     }
 
     /* === ALERT === */
@@ -473,8 +723,12 @@ interface Estadisticas {
         display: none;
       }
 
-      .action-btn {
-        padding: 16px;
+      .actions-grid-secondary {
+        grid-template-columns: 1fr;
+      }
+
+      .activity-grid {
+        grid-template-columns: 1fr;
       }
     }
   `]
@@ -492,8 +746,15 @@ export class DashboardComponent implements OnInit {
   loading = true;
   error = '';
 
+  // Actividad reciente
+  ultimosPagos: any[] = [];
+  alertas: any[] = [];
+  totalVencidas = 0;
+  loadingActivity = true;
+
   ngOnInit() {
     this.loadStats();
+    this.loadActivity();
   }
 
   loadStats() {
@@ -511,6 +772,43 @@ export class DashboardComponent implements OnInit {
         console.error('Error loading stats:', err);
       }
     });
+  }
+
+  loadActivity() {
+    this.loadingActivity = true;
+
+    // Cargar últimos pagos
+    this.api.get<any>('pagos?page=1&limit=5&sortBy=fecha_pago&sortOrder=DESC').subscribe({
+      next: (response) => {
+        this.ultimosPagos = response.data || [];
+        this.checkActivityLoaded();
+      },
+      error: () => {
+        this.ultimosPagos = [];
+        this.checkActivityLoaded();
+      }
+    });
+
+    // Cargar mensualidades vencidas
+    this.api.get<any[]>('mensualidades/vencidas').subscribe({
+      next: (data) => {
+        this.totalVencidas = data.length;
+        this.alertas = data.slice(0, 5);
+        this.checkActivityLoaded();
+      },
+      error: () => {
+        this.alertas = [];
+        this.checkActivityLoaded();
+      }
+    });
+  }
+
+  private activityLoadCount = 0;
+  private checkActivityLoaded() {
+    this.activityLoadCount++;
+    if (this.activityLoadCount >= 2) {
+      this.loadingActivity = false;
+    }
   }
 
   formatNumber(num: number): string {
@@ -532,5 +830,38 @@ export class DashboardComponent implements OnInit {
       month: 'long',
       day: 'numeric'
     });
+  }
+
+  getGreeting(): string {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Buenos días';
+    if (hour < 18) return 'Buenas tardes';
+    return 'Buenas noches';
+  }
+
+  getFirstName(): string {
+    const nombre = this.authService.currentUser()?.nombre || '';
+    return nombre.split(' ')[0];
+  }
+
+  getTimeAgo(dateStr: string): string {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Ahora';
+    if (diffMin < 60) return `hace ${diffMin}min`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `hace ${diffH}h`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD === 1) return 'Ayer';
+    if (diffD < 7) return `hace ${diffD}d`;
+    return date.toLocaleDateString('es-CO', { day: '2-digit', month: 'short' });
+  }
+
+  getMesNombre(mes: number): string {
+    const meses = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return meses[mes] || `Mes ${mes}`;
   }
 }

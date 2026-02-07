@@ -34,7 +34,6 @@ import { UiService } from '../../core/services/ui.service';
       <div class="navbar-user">
         <div class="user-info">
           <span class="user-name">{{ authService.currentUser()?.nombre }}</span>
-          <span class="user-role">{{ authService.currentUser()?.rol }}</span>
         </div>
         <div class="user-avatar">
           {{ getInitials() }}
