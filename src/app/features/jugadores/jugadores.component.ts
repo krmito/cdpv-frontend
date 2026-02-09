@@ -254,6 +254,23 @@ interface CreateJugadorDto {
                       </div>
                     }
 
+                    <div class="foto-upload-section">
+                      @if (fotoPreview) {
+                        <img [src]="fotoPreview" class="foto-preview" alt="Preview">
+                      } @else {
+                        <div class="avatar-lg avatar-initials" style="background-color: #94a3b8;">
+                          {{ getInitials(newJugador.nombre || '?', newJugador.apellido || '?') }}
+                        </div>
+                      }
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="newFotoInput.click()">
+                        {{ fotoPreview ? 'Cambiar foto' : 'Agregar foto' }}
+                      </button>
+                      <input #newFotoInput type="file" accept="image/jpeg,image/png" (change)="onFotoSelected($event)" style="display:none">
+                      @if (fotoPreview) {
+                        <small class="foto-hint">La foto se guardará al crear el jugador</small>
+                      }
+                    </div>
+
                     <div class="form-section">
                       <h3>Datos Personales</h3>
                       
@@ -1564,6 +1581,8 @@ export class JugadoresComponent implements OnInit {
       direccion: '',
       categoria_id: 0
     };
+    this.fotoFile = null;
+    this.fotoPreview = null;
   }
 
   isFormValid(): boolean {
@@ -1594,27 +1613,54 @@ export class JugadoresComponent implements OnInit {
 
     console.log('Enviando jugador:', jugadorData);
 
-    this.api.post<Jugador>('jugadores', jugadorData).subscribe({
-      next: (jugador) => {
-        this.saving = false;
-        this.showNewForm = false;
-        this.successMessage = `Jugador ${jugador.nombre} ${jugador.apellido} creado exitosamente`;
-        
-        // Ocultar mensaje después de 5 segundos
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
+    this.api.post<any>('jugadores', jugadorData).subscribe({
+      next: (response) => {
+        const jugador = response.data || response;
+        const jugadorId = jugador.id;
 
-        // Recargar lista
-        this.currentPage = 1;
-        this.loadJugadores();
-        this.resetForm();
+        // Si hay foto seleccionada, subirla
+        if (this.fotoFile && jugadorId) {
+          this.subiendoFoto = true;
+          const formData = new FormData();
+          formData.append('foto', this.fotoFile);
+
+          this.api.postFile(`jugadores/${jugadorId}/foto`, formData).subscribe({
+            next: () => {
+              this.subiendoFoto = false;
+              this.saving = false;
+              this.showNewForm = false;
+              this.successMessage = `Jugador ${jugador.nombre} ${jugador.apellido} creado exitosamente`;
+              setTimeout(() => { this.successMessage = ''; }, 5000);
+              this.currentPage = 1;
+              this.loadJugadores();
+              this.resetForm();
+            },
+            error: () => {
+              this.subiendoFoto = false;
+              this.saving = false;
+              this.showNewForm = false;
+              this.successMessage = `Jugador creado, pero hubo un error al subir la foto`;
+              setTimeout(() => { this.successMessage = ''; }, 5000);
+              this.currentPage = 1;
+              this.loadJugadores();
+              this.resetForm();
+            }
+          });
+        } else {
+          this.saving = false;
+          this.showNewForm = false;
+          this.successMessage = `Jugador ${jugador.nombre} ${jugador.apellido} creado exitosamente`;
+          setTimeout(() => { this.successMessage = ''; }, 5000);
+          this.currentPage = 1;
+          this.loadJugadores();
+          this.resetForm();
+        }
       },
       error: (err) => {
         this.saving = false;
         console.error('Error completo:', err);
         console.error('Error response:', err.error);
-        
+
         // Mostrar mensaje de error más específico
         if (err.error?.message) {
           if (Array.isArray(err.error.message)) {
