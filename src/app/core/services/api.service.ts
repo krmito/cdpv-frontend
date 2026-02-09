@@ -34,6 +34,10 @@ export class ApiService {
     return this.http.post<T>(`${this.apiUrl}/${endpoint}`, formData);
   }
 
+  getBlob(endpoint: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${endpoint}`, { responseType: 'blob' });
+  }
+
   getBaseUrl(): string {
     // Extraer base URL sin el prefijo /api/v1
     return this.apiUrl.replace(/\/api\/v1$/, '');

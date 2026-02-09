@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import * as XLSX from 'xlsx';
 import { ApiService } from '../../core/services/api.service';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
@@ -64,6 +65,9 @@ interface CreateJugadorDto {
             icon="👥"
           />
           <div class="header-actions">
+            <button class="btn btn-success btn-new" (click)="openImportModal()">
+              <span>📥</span> Importar Excel
+            </button>
             <button class="btn btn-primary btn-new" (click)="openNewForm()">
               <span>➕</span> Nuevo Jugador
             </button>
@@ -785,6 +789,202 @@ interface CreateJugadorDto {
               </div>
             </div>
           }
+          <!-- Modal Importar Excel -->
+          @if (showImportModal) {
+            <div class="modal-overlay">
+              <div class="modal-card modal-import">
+                <div class="modal-header">
+                  <h2>📥 Importar Jugadores desde Excel</h2>
+                  <button class="btn-close" (click)="closeImportModal()">✕</button>
+                </div>
+
+                <div class="modal-body">
+                  <!-- Stepper -->
+                  <div class="import-stepper">
+                    <div class="step" [class.active]="importStep === 1" [class.done]="importStep > 1">
+                      <span class="step-number">{{ importStep > 1 ? '✓' : '1' }}</span>
+                      <span class="step-label">Archivo</span>
+                    </div>
+                    <div class="step-line" [class.active]="importStep > 1"></div>
+                    <div class="step" [class.active]="importStep === 2" [class.done]="importStep > 2">
+                      <span class="step-number">{{ importStep > 2 ? '✓' : '2' }}</span>
+                      <span class="step-label">Preview</span>
+                    </div>
+                    <div class="step-line" [class.active]="importStep > 2"></div>
+                    <div class="step" [class.active]="importStep === 3">
+                      <span class="step-number">3</span>
+                      <span class="step-label">Resultados</span>
+                    </div>
+                  </div>
+
+                  <!-- Paso 1: Seleccion de archivo -->
+                  @if (importStep === 1) {
+                    <div class="import-step-content">
+                      <div class="import-actions-row">
+                        <button class="btn btn-secondary" (click)="downloadPlantilla()" [disabled]="downloadingPlantilla">
+                          {{ downloadingPlantilla ? 'Descargando...' : '📄 Descargar Plantilla' }}
+                        </button>
+                        <small class="import-hint">Descarga la plantilla con las categorias actualizadas</small>
+                      </div>
+
+                      <div
+                        class="drop-zone"
+                        [class.drag-over]="isDragOver"
+                        (dragover)="onDragOver($event)"
+                        (dragleave)="onDragLeave($event)"
+                        (drop)="onDrop($event)"
+                        (click)="importFileInput.click()"
+                      >
+                        <div class="drop-zone-content">
+                          <span class="drop-icon">📁</span>
+                          <p><strong>Arrastra tu archivo Excel aqui</strong></p>
+                          <p class="drop-hint">o haz clic para seleccionar</p>
+                          <small class="drop-limits">Formato: .xlsx | Max: 5MB | Max: 500 filas</small>
+                        </div>
+                      </div>
+                      <input
+                        #importFileInput
+                        type="file"
+                        accept=".xlsx,.xls"
+                        (change)="onExcelFileSelected($event)"
+                        style="display:none"
+                      >
+
+                      @if (importFileError) {
+                        <div class="alert alert-danger">
+                          {{ importFileError }}
+                        </div>
+                      }
+                    </div>
+                  }
+
+                  <!-- Paso 2: Preview -->
+                  @if (importStep === 2) {
+                    <div class="import-step-content">
+                      <div class="import-summary-bar">
+                        <span class="summary-item summary-ok">✓ Validos: {{ getValidCount() }}</span>
+                        <span class="summary-item summary-err">✗ Con errores: {{ getErrorCount() }}</span>
+                        <span class="summary-item summary-total">Total: {{ importPreviewData.length }}</span>
+                      </div>
+
+                      <div class="table-container import-preview-table">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Estado</th>
+                              <th>Nombre</th>
+                              <th>Apellido</th>
+                              <th>Documento</th>
+                              <th>Fecha Nac.</th>
+                              <th>Telefono</th>
+                              <th>Categoria</th>
+                              <th>Error</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (row of importPreviewData; track row.fila) {
+                              <tr [class.row-error]="row.error" [class.row-ok]="!row.error">
+                                <td>{{ row.fila }}</td>
+                                <td>
+                                  @if (row.error) {
+                                    <span class="status-badge status-error">✗</span>
+                                  } @else {
+                                    <span class="status-badge status-success">✓</span>
+                                  }
+                                </td>
+                                <td>{{ row.nombre }}</td>
+                                <td>{{ row.apellido }}</td>
+                                <td>{{ row.documento }}</td>
+                                <td>{{ row.fecha_nacimiento }}</td>
+                                <td>{{ row.telefono }}</td>
+                                <td>{{ row.categoria }}</td>
+                                <td class="error-cell">{{ row.error || '' }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Paso 3: Resultados -->
+                  @if (importStep === 3) {
+                    <div class="import-step-content">
+                      @if (importLoading) {
+                        <div class="loading">
+                          <p>Importando jugadores...</p>
+                        </div>
+                      } @else if (importResult) {
+                        <div class="result-cards">
+                          <div class="result-card result-success">
+                            <span class="result-number">{{ importResult.exitosos }}</span>
+                            <span class="result-label">Importados</span>
+                          </div>
+                          <div class="result-card result-error">
+                            <span class="result-number">{{ importResult.fallidos }}</span>
+                            <span class="result-label">Errores</span>
+                          </div>
+                          <div class="result-card result-total">
+                            <span class="result-number">{{ importResult.total_procesados }}</span>
+                            <span class="result-label">Total</span>
+                          </div>
+                        </div>
+
+                        @if (importResult.errores && importResult.errores.length > 0) {
+                          <div class="import-errors-detail">
+                            <h4>Detalle de errores:</h4>
+                            <div class="table-container">
+                              <table>
+                                <thead>
+                                  <tr>
+                                    <th>Fila</th>
+                                    <th>Documento</th>
+                                    <th>Nombre</th>
+                                    <th>Error</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  @for (err of importResult.errores; track err.fila) {
+                                    <tr>
+                                      <td>{{ err.fila }}</td>
+                                      <td>{{ err.documento }}</td>
+                                      <td>{{ err.nombre }}</td>
+                                      <td class="error-cell">{{ err.error }}</td>
+                                    </tr>
+                                  }
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        }
+                      }
+                    </div>
+                  }
+                </div>
+
+                <div class="modal-footer">
+                  @if (importStep === 1) {
+                    <button class="btn btn-secondary" (click)="closeImportModal()">Cancelar</button>
+                  }
+                  @if (importStep === 2) {
+                    <button class="btn btn-secondary" (click)="importStep = 1">← Volver</button>
+                    <button
+                      class="btn btn-primary"
+                      (click)="executeImport()"
+                      [disabled]="getValidCount() === 0"
+                    >
+                      Importar {{ getValidCount() }} jugadores
+                    </button>
+                  }
+                  @if (importStep === 3 && !importLoading) {
+                    <button class="btn btn-primary" (click)="closeImportModal()">Cerrar</button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
           <!-- Lightbox foto -->
           @if (fotoViewerUrl) {
             <div class="foto-viewer-overlay" (click)="closeFotoViewer()">
@@ -1413,6 +1613,253 @@ interface CreateJugadorDto {
       from { opacity: 0; }
       to { opacity: 1; }
     }
+
+    /* Import Modal */
+    .btn-success {
+      background: #10b981;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #059669;
+    }
+    .header-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .btn-new {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .modal-import {
+      max-width: 900px;
+    }
+
+    /* Stepper */
+    .import-stepper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin-bottom: 24px;
+      padding: 16px 0;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .step-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #e5e7eb;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .step.active .step-number {
+      background: #3b82f6;
+      color: white;
+    }
+    .step.done .step-number {
+      background: #10b981;
+      color: white;
+    }
+    .step-label {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    .step.active .step-label {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+    .step-line {
+      width: 60px;
+      height: 2px;
+      background: #e5e7eb;
+      margin: 0 8px;
+      margin-bottom: 18px;
+    }
+    .step-line.active {
+      background: #10b981;
+    }
+
+    /* Drop zone */
+    .import-actions-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .import-hint {
+      color: #6b7280;
+      font-size: 13px;
+    }
+    .drop-zone {
+      border: 2px dashed #d1d5db;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #fafbfc;
+    }
+    .drop-zone:hover {
+      border-color: #3b82f6;
+      background: #f0f7ff;
+    }
+    .drop-zone.drag-over {
+      border-color: #3b82f6;
+      background: #dbeafe;
+    }
+    .drop-zone-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .drop-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+    .drop-zone-content p {
+      margin: 0;
+      color: #374151;
+    }
+    .drop-hint {
+      color: #9ca3af !important;
+      font-size: 14px;
+    }
+    .drop-limits {
+      color: #9ca3af;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    /* Preview table */
+    .import-summary-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .summary-item {
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .summary-ok {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .summary-err {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    .summary-total {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    .import-preview-table {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .import-preview-table table {
+      font-size: 13px;
+    }
+    .import-preview-table th {
+      font-size: 11px;
+      padding: 8px 10px;
+      position: sticky;
+      top: 0;
+      background: #f9fafb;
+      z-index: 1;
+    }
+    .import-preview-table td {
+      padding: 8px 10px;
+    }
+    .row-error {
+      background: #fef2f2 !important;
+    }
+    .row-ok {
+      background: #f0fdf4;
+    }
+    .row-ok:hover {
+      background: #dcfce7 !important;
+    }
+    .status-badge {
+      display: inline-flex;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .status-success {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .status-error {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    .error-cell {
+      color: #dc2626;
+      font-size: 12px;
+      max-width: 200px;
+    }
+
+    /* Result cards */
+    .result-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .result-card {
+      text-align: center;
+      padding: 24px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .result-number {
+      font-size: 36px;
+      font-weight: 700;
+    }
+    .result-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .result-success {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .result-error {
+      background: #fef2f2;
+      color: #991b1b;
+    }
+    .result-total {
+      background: #f3f4f6;
+      color: #374151;
+    }
+    .import-errors-detail h4 {
+      margin: 0 0 12px 0;
+      color: #991b1b;
+    }
+    .import-step-content {
+      min-height: 200px;
+    }
   `]
 })
 export class JugadoresComponent implements OnInit {
@@ -1473,6 +1920,16 @@ export class JugadoresComponent implements OnInit {
   // Foto viewer
   fotoViewerUrl: string | null = null;
   fotoViewerNombre: string | null = null;
+
+  // Import Excel
+  showImportModal = false;
+  importStep = 1;
+  importPreviewData: any[] = [];
+  importResult: any = null;
+  importLoading = false;
+  importFileError = '';
+  isDragOver = false;
+  downloadingPlantilla = false;
 
   ngOnInit() {
     this.apiBaseUrl = this.api.getBaseUrl();
@@ -1888,5 +2345,228 @@ export class JugadoresComponent implements OnInit {
     const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     return meses[mes] || `Mes ${mes}`;
+  }
+
+  // === Import Excel Methods ===
+
+  openImportModal() {
+    this.showImportModal = true;
+    this.importStep = 1;
+    this.importPreviewData = [];
+    this.importResult = null;
+    this.importFileError = '';
+    this.importLoading = false;
+  }
+
+  closeImportModal() {
+    const hadImports = this.importResult?.exitosos > 0;
+    this.showImportModal = false;
+    this.importStep = 1;
+    this.importPreviewData = [];
+    this.importResult = null;
+    this.importFileError = '';
+    if (hadImports) {
+      this.loadJugadores();
+    }
+  }
+
+  downloadPlantilla() {
+    this.downloadingPlantilla = true;
+    this.api.getBlob('jugadores/plantilla-excel').subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'plantilla_jugadores.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.downloadingPlantilla = false;
+      },
+      error: (err) => {
+        console.error('Error descargando plantilla:', err);
+        this.importFileError = 'Error al descargar la plantilla';
+        this.downloadingPlantilla = false;
+      }
+    });
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver = true;
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver = false;
+  }
+
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver = false;
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.processExcelFile(files[0]);
+    }
+  }
+
+  onExcelFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.processExcelFile(input.files[0]);
+      input.value = '';
+    }
+  }
+
+  private processExcelFile(file: File) {
+    this.importFileError = '';
+
+    // Validar tipo
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      this.importFileError = 'Solo se permiten archivos .xlsx o .xls';
+      return;
+    }
+
+    // Validar tamano
+    if (file.size > 5 * 1024 * 1024) {
+      this.importFileError = 'El archivo no puede superar 5MB';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const jsonData: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+        if (jsonData.length < 2) {
+          this.importFileError = 'El archivo no contiene datos (solo headers o esta vacio)';
+          return;
+        }
+
+        // Normalizar headers
+        const headers = (jsonData[0] as string[]).map((h: string) =>
+          String(h).replace(/\*/g, '').trim().toLowerCase()
+        );
+
+        const expectedHeaders = ['nombre', 'apellido', 'documento', 'fecha_nacimiento', 'telefono', 'categoria'];
+        const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
+        if (missingHeaders.length > 0) {
+          this.importFileError = `Faltan columnas obligatorias: ${missingHeaders.join(', ')}`;
+          return;
+        }
+
+        // Mapear datos
+        const rows = jsonData.slice(1).filter((row: any[]) =>
+          row.some((cell: any) => String(cell).trim() !== '')
+        );
+
+        if (rows.length > 500) {
+          this.importFileError = `El archivo tiene ${rows.length} filas. El maximo es 500.`;
+          return;
+        }
+
+        const categoriasNombres = new Set(this.categorias.map(c => c.nombre.toLowerCase().trim()));
+        const documentosEnArchivo = new Set<string>();
+
+        this.importPreviewData = rows.map((row: any[], index: number) => {
+          const obj: any = { fila: index + 2 };
+
+          headers.forEach((header: string, colIndex: number) => {
+            obj[header] = String(row[colIndex] ?? '').trim();
+          });
+
+          // Pre-validar
+          const errors: string[] = [];
+          if (!obj.nombre) errors.push('Nombre vacio');
+          if (!obj.apellido) errors.push('Apellido vacio');
+          if (!obj.documento) errors.push('Documento vacio');
+          if (!obj.fecha_nacimiento) errors.push('Fecha nacimiento vacia');
+          if (!obj.telefono) errors.push('Telefono vacio');
+          if (!obj.categoria) errors.push('Categoria vacia');
+
+          if (obj.categoria && !categoriasNombres.has(obj.categoria.toLowerCase().trim())) {
+            errors.push(`Categoria "${obj.categoria}" no existe`);
+          }
+
+          if (obj.documento && documentosEnArchivo.has(obj.documento)) {
+            errors.push('Documento duplicado en archivo');
+          }
+
+          if (obj.documento) {
+            documentosEnArchivo.add(obj.documento);
+          }
+
+          obj.error = errors.length > 0 ? errors.join('; ') : '';
+          return obj;
+        });
+
+        this.importStep = 2;
+      } catch (err) {
+        console.error('Error al parsear Excel:', err);
+        this.importFileError = 'Error al leer el archivo. Verifique que sea un Excel valido.';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  getValidCount(): number {
+    return this.importPreviewData.filter(r => !r.error).length;
+  }
+
+  getErrorCount(): number {
+    return this.importPreviewData.filter(r => r.error).length;
+  }
+
+  executeImport() {
+    const validRows = this.importPreviewData
+      .filter(r => !r.error)
+      .map(r => ({
+        nombre: r.nombre,
+        apellido: r.apellido,
+        documento: r.documento,
+        fecha_nacimiento: r.fecha_nacimiento,
+        telefono: r.telefono,
+        categoria: r.categoria,
+        email: r.email || undefined,
+        direccion: r.direccion || undefined,
+        tipo_documento: r.tipo_documento || undefined,
+        telefono_acudiente: r.telefono_acudiente || undefined,
+        posicion: r.posicion || undefined,
+        talla_camisa: r.talla_camisa || undefined,
+      }));
+
+    if (validRows.length === 0) return;
+
+    this.importLoading = true;
+    this.importStep = 3;
+
+    this.api.post<any>('jugadores/bulk-import', { jugadores: validRows }).subscribe({
+      next: (response) => {
+        this.importResult = response;
+        this.importLoading = false;
+        if (response.exitosos > 0) {
+          this.successMessage = `Se importaron ${response.exitosos} jugadores exitosamente`;
+          setTimeout(() => { this.successMessage = ''; }, 5000);
+        }
+      },
+      error: (err) => {
+        console.error('Error en importacion:', err);
+        this.importResult = {
+          total_procesados: validRows.length,
+          exitosos: 0,
+          fallidos: validRows.length,
+          errores: [{ fila: 0, documento: '', nombre: '', error: err.error?.message || 'Error del servidor' }]
+        };
+        this.importLoading = false;
+      }
+    });
   }
 }
