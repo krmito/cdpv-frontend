@@ -59,6 +59,10 @@ import { UiService } from '../../core/services/ui.service';
           <span class="menu-icon">📈</span>
           <span class="menu-text">Reportes</span>
         </a>
+        <a routerLink="/ayuda" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+          <span class="menu-icon">❓</span>
+          <span class="menu-text">Ayuda</span>
+        </a>
       </nav>
     </aside>
   `,
