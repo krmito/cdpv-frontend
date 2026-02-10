@@ -19,15 +19,18 @@ interface Jugador {
   id: number;
   nombre: string;
   apellido: string;
+  tipo_documento: string;
   documento: string;
   fecha_nacimiento: string;
   telefono: string;
+  telefono_acudiente: string;
   email: string;
   direccion: string;
   categoria: Categoria;
   activo: boolean;
   fecha_registro: string;
   foto_url?: string;
+  posicion: string;
 }
 
 interface PaginatedResponse {
@@ -543,6 +546,21 @@ interface CreateJugadorDto {
 
                       <div class="form-row">
                         <div class="form-group">
+                          <label>Tipo Documento</label>
+                          <select
+                            class="form-control"
+                            [(ngModel)]="editJugadorData.tipo_documento"
+                            name="edit_tipo_documento"
+                          >
+                            <option value="CC">CC - Cédula de Ciudadanía</option>
+                            <option value="TI">TI - Tarjeta de Identidad</option>
+                            <option value="CE">CE - Cédula de Extranjería</option>
+                            <option value="RC">RC - Registro Civil</option>
+                            <option value="PA">PA - Pasaporte</option>
+                          </select>
+                        </div>
+
+                        <div class="form-group">
                           <label>Documento <span class="required">*</span></label>
                           <input
                             type="text"
@@ -554,7 +572,9 @@ interface CreateJugadorDto {
                             maxlength="15"
                           />
                         </div>
+                      </div>
 
+                      <div class="form-row">
                         <div class="form-group">
                           <label>Fecha de Nacimiento <span class="required">*</span></label>
                           <input
@@ -565,45 +585,72 @@ interface CreateJugadorDto {
                             required
                           />
                         </div>
+
+                        <div class="form-group">
+                          <label>Posición</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            [(ngModel)]="editJugadorData.posicion"
+                            name="edit_posicion"
+                            placeholder="Delantero"
+                          />
+                        </div>
                       </div>
                     </div>
 
                     <div class="form-section">
                       <h3>Información de Contacto</h3>
-                      
-                      <div class="form-group">
-                        <label>Teléfono <span class="required">*</span></label>
-                        <input
-                          type="tel"
-                          class="form-control"
-                          [(ngModel)]="editJugadorData.telefono"
-                          name="edit_telefono"
-                          required
-                          placeholder="3001234567"
-                          maxlength="15"
-                        />
+
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label>Teléfono <span class="required">*</span></label>
+                          <input
+                            type="tel"
+                            class="form-control"
+                            [(ngModel)]="editJugadorData.telefono"
+                            name="edit_telefono"
+                            required
+                            placeholder="3001234567"
+                            maxlength="15"
+                          />
+                        </div>
+
+                        <div class="form-group">
+                          <label>Teléfono Acudiente</label>
+                          <input
+                            type="tel"
+                            class="form-control"
+                            [(ngModel)]="editJugadorData.telefono_acudiente"
+                            name="edit_telefono_acudiente"
+                            placeholder="3109876543"
+                            maxlength="15"
+                          />
+                        </div>
                       </div>
 
-                      <div class="form-group">
-                        <label>Email</label>
-                        <input
-                          type="email"
-                          class="form-control"
-                          [(ngModel)]="editJugadorData.email"
-                          name="edit_email"
-                          placeholder="jugador@example.com"
-                        />
-                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label>Email</label>
+                          <input
+                            type="email"
+                            class="form-control"
+                            [(ngModel)]="editJugadorData.email"
+                            name="edit_email"
+                            placeholder="jugador@example.com"
+                          />
+                        </div>
 
-                      <div class="form-group">
-                        <label>Dirección</label>
-                        <input
-                          type="text"
-                          class="form-control"
-                          [(ngModel)]="editJugadorData.direccion"
-                          name="edit_direccion"
-                          placeholder="Calle 123 #45-67"
-                        />
+                        <div class="form-group">
+                          <label>Dirección</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            [(ngModel)]="editJugadorData.direccion"
+                            name="edit_direccion"
+                            placeholder="Calle 123 #45-67"
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -2204,9 +2251,12 @@ export class JugadoresComponent implements OnInit {
     this.editJugadorData = {
       nombre: jugador.nombre,
       apellido: jugador.apellido,
+      tipo_documento: jugador.tipo_documento || 'CC',
       documento: jugador.documento,
       fecha_nacimiento: jugador.fecha_nacimiento.toString().split('T')[0], // Convertir a YYYY-MM-DD
+      posicion: jugador.posicion || '',
       telefono: jugador.telefono,
+      telefono_acudiente: jugador.telefono_acudiente || '',
       email: jugador.email || '',
       direccion: jugador.direccion || '',
       categoria_id: jugador.categoria.id,
