@@ -39,14 +39,17 @@ interface PaginatedResponse {
 }
 
 interface CreateJugadorDto {
-  nombre: string;              // Nombre
-  apellido: string;            // Apellido
+  nombre: string;
+  apellido: string;
+  tipo_documento: string;
   documento: string;
-  fecha_nacimiento: string;    // ISO string
-  telefono: string;            // Obligatorio
-  email?: string;              // Opcional
-  direccion?: string;          // Opcional
+  fecha_nacimiento: string;
+  telefono: string;
+  telefono_acudiente?: string;
+  email?: string;
+  direccion?: string;
   categoria_id: number;
+  posicion?: string;
 }
 
 @Component({
@@ -277,7 +280,7 @@ interface CreateJugadorDto {
 
                     <div class="form-section">
                       <h3>Datos Personales</h3>
-                      
+
                       <div class="form-row">
                         <div class="form-group">
                           <label>Nombre <span class="required">*</span></label>
@@ -306,6 +309,21 @@ interface CreateJugadorDto {
 
                       <div class="form-row">
                         <div class="form-group">
+                          <label>Tipo Documento</label>
+                          <select
+                            class="form-control"
+                            [(ngModel)]="newJugador.tipo_documento"
+                            name="tipo_documento"
+                          >
+                            <option value="CC">CC - Cédula de Ciudadanía</option>
+                            <option value="TI">TI - Tarjeta de Identidad</option>
+                            <option value="CE">CE - Cédula de Extranjería</option>
+                            <option value="RC">RC - Registro Civil</option>
+                            <option value="PA">PA - Pasaporte</option>
+                          </select>
+                        </div>
+
+                        <div class="form-group">
                           <label>Documento <span class="required">*</span></label>
                           <input
                             type="text"
@@ -317,7 +335,9 @@ interface CreateJugadorDto {
                             maxlength="15"
                           />
                         </div>
+                      </div>
 
+                      <div class="form-row">
                         <div class="form-group">
                           <label>Fecha de Nacimiento <span class="required">*</span></label>
                           <input
@@ -328,51 +348,78 @@ interface CreateJugadorDto {
                             required
                           />
                         </div>
+
+                        <div class="form-group">
+                          <label>Posición</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            [(ngModel)]="newJugador.posicion"
+                            name="posicion"
+                            placeholder="Delantero"
+                          />
+                        </div>
                       </div>
                     </div>
 
                     <div class="form-section">
                       <h3>Información de Contacto</h3>
-                      
-                      <div class="form-group">
-                        <label>Teléfono <span class="required">*</span></label>
-                        <input
-                          type="tel"
-                          class="form-control"
-                          [(ngModel)]="newJugador.telefono"
-                          name="telefono"
-                          required
-                          placeholder="3001234567"
-                          maxlength="15"
-                        />
+
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label>Teléfono <span class="required">*</span></label>
+                          <input
+                            type="tel"
+                            class="form-control"
+                            [(ngModel)]="newJugador.telefono"
+                            name="telefono"
+                            required
+                            placeholder="3001234567"
+                            maxlength="15"
+                          />
+                        </div>
+
+                        <div class="form-group">
+                          <label>Teléfono Acudiente</label>
+                          <input
+                            type="tel"
+                            class="form-control"
+                            [(ngModel)]="newJugador.telefono_acudiente"
+                            name="telefono_acudiente"
+                            placeholder="3109876543"
+                            maxlength="15"
+                          />
+                        </div>
                       </div>
 
-                      <div class="form-group">
-                        <label>Email</label>
-                        <input
-                          type="email"
-                          class="form-control"
-                          [(ngModel)]="newJugador.email"
-                          name="email"
-                          placeholder="jugador@example.com"
-                        />
-                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label>Email</label>
+                          <input
+                            type="email"
+                            class="form-control"
+                            [(ngModel)]="newJugador.email"
+                            name="email"
+                            placeholder="jugador@example.com"
+                          />
+                        </div>
 
-                      <div class="form-group">
-                        <label>Dirección</label>
-                        <input
-                          type="text"
-                          class="form-control"
-                          [(ngModel)]="newJugador.direccion"
-                          name="direccion"
-                          placeholder="Calle 123 #45-67"
-                        />
+                        <div class="form-group">
+                          <label>Dirección</label>
+                          <input
+                            type="text"
+                            class="form-control"
+                            [(ngModel)]="newJugador.direccion"
+                            name="direccion"
+                            placeholder="Calle 123 #45-67"
+                          />
+                        </div>
                       </div>
                     </div>
 
                     <div class="form-section">
                       <h3>Categoría</h3>
-                      
+
                       <div class="form-group">
                         <label>Categoría <span class="required">*</span></label>
                         <select
@@ -388,7 +435,7 @@ interface CreateJugadorDto {
                             </option>
                           }
                         </select>
-                        
+
                         @if (selectedCategoria) {
                           <div class="categoria-info">
                             <p><strong>Mensualidad:</strong> \${{ formatNumber(selectedCategoria.valor_mensualidad) }}</p>
@@ -875,10 +922,13 @@ interface CreateJugadorDto {
                               <th>Estado</th>
                               <th>Nombre</th>
                               <th>Apellido</th>
+                              <th>Tipo Doc.</th>
                               <th>Documento</th>
                               <th>Fecha Nac.</th>
                               <th>Telefono</th>
+                              <th>Tel. Acudiente</th>
                               <th>Categoria</th>
+                              <th>Posicion</th>
                               <th>Error</th>
                             </tr>
                           </thead>
@@ -895,10 +945,13 @@ interface CreateJugadorDto {
                                 </td>
                                 <td>{{ row.nombre }}</td>
                                 <td>{{ row.apellido }}</td>
+                                <td>{{ row.tipo_documento || 'CC' }}</td>
                                 <td>{{ row.documento }}</td>
                                 <td>{{ row.fecha_nacimiento }}</td>
                                 <td>{{ row.telefono }}</td>
+                                <td>{{ row.telefono_acudiente || '' }}</td>
                                 <td>{{ row.categoria }}</td>
+                                <td>{{ row.posicion || '' }}</td>
                                 <td class="error-cell">{{ row.error || '' }}</td>
                               </tr>
                             }
@@ -1879,12 +1932,15 @@ export class JugadoresComponent implements OnInit {
   newJugador: CreateJugadorDto = {
     nombre: '',
     apellido: '',
+    tipo_documento: 'CC',
     documento: '',
     fecha_nacimiento: '',
     telefono: '',
+    telefono_acudiente: '',
     email: '',
     direccion: '',
-    categoria_id: 0
+    categoria_id: 0,
+    posicion: ''
   };
 
   // Jugador a editar
@@ -2031,12 +2087,15 @@ export class JugadoresComponent implements OnInit {
     this.newJugador = {
       nombre: '',
       apellido: '',
+      tipo_documento: 'CC',
       documento: '',
       fecha_nacimiento: '',
       telefono: '',
+      telefono_acudiente: '',
       email: '',
       direccion: '',
-      categoria_id: 0
+      categoria_id: 0,
+      posicion: ''
     };
     this.fotoFile = null;
     this.fotoPreview = null;
@@ -2540,7 +2599,6 @@ export class JugadoresComponent implements OnInit {
         tipo_documento: r.tipo_documento || undefined,
         telefono_acudiente: r.telefono_acudiente || undefined,
         posicion: r.posicion || undefined,
-        talla_camisa: r.talla_camisa || undefined,
       }));
 
     if (validRows.length === 0) return;
