@@ -25,6 +25,7 @@ interface Jugador {
   telefono: string;
   telefono_acudiente: string;
   email: string;
+  email_acudiente: string;
   direccion: string;
   categoria: Categoria;
   activo: boolean;
@@ -50,6 +51,7 @@ interface CreateJugadorDto {
   telefono: string;
   telefono_acudiente?: string;
   email?: string;
+  email_acudiente?: string;
   direccion?: string;
   categoria_id: number;
   posicion?: string;
@@ -408,6 +410,19 @@ interface CreateJugadorDto {
                         </div>
 
                         <div class="form-group">
+                          <label>Email Acudiente</label>
+                          <input
+                            type="email"
+                            class="form-control"
+                            [(ngModel)]="newJugador.email_acudiente"
+                            name="email_acudiente"
+                            placeholder="acudiente@example.com"
+                          />
+                        </div>
+                      </div>
+
+                      <div class="form-row">
+                        <div class="form-group">
                           <label>Dirección</label>
                           <input
                             type="text"
@@ -641,6 +656,19 @@ interface CreateJugadorDto {
                           />
                         </div>
 
+                        <div class="form-group">
+                          <label>Email Acudiente</label>
+                          <input
+                            type="email"
+                            class="form-control"
+                            [(ngModel)]="editJugadorData.email_acudiente"
+                            name="edit_email_acudiente"
+                            placeholder="acudiente@example.com"
+                          />
+                        </div>
+                      </div>
+
+                      <div class="form-row">
                         <div class="form-group">
                           <label>Dirección</label>
                           <input
@@ -1985,6 +2013,7 @@ export class JugadoresComponent implements OnInit {
     telefono: '',
     telefono_acudiente: '',
     email: '',
+    email_acudiente: '',
     direccion: '',
     categoria_id: 0,
     posicion: ''
@@ -2140,6 +2169,7 @@ export class JugadoresComponent implements OnInit {
       telefono: '',
       telefono_acudiente: '',
       email: '',
+      email_acudiente: '',
       direccion: '',
       categoria_id: 0,
       posicion: ''
@@ -2258,6 +2288,7 @@ export class JugadoresComponent implements OnInit {
       telefono: jugador.telefono,
       telefono_acudiente: jugador.telefono_acudiente || '',
       email: jugador.email || '',
+      email_acudiente: jugador.email_acudiente || '',
       direccion: jugador.direccion || '',
       categoria_id: jugador.categoria.id,
       activo: jugador.activo
@@ -2645,6 +2676,7 @@ export class JugadoresComponent implements OnInit {
         telefono: r.telefono,
         categoria: r.categoria,
         email: r.email || undefined,
+        email_acudiente: r.email_acudiente || undefined,
         direccion: r.direccion || undefined,
         tipo_documento: r.tipo_documento || undefined,
         telefono_acudiente: r.telefono_acudiente || undefined,
