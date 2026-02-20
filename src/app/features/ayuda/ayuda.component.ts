@@ -54,27 +54,43 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
               @if (openSection === 'jugadores') {
                 <div class="accordion-body">
                   <p>Módulo para la gestión completa de los jugadores del club.</p>
+
                   <h4>Crear jugador</h4>
                   <ol>
                     <li>Haz clic en el botón <strong>"Nuevo Jugador"</strong>.</li>
-                    <li>Completa los datos: nombre, apellido, documento, categoría.</li>
-                    <li>Opcionalmente sube una foto del jugador.</li>
-                    <li>Haz clic en <strong>"Guardar"</strong> para registrar el jugador.</li>
+                    <li>Completa los <strong>campos obligatorios</strong> (marcados con <span class="req-mark">*</span>): nombre, apellido, documento, fecha de nacimiento, teléfono y categoría.</li>
+                    <li>El formulario valida cada campo en tiempo real: si saltas un campo obligatorio sin llenarlo, verás el error de inmediato sin necesidad de enviar el formulario.</li>
+                    <li>Completa opcionalmente: teléfono del acudiente, email, email del acudiente, dirección y posición.</li>
+                    <li>Sube una foto del jugador haciendo clic en <strong>"Agregar foto"</strong> (formatos JPG o PNG).</li>
+                    <li>Haz clic en <strong>"Guardar Jugador"</strong> para registrarlo. El sistema confirmará el registro con un mensaje de éxito.</li>
                   </ol>
+                  <div class="info-note">
+                    💡 Al guardar un jugador nuevo, el sistema le genera automáticamente la mensualidad del mes actual si aún no existe.
+                  </div>
+
                   <h4>Editar jugador</h4>
                   <ol>
                     <li>Busca el jugador en la tabla.</li>
-                    <li>Haz clic en el botón de <strong>editar</strong> (icono de lápiz).</li>
-                    <li>Modifica los campos necesarios y guarda los cambios.</li>
+                    <li>Haz clic en el botón <strong>✏️ editar</strong> de la fila correspondiente.</li>
+                    <li>Modifica los campos necesarios. La validación en tiempo real también aplica aquí.</li>
+                    <li>Guarda los cambios con <strong>"Guardar Cambios"</strong>.</li>
                   </ol>
+
                   <h4>Buscar y filtrar</h4>
                   <ul>
                     <li>Usa la <strong>barra de búsqueda</strong> para encontrar jugadores por nombre, apellido o documento.</li>
-                    <li>Filtra por <strong>categoría</strong> usando el selector desplegable.</li>
+                    <li>Filtra por <strong>categoría</strong> o por <strong>estado</strong> (activos / inactivos) usando los selectores desplegables.</li>
                   </ul>
+
                   <h4>Ver historial de pagos</h4>
                   <ul>
-                    <li>Haz clic en el botón de <strong>historial</strong> del jugador para ver todos sus pagos y mensualidades.</li>
+                    <li>Haz clic en el botón <strong>📋 historial</strong> de la fila del jugador para ver todos sus pagos y el estado de sus mensualidades.</li>
+                  </ul>
+
+                  <h4>Activar / Desactivar jugador</h4>
+                  <ul>
+                    <li>Al editar un jugador, puedes cambiar su estado con el interruptor <strong>"Jugador Activo"</strong>.</li>
+                    <li>Los jugadores inactivos no aparecen en la generación de mensualidades ni en el cron automático.</li>
                   </ul>
                 </div>
               }
@@ -165,21 +181,40 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
               @if (openSection === 'mensualidades') {
                 <div class="accordion-body">
                   <p>Control de las cuotas mensuales de cada jugador.</p>
-                  <h4>Generación mensual</h4>
+
+                  <h4>Generación automática (cron)</h4>
                   <ul>
-                    <li>Las mensualidades se generan para todos los jugadores activos de cada categoría.</li>
-                    <li>El monto corresponde al valor de mensualidad configurado en la categoría.</li>
+                    <li>El sistema genera las mensualidades <strong>automáticamente el primer día de cada mes</strong> para todos los jugadores activos.</li>
+                    <li>El monto de cada mensualidad corresponde al valor configurado en la categoría del jugador.</li>
+                    <li>No es necesario hacer nada manualmente: el proceso corre en el servidor de forma programada.</li>
                   </ul>
+                  <div class="info-note">
+                    💡 Si un jugador estaba inactivo al momento de la generación automática, no se le creará mensualidad. Si luego se activa, deberá generarse manualmente.
+                  </div>
+
+                  <h4>Generación manual</h4>
+                  <ol>
+                    <li>Ve a la pestaña <strong>"Generar Mensualidades"</strong>.</li>
+                    <li>Selecciona el <strong>mes</strong> y el <strong>año</strong> para el que deseas generar.</li>
+                    <li>Opcionalmente ajusta la <strong>fecha de vencimiento</strong> (por defecto: 30 días desde hoy).</li>
+                    <li>El sistema muestra cuántos jugadores ya tienen mensualidad y cuántos faltan.</li>
+                    <li>Haz clic en <strong>"Generar Mensualidades"</strong>. Solo se crearán las que aún no existan, sin duplicar.</li>
+                  </ol>
+                  <div class="info-note">
+                    💡 Usa la generación manual para meses anteriores, para jugadores nuevos que no estaban en el cron, o si necesitas regenerar un mes específico.
+                  </div>
+
                   <h4>Estados</h4>
                   <ul>
                     <li><strong>Pendiente:</strong> La mensualidad fue generada pero aún no tiene pagos.</li>
                     <li><strong>Pagada:</strong> El monto total ha sido cubierto.</li>
-                    <li><strong>Vencida:</strong> La fecha de pago ha expirado sin completar el monto.</li>
+                    <li><strong>Vencida:</strong> La fecha de vencimiento expiró sin completar el monto.</li>
                   </ul>
+
                   <h4>Seguimiento</h4>
                   <ul>
-                    <li>Visualiza el estado de las mensualidades por jugador, categoría o mes.</li>
-                    <li>Revisa montos pagados y saldos pendientes.</li>
+                    <li>En la pestaña <strong>"Listado"</strong> podés filtrar por mes, año, categoría y estado.</li>
+                    <li>En la pestaña <strong>"Resumen"</strong> ves el total recaudado, pendiente y la tasa de cumplimiento del período.</li>
                   </ul>
                 </div>
               }
@@ -370,6 +405,22 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 
     .accordion-body strong {
       color: #1a3a5c;
+    }
+
+    .info-note {
+      background: #eff6ff;
+      border-left: 3px solid #3b82f6;
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      margin: 12px 0;
+      font-size: 13px;
+      color: #1e40af;
+      line-height: 1.5;
+    }
+
+    .req-mark {
+      color: #ef4444;
+      font-weight: 700;
     }
 
     /* Responsive */
