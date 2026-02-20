@@ -608,19 +608,19 @@ export class ReportesComponent implements OnInit {
 
   cajaChartData: ChartData<'bar'> = {
     labels: [],
-    datasets: [{ data: [], label: 'Recaudado', backgroundColor: '#4f46e5' }]
+    datasets: [{ data: [], label: 'Recaudado', backgroundColor: '#4f46e5', borderRadius: 4 }]
   };
 
   proyeccionChartData: ChartData<'doughnut'> = {
     labels: ['Recaudado', 'Pendiente'],
-    datasets: [{ data: [0, 0], backgroundColor: ['#10b981', '#f59e0b'] }]
+    datasets: [{ data: [0, 0], backgroundColor: ['#10b981', '#ef4444'] }]
   };
 
   categoriasChartData: ChartData<'bar'> = {
     labels: [],
     datasets: [
-      { data: [], label: 'Esperado', backgroundColor: '#94a3b8' },
-      { data: [], label: 'Recaudado', backgroundColor: '#10b981' }
+      { data: [], label: 'Esperado', backgroundColor: '#94a3b8', borderRadius: 4 },
+      { data: [], label: 'Recaudado', backgroundColor: '#10b981', borderRadius: 4 }
     ]
   };
 
@@ -675,7 +675,7 @@ export class ReportesComponent implements OnInit {
     this.cajaItems = items;
     this.cajaChartData = {
       labels,
-      datasets: [{ data: values, label: 'Recaudado', backgroundColor: '#4f46e5' }]
+      datasets: [{ data: values, label: 'Recaudado', backgroundColor: '#4f46e5', borderRadius: 4 }]
     };
   }
 
@@ -700,7 +700,7 @@ export class ReportesComponent implements OnInit {
           labels: ['Recaudado', 'Pendiente'],
           datasets: [{
             data: [data.total_recaudado, data.total_pendiente],
-            backgroundColor: ['#10b981', '#f59e0b']
+            backgroundColor: ['#10b981', '#ef4444']
           }]
         };
         this.loadingProyeccion = false;
@@ -730,8 +730,8 @@ export class ReportesComponent implements OnInit {
     this.categoriasChartData = {
       labels,
       datasets: [
-        { data: esperado, label: 'Esperado', backgroundColor: '#94a3b8' },
-        { data: recaudado, label: 'Recaudado', backgroundColor: '#10b981' }
+        { data: esperado, label: 'Esperado', backgroundColor: '#94a3b8', borderRadius: 4 },
+        { data: recaudado, label: 'Recaudado', backgroundColor: '#10b981', borderRadius: 4 }
       ]
     };
   }
