@@ -9,9 +9,6 @@ import { CommonModule } from '@angular/common';
     <div class="page-header">
       <div class="header-bg"></div>
       <div class="header-content">
-        <div class="header-logo">
-          <img src="assets/escudo.jpg" alt="Escudo" class="escudo" />
-        </div>
         <div class="header-text">
           <h1>
             <span class="header-icon">{{ icon }}</span>
@@ -58,23 +55,6 @@ import { CommonModule } from '@angular/common';
       gap: 20px;
       position: relative;
       z-index: 2;
-    }
-
-    .header-logo {
-      width: 60px;
-      height: 60px;
-      background: white;
-      border-radius: 12px;
-      padding: 4px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      flex-shrink: 0;
-    }
-
-    .escudo {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      border-radius: 8px;
     }
 
     .header-text h1 {
@@ -128,11 +108,6 @@ import { CommonModule } from '@angular/common';
     @media (max-width: 640px) {
       .page-header {
         padding: 20px;
-      }
-
-      .header-logo {
-        width: 50px;
-        height: 50px;
       }
 
       .header-text h1 {
