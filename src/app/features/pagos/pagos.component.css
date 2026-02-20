@@ -559,6 +559,26 @@ textarea.form-control {
   z-index: 1000;
   box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
   animation: slideIn 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-recibo-link {
+  background: #065f46;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-recibo-link:hover {
+  background: #047857;
 }
 
 @keyframes slideIn {

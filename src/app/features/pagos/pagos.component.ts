@@ -221,6 +221,7 @@ export class PagosComponent implements OnInit {
 
   // General
   successMessage = '';
+  ultimoPagoRegistradoId: number | null = null;
 
   private authService = inject(AuthService);
 
@@ -441,11 +442,13 @@ export class PagosComponent implements OnInit {
           this.subirComprobante(pagoId, numeroRecibo);
         } else {
           this.guardando = false;
+          this.ultimoPagoRegistradoId = pagoId;
           this.successMessage = `✓ Pago registrado exitosamente. Recibo: ${numeroRecibo}`;
 
           setTimeout(() => {
             this.successMessage = '';
-          }, 5000);
+            this.ultimoPagoRegistradoId = null;
+          }, 8000);
 
           this.cargarMensualidadesPendientes();
           this.cerrarFormularioPago();
@@ -694,11 +697,13 @@ export class PagosComponent implements OnInit {
     .then(() => {
       this.subiendoComprobante = false;
       this.guardando = false;
+      this.ultimoPagoRegistradoId = pagoId;
       this.successMessage = `✓ Pago registrado con comprobante. Recibo: ${numeroRecibo}`;
 
       setTimeout(() => {
         this.successMessage = '';
-      }, 5000);
+        this.ultimoPagoRegistradoId = null;
+      }, 8000);
 
       this.cargarMensualidadesPendientes();
       this.cerrarFormularioPago();
@@ -706,12 +711,14 @@ export class PagosComponent implements OnInit {
     .catch(err => {
       this.subiendoComprobante = false;
       this.guardando = false;
+      this.ultimoPagoRegistradoId = pagoId;
       // El pago se registró pero el comprobante falló
       this.successMessage = `✓ Pago registrado. Recibo: ${numeroRecibo} (comprobante no se pudo subir)`;
 
       setTimeout(() => {
         this.successMessage = '';
-      }, 5000);
+        this.ultimoPagoRegistradoId = null;
+      }, 8000);
 
       this.cargarMensualidadesPendientes();
       this.cerrarFormularioPago();
@@ -740,6 +747,24 @@ export class PagosComponent implements OnInit {
     })
     .catch(err => {
       console.error('Error descargando comprobante:', err);
+    });
+  }
+
+  descargarRecibo(pagoId: number) {
+    this.api.getBlob(`pagos/${pagoId}/recibo-pdf`).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `recibo-${pagoId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Error descargando recibo:', err);
+      }
     });
   }
 

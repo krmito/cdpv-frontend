@@ -20,6 +20,16 @@ interface Estadisticas {
     pendientes: number;
     vencidas: number;
   };
+  proyeccion?: {
+    total_esperado: number;
+    total_recaudado: number;
+    total_pendiente: number;
+    porcentaje_cumplimiento: number;
+  };
+  morosos?: {
+    total_morosos: number;
+    deuda_total: number;
+  };
 }
 
 @Component({
@@ -101,6 +111,47 @@ interface Estadisticas {
                 </div>
               </div>
             </div>
+
+            <!-- Resumen Financiero del Mes -->
+            @if (stats.proyeccion) {
+              <div class="card resumen-card">
+                <div class="card-header">
+                  <span class="header-icon">📊</span>
+                  Resumen del Mes
+                </div>
+                <div class="resumen-content">
+                  <div class="progress-section">
+                    <div class="progress-header">
+                      <span class="progress-label">Recaudación</span>
+                      <span class="progress-percent">{{ stats.proyeccion.porcentaje_cumplimiento | number:'1.0-0' }}%</span>
+                    </div>
+                    <div class="progress-bar-container">
+                      <div class="progress-bar-fill" [style.width.%]="stats.proyeccion.porcentaje_cumplimiento > 100 ? 100 : stats.proyeccion.porcentaje_cumplimiento"></div>
+                    </div>
+                    <div class="progress-amounts">
+                      <span>\${{ formatNumber(stats.proyeccion.total_recaudado) }} recaudado</span>
+                      <span>de \${{ formatNumber(stats.proyeccion.total_esperado) }}</span>
+                    </div>
+                  </div>
+                  <div class="resumen-grid">
+                    <div class="resumen-item">
+                      <span class="resumen-value pendiente-color">\${{ formatNumber(stats.proyeccion.total_pendiente) }}</span>
+                      <span class="resumen-label">Pendiente por cobrar</span>
+                    </div>
+                    @if (stats.morosos) {
+                      <div class="resumen-item">
+                        <span class="resumen-value moroso-color">{{ stats.morosos.total_morosos }}</span>
+                        <span class="resumen-label">Jugadores morosos</span>
+                      </div>
+                      <div class="resumen-item">
+                        <span class="resumen-value moroso-color">\${{ formatNumber(stats.morosos.deuda_total) }}</span>
+                        <span class="resumen-label">Deuda total acumulada</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
 
             <div class="card actions-card">
               <div class="card-header">
@@ -422,6 +473,100 @@ interface Estadisticas {
       font-size: 13px;
       color: #9ca3af;
       margin: 4px 0 0;
+    }
+
+    /* === RESUMEN FINANCIERO === */
+    .resumen-card {
+      background: white;
+      padding: 28px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      margin-bottom: 28px;
+    }
+
+    .resumen-content {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .progress-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .progress-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .progress-percent {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary-blue);
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 14px;
+      background: #e5e7eb;
+      border-radius: 7px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+      border-radius: 7px;
+      transition: width 0.8s ease;
+    }
+
+    .progress-amounts {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .resumen-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .resumen-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 16px;
+      background: #f9fafb;
+      border-radius: 12px;
+    }
+
+    .resumen-value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .resumen-label {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .pendiente-color {
+      color: #f59e0b;
+    }
+
+    .moroso-color {
+      color: #ef4444;
     }
 
     /* === ACTIONS CARD === */
@@ -765,12 +910,33 @@ export class DashboardComponent implements OnInit {
       next: (data) => {
         this.stats = data;
         this.loading = false;
+        this.loadFinancialSummary();
       },
       error: (err) => {
         this.error = 'No se pudieron cargar las estadísticas';
         this.loading = false;
         console.error('Error loading stats:', err);
       }
+    });
+  }
+
+  loadFinancialSummary() {
+    const now = new Date();
+    const mes = now.getMonth() + 1;
+    const anio = now.getFullYear();
+
+    this.api.get<any>(`reportes/proyeccion-ingresos?mes=${mes}&anio=${anio}`).subscribe({
+      next: (data) => {
+        this.stats.proyeccion = data;
+      },
+      error: () => {}
+    });
+
+    this.api.get<any>('reportes/morosos').subscribe({
+      next: (data) => {
+        this.stats.morosos = data;
+      },
+      error: () => {}
     });
   }
 

@@ -15,6 +15,13 @@ interface Categoria {
   activo: boolean;
 }
 
+interface Mensualidad {
+  id: number;
+  estado: string;
+  fecha_vencimiento: string;
+  saldo_pendiente: number;
+}
+
 interface Jugador {
   id: number;
   nombre: string;
@@ -32,6 +39,7 @@ interface Jugador {
   fecha_registro: string;
   foto_url?: string;
   posicion: string;
+  mensualidades?: Mensualidad[];
 }
 
 interface PaginatedResponse {
@@ -178,6 +186,7 @@ interface CreateJugadorDto {
                         <th>Teléfono</th>
                         <th>Email</th>
                         <th>Estado</th>
+                        <th>Pagos</th>
                         <th>Acciones</th>
                       </tr>
                     </thead>
@@ -205,6 +214,11 @@ interface CreateJugadorDto {
                           <td>
                             <span [class]="jugador.activo ? 'status-active' : 'status-inactive'">
                               {{ jugador.activo ? '✓ Activo' : '✗ Inactivo' }}
+                            </span>
+                          </td>
+                          <td>
+                            <span [class]="'pago-badge ' + getEstadoPago(jugador).clase">
+                              {{ getEstadoPago(jugador).texto }}
                             </span>
                           </td>
                           <td>
@@ -1233,6 +1247,25 @@ interface CreateJugadorDto {
     .status-inactive {
       color: #ef4444;
       font-weight: 600;
+    }
+    .pago-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .pago-aldia {
+      background: #ecfdf5;
+      color: #10b981;
+    }
+    .pago-pendiente {
+      background: #fffbeb;
+      color: #f59e0b;
+    }
+    .pago-debe {
+      background: #fef2f2;
+      color: #ef4444;
     }
     .action-buttons {
       display: flex;
@@ -2437,6 +2470,28 @@ export class JugadoresComponent implements OnInit {
   // Foto helpers
   getFotoUrl(fotoUrl: string): string {
     return `${this.apiBaseUrl}${fotoUrl}`;
+  }
+
+  getEstadoPago(jugador: Jugador): { texto: string; clase: string } {
+    const mensualidades = jugador.mensualidades || [];
+    if (mensualidades.length === 0) {
+      return { texto: 'Al día', clase: 'pago-aldia' };
+    }
+
+    const hoy = new Date();
+    const tieneVencidas = mensualidades.some(
+      m => m.estado !== 'pagado' && new Date(m.fecha_vencimiento) < hoy
+    );
+    if (tieneVencidas) {
+      return { texto: 'Debe', clase: 'pago-debe' };
+    }
+
+    const tienePendientes = mensualidades.some(m => m.estado !== 'pagado');
+    if (tienePendientes) {
+      return { texto: 'Pendiente', clase: 'pago-pendiente' };
+    }
+
+    return { texto: 'Al día', clase: 'pago-aldia' };
   }
 
   getInitials(nombre: string, apellido: string): string {

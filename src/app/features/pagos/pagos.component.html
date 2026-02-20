@@ -759,6 +759,11 @@
         </div>
 
         <div class="modal-footer">
+          @if (!pagoSeleccionado.anulado) {
+            <button class="btn btn-primary" (click)="descargarRecibo(pagoSeleccionado.id)">
+              📄 Descargar Recibo
+            </button>
+          }
           <button class="btn btn-secondary" (click)="cerrarDetalleModal()">
             Cerrar
           </button>
@@ -833,6 +838,11 @@
   @if (successMessage) {
     <div class="alert alert-success success-float">
       {{ successMessage }}
+      @if (ultimoPagoRegistradoId) {
+        <button class="btn-recibo-link" (click)="descargarRecibo(ultimoPagoRegistradoId)">
+          📄 Descargar Recibo PDF
+        </button>
+      }
     </div>
   }
       </div>
