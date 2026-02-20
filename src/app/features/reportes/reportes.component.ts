@@ -206,7 +206,7 @@ interface CumplimientoCategoria {
                   </div>
 
                   @if (cajaChartData.datasets[0].data.length > 0) {
-                    <div class="chart-container">
+                    <div class="chart-container" role="img" aria-label="Gráfico de barras de recaudación por fecha">
                       <canvas baseChart
                         [data]="cajaChartData"
                         [type]="'bar'"
@@ -217,6 +217,7 @@ interface CumplimientoCategoria {
 
                   <div class="table-container">
                     <table class="data-table">
+                      <caption>Detalle de pagos agrupados por fecha</caption>
                       <thead>
                         <tr>
                           <th>Fecha</th>
@@ -271,6 +272,7 @@ interface CumplimientoCategoria {
                   } @else {
                     <div class="table-container">
                       <table class="data-table">
+                        <caption>Listado de jugadores con mensualidades vencidas</caption>
                         <thead>
                           <tr>
                             <th>Jugador</th>
@@ -344,7 +346,7 @@ interface CumplimientoCategoria {
                     </div>
                   </div>
 
-                  <div class="chart-container">
+                  <div class="chart-container" role="img" aria-label="Gráfico de dona con proyección de ingresos: recaudado vs pendiente">
                     <canvas baseChart
                       [data]="proyeccionChartData"
                       [type]="'doughnut'"
@@ -395,7 +397,7 @@ interface CumplimientoCategoria {
                 @if (loadingCategorias) {
                   <div class="loading">Cargando cumplimiento...</div>
                 } @else if (cumplimientoCategorias.length > 0) {
-                  <div class="chart-container">
+                  <div class="chart-container" role="img" aria-label="Gráfico de barras de cumplimiento de pago por categoría">
                     <canvas baseChart
                       [data]="categoriasChartData"
                       [type]="'bar'"
@@ -405,6 +407,7 @@ interface CumplimientoCategoria {
 
                   <div class="table-container">
                     <table class="data-table">
+                      <caption>Cumplimiento de mensualidades por categoría</caption>
                       <thead>
                         <tr>
                           <th>Categoría</th>

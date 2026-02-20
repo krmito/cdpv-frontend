@@ -269,6 +269,7 @@
         } @else {
           <div class="table-responsive">
             <table class="data-table">
+              <caption>Historial de pagos registrados</caption>
               <thead>
                 <tr>
                   <th>N° Recibo</th>
@@ -310,10 +311,11 @@
                     </td>
                     <td>
                       <div class="action-buttons">
-                        <button 
-                          class="btn-icon" 
+                        <button
+                          class="btn-icon"
                           (click)="verDetallePago(pago)"
                           title="Ver detalles"
+                          [attr.aria-label]="'Ver detalles del pago de ' + pago.jugador?.nombre"
                         >
                           👁️
                         </button>

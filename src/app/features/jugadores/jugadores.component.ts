@@ -196,6 +196,7 @@ interface CreateJugadorDto {
               } @else {
                 <div class="table-container">
                   <table>
+                    <caption>Listado de jugadores del club</caption>
                     <thead>
                       <tr>
                         <th>Foto</th>
@@ -325,15 +326,16 @@ interface CreateJugadorDto {
                           <input
                             id="new-nombre"
                             type="text"
-                            [class]="'form-control' + (formSubmitted && !newJugador.nombre ? ' is-invalid' : '')"
+                            [class]="'form-control' + ((formSubmitted || newFormTouched['nombre']) && !newJugador.nombre ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.nombre"
                             name="nombre"
                             required
                             placeholder="Juan"
-                            [attr.aria-invalid]="formSubmitted && !newJugador.nombre"
+                            (blur)="touchNewField('nombre')"
+                            [attr.aria-invalid]="(formSubmitted || newFormTouched['nombre']) && !newJugador.nombre"
                             aria-describedby="new-nombre-error"
                           />
-                          @if (formSubmitted && !newJugador.nombre) {
+                          @if ((formSubmitted || newFormTouched['nombre']) && !newJugador.nombre) {
                             <span id="new-nombre-error" class="field-error" role="alert">El nombre es obligatorio</span>
                           }
                         </div>
@@ -343,15 +345,16 @@ interface CreateJugadorDto {
                           <input
                             id="new-apellido"
                             type="text"
-                            [class]="'form-control' + (formSubmitted && !newJugador.apellido ? ' is-invalid' : '')"
+                            [class]="'form-control' + ((formSubmitted || newFormTouched['apellido']) && !newJugador.apellido ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.apellido"
                             name="apellido"
                             required
                             placeholder="Pérez García"
-                            [attr.aria-invalid]="formSubmitted && !newJugador.apellido"
+                            (blur)="touchNewField('apellido')"
+                            [attr.aria-invalid]="(formSubmitted || newFormTouched['apellido']) && !newJugador.apellido"
                             aria-describedby="new-apellido-error"
                           />
-                          @if (formSubmitted && !newJugador.apellido) {
+                          @if ((formSubmitted || newFormTouched['apellido']) && !newJugador.apellido) {
                             <span id="new-apellido-error" class="field-error" role="alert">El apellido es obligatorio</span>
                           }
                         </div>
@@ -379,16 +382,17 @@ interface CreateJugadorDto {
                           <input
                             id="new-documento"
                             type="text"
-                            [class]="'form-control' + (formSubmitted && !newJugador.documento ? ' is-invalid' : '')"
+                            [class]="'form-control' + ((formSubmitted || newFormTouched['documento']) && !newJugador.documento ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.documento"
                             name="documento"
                             required
                             placeholder="1234567890"
                             maxlength="15"
-                            [attr.aria-invalid]="formSubmitted && !newJugador.documento"
+                            (blur)="touchNewField('documento')"
+                            [attr.aria-invalid]="(formSubmitted || newFormTouched['documento']) && !newJugador.documento"
                             aria-describedby="new-documento-error"
                           />
-                          @if (formSubmitted && !newJugador.documento) {
+                          @if ((formSubmitted || newFormTouched['documento']) && !newJugador.documento) {
                             <span id="new-documento-error" class="field-error" role="alert">El documento es obligatorio</span>
                           }
                         </div>
@@ -400,14 +404,15 @@ interface CreateJugadorDto {
                           <input
                             id="new-fecha"
                             type="date"
-                            [class]="'form-control' + (formSubmitted && !newJugador.fecha_nacimiento ? ' is-invalid' : '')"
+                            [class]="'form-control' + ((formSubmitted || newFormTouched['fecha_nacimiento']) && !newJugador.fecha_nacimiento ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.fecha_nacimiento"
                             name="fecha_nacimiento"
                             required
-                            [attr.aria-invalid]="formSubmitted && !newJugador.fecha_nacimiento"
+                            (blur)="touchNewField('fecha_nacimiento')"
+                            [attr.aria-invalid]="(formSubmitted || newFormTouched['fecha_nacimiento']) && !newJugador.fecha_nacimiento"
                             aria-describedby="new-fecha-error"
                           />
-                          @if (formSubmitted && !newJugador.fecha_nacimiento) {
+                          @if ((formSubmitted || newFormTouched['fecha_nacimiento']) && !newJugador.fecha_nacimiento) {
                             <span id="new-fecha-error" class="field-error" role="alert">La fecha de nacimiento es obligatoria</span>
                           }
                         </div>
@@ -435,16 +440,17 @@ interface CreateJugadorDto {
                           <input
                             id="new-telefono"
                             type="tel"
-                            [class]="'form-control' + (formSubmitted && !newJugador.telefono ? ' is-invalid' : '')"
+                            [class]="'form-control' + ((formSubmitted || newFormTouched['telefono']) && !newJugador.telefono ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.telefono"
                             name="telefono"
                             required
                             placeholder="3001234567"
                             maxlength="15"
-                            [attr.aria-invalid]="formSubmitted && !newJugador.telefono"
+                            (blur)="touchNewField('telefono')"
+                            [attr.aria-invalid]="(formSubmitted || newFormTouched['telefono']) && !newJugador.telefono"
                             aria-describedby="new-telefono-error"
                           />
-                          @if (formSubmitted && !newJugador.telefono) {
+                          @if ((formSubmitted || newFormTouched['telefono']) && !newJugador.telefono) {
                             <span id="new-telefono-error" class="field-error" role="alert">El teléfono es obligatorio</span>
                           }
                         </div>
@@ -507,11 +513,12 @@ interface CreateJugadorDto {
                         <label for="new-categoria">Categoría <span class="required">*</span></label>
                         <select
                           id="new-categoria"
-                          [class]="'form-control' + (formSubmitted && !(newJugador.categoria_id > 0) ? ' is-invalid' : '')"
+                          [class]="'form-control' + ((formSubmitted || newFormTouched['categoria_id']) && !(newJugador.categoria_id > 0) ? ' is-invalid' : '')"
                           [(ngModel)]="newJugador.categoria_id"
                           name="categoria_id"
                           required
-                          [attr.aria-invalid]="formSubmitted && !(newJugador.categoria_id > 0)"
+                          (blur)="touchNewField('categoria_id')"
+                          [attr.aria-invalid]="(formSubmitted || newFormTouched['categoria_id']) && !(newJugador.categoria_id > 0)"
                           aria-describedby="new-categoria-error"
                         >
                           <option [ngValue]="0">Seleccione una categoría</option>
@@ -521,7 +528,7 @@ interface CreateJugadorDto {
                             </option>
                           }
                         </select>
-                        @if (formSubmitted && !(newJugador.categoria_id > 0)) {
+                        @if ((formSubmitted || newFormTouched['categoria_id']) && !(newJugador.categoria_id > 0)) {
                           <span id="new-categoria-error" class="field-error" role="alert">Selecciona una categoría</span>
                         }
                         @if (selectedCategoria) {
@@ -605,27 +612,39 @@ interface CreateJugadorDto {
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label>Nombre <span class="required">*</span></label>
+                          <label for="edit-nombre">Nombre <span class="required">*</span></label>
                           <input
+                            id="edit-nombre"
                             type="text"
-                            class="form-control"
+                            [class]="'form-control' + ((formSubmitted || editFormTouched['nombre']) && !editJugadorData.nombre ? ' is-invalid' : '')"
                             [(ngModel)]="editJugadorData.nombre"
                             name="edit_nombre"
                             required
                             placeholder="Juan"
+                            (blur)="touchEditField('nombre')"
+                            [attr.aria-invalid]="(formSubmitted || editFormTouched['nombre']) && !editJugadorData.nombre"
                           />
+                          @if ((formSubmitted || editFormTouched['nombre']) && !editJugadorData.nombre) {
+                            <span class="field-error" role="alert">El nombre es obligatorio</span>
+                          }
                         </div>
 
                         <div class="form-group">
-                          <label>Apellido <span class="required">*</span></label>
+                          <label for="edit-apellido">Apellido <span class="required">*</span></label>
                           <input
+                            id="edit-apellido"
                             type="text"
-                            class="form-control"
+                            [class]="'form-control' + ((formSubmitted || editFormTouched['apellido']) && !editJugadorData.apellido ? ' is-invalid' : '')"
                             [(ngModel)]="editJugadorData.apellido"
                             name="edit_apellido"
                             required
                             placeholder="Pérez García"
+                            (blur)="touchEditField('apellido')"
+                            [attr.aria-invalid]="(formSubmitted || editFormTouched['apellido']) && !editJugadorData.apellido"
                           />
+                          @if ((formSubmitted || editFormTouched['apellido']) && !editJugadorData.apellido) {
+                            <span class="field-error" role="alert">El apellido es obligatorio</span>
+                          }
                         </div>
                       </div>
 
@@ -646,29 +665,41 @@ interface CreateJugadorDto {
                         </div>
 
                         <div class="form-group">
-                          <label>Documento <span class="required">*</span></label>
+                          <label for="edit-documento">Documento <span class="required">*</span></label>
                           <input
+                            id="edit-documento"
                             type="text"
-                            class="form-control"
+                            [class]="'form-control' + ((formSubmitted || editFormTouched['documento']) && !editJugadorData.documento ? ' is-invalid' : '')"
                             [(ngModel)]="editJugadorData.documento"
                             name="edit_documento"
                             required
                             placeholder="1234567890"
                             maxlength="15"
+                            (blur)="touchEditField('documento')"
+                            [attr.aria-invalid]="(formSubmitted || editFormTouched['documento']) && !editJugadorData.documento"
                           />
+                          @if ((formSubmitted || editFormTouched['documento']) && !editJugadorData.documento) {
+                            <span class="field-error" role="alert">El documento es obligatorio</span>
+                          }
                         </div>
                       </div>
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label>Fecha de Nacimiento <span class="required">*</span></label>
+                          <label for="edit-fecha">Fecha de Nacimiento <span class="required">*</span></label>
                           <input
+                            id="edit-fecha"
                             type="date"
-                            class="form-control"
+                            [class]="'form-control' + ((formSubmitted || editFormTouched['fecha_nacimiento']) && !editJugadorData.fecha_nacimiento ? ' is-invalid' : '')"
                             [(ngModel)]="editJugadorData.fecha_nacimiento"
                             name="edit_fecha_nacimiento"
                             required
+                            (blur)="touchEditField('fecha_nacimiento')"
+                            [attr.aria-invalid]="(formSubmitted || editFormTouched['fecha_nacimiento']) && !editJugadorData.fecha_nacimiento"
                           />
+                          @if ((formSubmitted || editFormTouched['fecha_nacimiento']) && !editJugadorData.fecha_nacimiento) {
+                            <span class="field-error" role="alert">La fecha de nacimiento es obligatoria</span>
+                          }
                         </div>
 
                         <div class="form-group">
@@ -689,16 +720,22 @@ interface CreateJugadorDto {
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label>Teléfono <span class="required">*</span></label>
+                          <label for="edit-telefono">Teléfono <span class="required">*</span></label>
                           <input
+                            id="edit-telefono"
                             type="tel"
-                            class="form-control"
+                            [class]="'form-control' + ((formSubmitted || editFormTouched['telefono']) && !editJugadorData.telefono ? ' is-invalid' : '')"
                             [(ngModel)]="editJugadorData.telefono"
                             name="edit_telefono"
                             required
                             placeholder="3001234567"
                             maxlength="15"
+                            (blur)="touchEditField('telefono')"
+                            [attr.aria-invalid]="(formSubmitted || editFormTouched['telefono']) && !editJugadorData.telefono"
                           />
+                          @if ((formSubmitted || editFormTouched['telefono']) && !editJugadorData.telefono) {
+                            <span class="field-error" role="alert">El teléfono es obligatorio</span>
+                          }
                         </div>
 
                         <div class="form-group">
@@ -756,12 +793,15 @@ interface CreateJugadorDto {
                       <h3>Categoría</h3>
 
                       <div class="form-group">
-                        <label>Categoría <span class="required">*</span></label>
+                        <label for="edit-categoria">Categoría <span class="required">*</span></label>
                         <select
-                          class="form-control"
+                          id="edit-categoria"
+                          [class]="'form-control' + ((formSubmitted || editFormTouched['categoria_id']) && !(editJugadorData.categoria_id > 0) ? ' is-invalid' : '')"
                           [(ngModel)]="editJugadorData.categoria_id"
                           name="edit_categoria_id"
                           required
+                          (blur)="touchEditField('categoria_id')"
+                          [attr.aria-invalid]="(formSubmitted || editFormTouched['categoria_id']) && !(editJugadorData.categoria_id > 0)"
                         >
                           <option [ngValue]="0">Seleccione una categoría</option>
                           @for (cat of categorias; track cat.id) {
@@ -770,6 +810,9 @@ interface CreateJugadorDto {
                             </option>
                           }
                         </select>
+                        @if ((formSubmitted || editFormTouched['categoria_id']) && !(editJugadorData.categoria_id > 0)) {
+                          <span class="field-error" role="alert">Selecciona una categoría</span>
+                        }
 
                         @if (selectedCategoriaEdit) {
                           <div class="categoria-info">
@@ -2175,6 +2218,8 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   formError = '';
   successMessage = '';
   formSubmitted = false;
+  newFormTouched: Record<string, boolean> = {};
+  editFormTouched: Record<string, boolean> = {};
   private filterTimeout: any;
 
   // Nuevo jugador
@@ -2340,10 +2385,14 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.resetForm();
   }
 
+  touchNewField(field: string) { this.newFormTouched[field] = true; }
+  touchEditField(field: string) { this.editFormTouched[field] = true; }
+
   closeNewForm() {
     this.showNewForm = false;
     this.formError = '';
     this.formSubmitted = false;
+    this.newFormTouched = {};
     this.resetForm();
   }
 
@@ -2489,6 +2538,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.showEditForm = false;
     this.editingJugador = null;
     this.editJugadorData = {};
+    this.editFormTouched = {};
     this.formError = '';
     this.fotoFile = null;
     this.fotoPreview = null;
