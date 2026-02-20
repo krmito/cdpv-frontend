@@ -63,12 +63,17 @@ interface Estadisticas {
           </div>
 
           @if (loading) {
-            <div class="loading">
-              <div class="loading-spinner"></div>
-              <p>Cargando estadísticas...</p>
+            <div class="stats-grid skeleton-stats" aria-busy="true" aria-label="Cargando estadísticas">
+              @for (i of [1,2,3,4]; track i) {
+                <div class="skeleton-card">
+                  <div class="skeleton-icon"></div>
+                  <div class="skeleton-line skeleton-lg"></div>
+                  <div class="skeleton-line skeleton-sm"></div>
+                </div>
+              }
             </div>
           } @else if (error) {
-            <div class="alert alert-danger">
+            <div class="alert alert-danger" role="alert">
               <strong>Error:</strong> {{ error }}
               <br>
               <small>Verifica que el backend esté corriendo</small>
@@ -379,26 +384,34 @@ interface Estadisticas {
     .c2 { width: 60px; height: 60px; bottom: 10px; right: 80px; }
     .c3 { width: 40px; height: 40px; top: 50%; right: 10px; }
 
-    /* === LOADING === */
-    .loading {
-      text-align: center;
-      padding: 60px;
-      color: #6b7280;
+    /* === SKELETON STATS === */
+    .skeleton-stats {
+      margin-bottom: 28px;
     }
-
-    .loading-spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid #e5e7eb;
-      border-top-color: var(--primary-blue);
-      border-radius: 50%;
-      margin: 0 auto 16px;
-      animation: spin 1s linear infinite;
+    .skeleton-card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .skeleton-icon {
+      width: 48px; height: 48px; border-radius: 12px;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
     }
+    .skeleton-line {
+      height: 14px; border-radius: 6px;
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+    .skeleton-lg { width: 80px; height: 28px; }
+    .skeleton-sm { width: 130px; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
     /* === STATS GRID === */
     .stats-grid {

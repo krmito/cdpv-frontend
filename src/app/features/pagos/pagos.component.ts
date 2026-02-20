@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
+import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -120,7 +122,7 @@ interface Estadisticas {
   templateUrl: './pagos.component.html',
   styleUrls: ['./pagos.component.css']
 })
-export class PagosComponent implements OnInit {
+export class PagosComponent implements OnInit, CanComponentDeactivate {
   // Tabs
   activeTab: 'registrar' | 'historial' | 'estadisticas' = 'registrar';
 
@@ -224,8 +226,13 @@ export class PagosComponent implements OnInit {
   ultimoPagoRegistradoId: number | null = null;
 
   private authService = inject(AuthService);
+  private toast = inject(ToastService);
 
   constructor(private api: ApiService) {}
+
+  hasUnsavedChanges(): boolean {
+    return !!(this.showPagoForm && (this.pagoData.monto_pagado > 0 || this.pagoData.metodo_pago));
+  }
 
   ngOnInit() {
     this.generarNumeroRecibo();
@@ -443,13 +450,7 @@ export class PagosComponent implements OnInit {
         } else {
           this.guardando = false;
           this.ultimoPagoRegistradoId = pagoId;
-          this.successMessage = `✓ Pago registrado exitosamente. Recibo: ${numeroRecibo}`;
-
-          setTimeout(() => {
-            this.successMessage = '';
-            this.ultimoPagoRegistradoId = null;
-          }, 8000);
-
+          this.toast.success(`Pago registrado exitosamente. Recibo: ${numeroRecibo}`);
           this.cargarMensualidadesPendientes();
           this.cerrarFormularioPago();
         }
@@ -574,12 +575,7 @@ export class PagosComponent implements OnInit {
     this.api.delete(`pagos/${this.pagoAAnular!.id}/anular`).subscribe({
       next: () => {
         this.anulando = false;
-        this.successMessage = '✓ Pago anulado exitosamente';
-        
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
-
+        this.toast.success('Pago anulado exitosamente');
         this.cerrarModalAnular();
         this.loadPagos();
       },
@@ -628,10 +624,7 @@ export class PagosComponent implements OnInit {
     link.click();
     document.body.removeChild(link);
 
-    this.successMessage = '📥 Archivo exportado exitosamente';
-    setTimeout(() => {
-      this.successMessage = '';
-    }, 3000);
+    this.toast.success('Archivo exportado exitosamente');
   }
 
   // ===== COMPROBANTE =====
@@ -698,31 +691,17 @@ export class PagosComponent implements OnInit {
       this.subiendoComprobante = false;
       this.guardando = false;
       this.ultimoPagoRegistradoId = pagoId;
-      this.successMessage = `✓ Pago registrado con comprobante. Recibo: ${numeroRecibo}`;
-
-      setTimeout(() => {
-        this.successMessage = '';
-        this.ultimoPagoRegistradoId = null;
-      }, 8000);
-
+      this.toast.success(`Pago registrado con comprobante. Recibo: ${numeroRecibo}`);
       this.cargarMensualidadesPendientes();
       this.cerrarFormularioPago();
     })
-    .catch(err => {
+    .catch(() => {
       this.subiendoComprobante = false;
       this.guardando = false;
       this.ultimoPagoRegistradoId = pagoId;
-      // El pago se registró pero el comprobante falló
-      this.successMessage = `✓ Pago registrado. Recibo: ${numeroRecibo} (comprobante no se pudo subir)`;
-
-      setTimeout(() => {
-        this.successMessage = '';
-        this.ultimoPagoRegistradoId = null;
-      }, 8000);
-
+      this.toast.warning(`Pago registrado. Recibo: ${numeroRecibo} (comprobante no se pudo subir)`);
       this.cargarMensualidadesPendientes();
       this.cerrarFormularioPago();
-      console.error('Error subiendo comprobante:', err);
     });
   }
 

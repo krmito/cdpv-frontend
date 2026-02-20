@@ -41,7 +41,7 @@ import { AuthService } from '../../core/services/auth.service';
         <p class="subtitle">Sistema de Gestión</p>
 
         @if (errorMessage) {
-          <div class="alert alert-danger">
+          <div class="alert alert-danger" role="alert" aria-live="assertive">
             <span class="alert-icon">⚠️</span>
             {{ errorMessage }}
           </div>

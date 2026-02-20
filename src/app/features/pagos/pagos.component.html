@@ -244,13 +244,27 @@
 
         <!-- Tabla de Pagos -->
         @if (loadingPagos) {
-          <div class="loading-state">
-            <p>🔄 Cargando pagos...</p>
+          <div class="skeleton-table" aria-busy="true" aria-label="Cargando pagos">
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="skeleton-row">
+                <div class="skeleton-line skeleton-sm"></div>
+                <div class="skeleton-line skeleton-sm"></div>
+                <div class="skeleton-line skeleton-md"></div>
+                <div class="skeleton-line skeleton-sm"></div>
+                <div class="skeleton-line skeleton-xs"></div>
+                <div class="skeleton-line skeleton-xs"></div>
+                <div class="skeleton-line skeleton-xs"></div>
+              </div>
+            }
           </div>
         } @else if (pagos.length === 0) {
           <div class="empty-state">
-            <p>No hay pagos registrados</p>
-            <small>Los pagos aparecerán aquí cuando se registren</small>
+            <span class="empty-icon">💰</span>
+            <h4>No hay pagos registrados</h4>
+            <p>Los pagos aparecerán aquí cuando se registren desde la pestaña Registrar</p>
+            <button class="btn btn-primary" (click)="activeTab = 'registrar'" aria-label="Ir a registrar pago">
+              💳 Registrar Primer Pago
+            </button>
           </div>
         } @else {
           <div class="table-responsive">
@@ -482,10 +496,10 @@
 
   <!-- Modal: Formulario de Pago -->
   @if (mensualidadSeleccionada && showPagoForm) {
-    <div class="modal-overlay">
+    <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-pago-title">
       <div class="modal-card large">
         <div class="modal-header">
-          <h2>💰 Registrar Pago</h2>
+          <h2 id="modal-pago-title">💰 Registrar Pago</h2>
           <button class="btn-close" (click)="cerrarFormularioPago()">✕</button>
         </div>
 
@@ -520,7 +534,7 @@
 
           <form (ngSubmit)="registrarPago()">
             @if (formError) {
-              <div class="alert alert-danger">
+              <div class="alert alert-danger" role="alert" aria-live="polite">
                 {{ formError }}
               </div>
             }
@@ -667,10 +681,10 @@
 
   <!-- Modal: Ver Detalle del Pago -->
   @if (showDetalleModal && pagoSeleccionado) {
-    <div class="modal-overlay">
+    <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-detalle-title">
       <div class="modal-card">
         <div class="modal-header">
-          <h2>📄 Detalles del Pago</h2>
+          <h2 id="modal-detalle-title">📄 Detalles del Pago</h2>
           <button class="btn-close" (click)="cerrarDetalleModal()">✕</button>
         </div>
         
@@ -774,10 +788,10 @@
 
   <!-- Modal: Anular Pago -->
   @if (showAnularModal && pagoAAnular) {
-    <div class="modal-overlay">
+    <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-anular-title">
       <div class="modal-card">
         <div class="modal-header">
-          <h2>⚠️ Anular Pago</h2>
+          <h2 id="modal-anular-title">⚠️ Anular Pago</h2>
           <button class="btn-close" (click)="cerrarModalAnular()">✕</button>
         </div>
         
@@ -834,17 +848,6 @@
     </div>
   }
 
-  <!-- Mensaje de Éxito -->
-  @if (successMessage) {
-    <div class="alert alert-success success-float">
-      {{ successMessage }}
-      @if (ultimoPagoRegistradoId) {
-        <button class="btn-recibo-link" (click)="descargarRecibo(ultimoPagoRegistradoId)">
-          📄 Descargar Recibo PDF
-        </button>
-      }
-    </div>
-  }
       </div>
     </main>
   </div>

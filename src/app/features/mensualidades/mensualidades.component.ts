@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
+import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -61,7 +63,7 @@ interface ResumenMensual {
   templateUrl: './mensualidades.component.html',
   styleUrls: ['./mensualidades.component.css']
 })
-export class MensualidadesComponent implements OnInit {
+export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
   // Tabs
   activeTab: 'generar' | 'listado' | 'resumen' = 'generar';
 
@@ -123,7 +125,11 @@ export class MensualidadesComponent implements OnInit {
     { value: 12, label: 'Diciembre' }
   ];
 
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService, private toast: ToastService) {}
+
+  hasUnsavedChanges(): boolean {
+    return !!(this.editandoMensualidad);
+  }
 
   ngOnInit() {
     this.generarData.fecha_vencimiento = this.calcularFechaVencimientoDefault();
@@ -238,14 +244,8 @@ export class MensualidadesComponent implements OnInit {
       next: (response) => {
         this.generando = false;
         const cantidadGeneradas = response.cantidad_generadas || response.mensualidades?.length || 0;
-        this.successMessage = `✓ Se generaron ${cantidadGeneradas} mensualidades para ${this.getNombreMes(this.generarData.mes)} ${this.generarData.anio}`;
-        
-        // Actualizar contadores
+        this.toast.success(`Se generaron ${cantidadGeneradas} mensualidades para ${this.getNombreMes(this.generarData.mes)} ${this.generarData.anio}`);
         this.verificarMensualidadesExistentes();
-        
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
       },
       error: (err) => {
         this.generando = false;
@@ -294,9 +294,13 @@ export class MensualidadesComponent implements OnInit {
     });
   }
 
+  private filtroTimeout: any;
   onFiltroChange() {
-    this.currentPage = 1;
-    this.loadMensualidades();
+    clearTimeout(this.filtroTimeout);
+    this.filtroTimeout = setTimeout(() => {
+      this.currentPage = 1;
+      this.loadMensualidades();
+    }, 300);
   }
 
   cambiarPagina(page: number) {
@@ -459,19 +463,12 @@ export class MensualidadesComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.guardandoEdicion = false;
-        this.successMessage = '✓ Fecha de vencimiento actualizada';
-
-        // Actualizar la mensualidad en la lista local
+        this.toast.success('Fecha de vencimiento actualizada');
         const index = this.mensualidades.findIndex(m => m.id === this.editandoMensualidad!.id);
         if (index !== -1) {
           this.mensualidades[index].fecha_vencimiento = this.editFechaVencimiento;
         }
-
         this.cancelarEdicion();
-
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 3000);
       },
       error: (err) => {
         this.guardandoEdicion = false;
@@ -501,25 +498,15 @@ export class MensualidadesComponent implements OnInit {
     this.api.delete<any>(`mensualidades/${this.eliminandoMensualidad.id}`).subscribe({
       next: () => {
         this.eliminando = false;
-        this.successMessage = '✓ Mensualidad eliminada correctamente';
-
-        // Remover de la lista local
+        this.toast.success('Mensualidad eliminada correctamente');
         this.mensualidades = this.mensualidades.filter(m => m.id !== this.eliminandoMensualidad!.id);
         this.totalMensualidades--;
-
         this.cancelarEliminar();
-
-        // Actualizar contadores en tab generar
         this.verificarMensualidadesExistentes();
-
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 3000);
       },
       error: (err) => {
         this.eliminando = false;
-        console.error('Error al eliminar mensualidad:', err);
-        alert(err.error?.message || 'Error al eliminar la mensualidad');
+        this.toast.error(err.error?.message || 'Error al eliminar la mensualidad');
         this.cancelarEliminar();
       }
     });

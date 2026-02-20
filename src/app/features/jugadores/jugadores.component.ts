@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
+import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -145,16 +147,31 @@ interface CreateJugadorDto {
             </div>
           </div>
 
-          <!-- Loading -->
+          <!-- Skeleton loader -->
           @if (loading) {
-            <div class="loading">
-              <p>Cargando jugadores...</p>
+            <div class="card skeleton-card" aria-busy="true" aria-label="Cargando jugadores">
+              <div class="skeleton-header">
+                <div class="skeleton-line skeleton-title"></div>
+                <div class="skeleton-line skeleton-badge"></div>
+              </div>
+              @for (i of [1,2,3,4,5]; track i) {
+                <div class="skeleton-row">
+                  <div class="skeleton-circle"></div>
+                  <div class="skeleton-line skeleton-sm"></div>
+                  <div class="skeleton-line skeleton-md"></div>
+                  <div class="skeleton-line skeleton-sm"></div>
+                  <div class="skeleton-line skeleton-sm"></div>
+                  <div class="skeleton-line skeleton-md"></div>
+                  <div class="skeleton-line skeleton-xs"></div>
+                  <div class="skeleton-line skeleton-xs"></div>
+                </div>
+              }
             </div>
           }
 
           <!-- Error -->
           @if (error) {
-            <div class="alert alert-danger">
+            <div class="alert alert-danger" role="alert">
               {{ error }}
             </div>
           }
@@ -169,8 +186,10 @@ interface CreateJugadorDto {
 
               @if (jugadores.length === 0) {
                 <div class="empty-state">
-                  <p>No se encontraron jugadores</p>
-                  <button class="btn btn-primary" (click)="openNewForm()">
+                  <span class="empty-icon">👥</span>
+                  <h4>No se encontraron jugadores</h4>
+                  <p>Agrega el primer jugador o ajusta los filtros de búsqueda</p>
+                  <button class="btn btn-primary" (click)="openNewForm()" aria-label="Agregar primer jugador">
                     ➕ Agregar Primer Jugador
                   </button>
                 </div>
@@ -223,10 +242,10 @@ interface CreateJugadorDto {
                           </td>
                           <td>
                             <div class="action-buttons">
-                              <button class="btn-icon" (click)="verHistorial(jugador)" title="Ver Historial">
+                              <button class="btn-icon" (click)="verHistorial(jugador)" [attr.aria-label]="'Ver historial de ' + jugador.nombre + ' ' + jugador.apellido" title="Ver Historial">
                                 📋
                               </button>
-                              <button class="btn-icon" (click)="openEditForm(jugador)" title="Editar">
+                              <button class="btn-icon" (click)="openEditForm(jugador)" [attr.aria-label]="'Editar ' + jugador.nombre + ' ' + jugador.apellido" title="Editar">
                                 ✏️
                               </button>
                             </div>
@@ -265,11 +284,11 @@ interface CreateJugadorDto {
 
           <!-- Modal Nuevo Jugador -->
           @if (showNewForm) {
-            <div class="modal-overlay">
+            <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-new-title">
               <div class="modal-card">
                 <div class="modal-header">
-                  <h2>➕ Nuevo Jugador</h2>
-                  <button class="btn-close" (click)="closeNewForm()">✕</button>
+                  <h2 id="modal-new-title">➕ Nuevo Jugador</h2>
+                  <button class="btn-close" (click)="closeNewForm()" aria-label="Cerrar modal">✕</button>
                 </div>
                 
                 <form (ngSubmit)="onSubmit()">
@@ -302,34 +321,47 @@ interface CreateJugadorDto {
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label>Nombre <span class="required">*</span></label>
+                          <label for="new-nombre">Nombre <span class="required">*</span></label>
                           <input
+                            id="new-nombre"
                             type="text"
-                            class="form-control"
+                            [class]="'form-control' + (formSubmitted && !newJugador.nombre ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.nombre"
                             name="nombre"
                             required
                             placeholder="Juan"
+                            [attr.aria-invalid]="formSubmitted && !newJugador.nombre"
+                            aria-describedby="new-nombre-error"
                           />
+                          @if (formSubmitted && !newJugador.nombre) {
+                            <span id="new-nombre-error" class="field-error" role="alert">El nombre es obligatorio</span>
+                          }
                         </div>
 
                         <div class="form-group">
-                          <label>Apellido <span class="required">*</span></label>
+                          <label for="new-apellido">Apellido <span class="required">*</span></label>
                           <input
+                            id="new-apellido"
                             type="text"
-                            class="form-control"
+                            [class]="'form-control' + (formSubmitted && !newJugador.apellido ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.apellido"
                             name="apellido"
                             required
                             placeholder="Pérez García"
+                            [attr.aria-invalid]="formSubmitted && !newJugador.apellido"
+                            aria-describedby="new-apellido-error"
                           />
+                          @if (formSubmitted && !newJugador.apellido) {
+                            <span id="new-apellido-error" class="field-error" role="alert">El apellido es obligatorio</span>
+                          }
                         </div>
                       </div>
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label>Tipo Documento</label>
+                          <label for="new-tipo-doc">Tipo Documento</label>
                           <select
+                            id="new-tipo-doc"
                             class="form-control"
                             [(ngModel)]="newJugador.tipo_documento"
                             name="tipo_documento"
@@ -343,34 +375,47 @@ interface CreateJugadorDto {
                         </div>
 
                         <div class="form-group">
-                          <label>Documento <span class="required">*</span></label>
+                          <label for="new-documento">Documento <span class="required">*</span></label>
                           <input
+                            id="new-documento"
                             type="text"
-                            class="form-control"
+                            [class]="'form-control' + (formSubmitted && !newJugador.documento ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.documento"
                             name="documento"
                             required
                             placeholder="1234567890"
                             maxlength="15"
+                            [attr.aria-invalid]="formSubmitted && !newJugador.documento"
+                            aria-describedby="new-documento-error"
                           />
+                          @if (formSubmitted && !newJugador.documento) {
+                            <span id="new-documento-error" class="field-error" role="alert">El documento es obligatorio</span>
+                          }
                         </div>
                       </div>
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label>Fecha de Nacimiento <span class="required">*</span></label>
+                          <label for="new-fecha">Fecha de Nacimiento <span class="required">*</span></label>
                           <input
+                            id="new-fecha"
                             type="date"
-                            class="form-control"
+                            [class]="'form-control' + (formSubmitted && !newJugador.fecha_nacimiento ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.fecha_nacimiento"
                             name="fecha_nacimiento"
                             required
+                            [attr.aria-invalid]="formSubmitted && !newJugador.fecha_nacimiento"
+                            aria-describedby="new-fecha-error"
                           />
+                          @if (formSubmitted && !newJugador.fecha_nacimiento) {
+                            <span id="new-fecha-error" class="field-error" role="alert">La fecha de nacimiento es obligatoria</span>
+                          }
                         </div>
 
                         <div class="form-group">
-                          <label>Posición</label>
+                          <label for="new-posicion">Posición</label>
                           <input
+                            id="new-posicion"
                             type="text"
                             class="form-control"
                             [(ngModel)]="newJugador.posicion"
@@ -386,16 +431,22 @@ interface CreateJugadorDto {
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label>Teléfono <span class="required">*</span></label>
+                          <label for="new-telefono">Teléfono <span class="required">*</span></label>
                           <input
+                            id="new-telefono"
                             type="tel"
-                            class="form-control"
+                            [class]="'form-control' + (formSubmitted && !newJugador.telefono ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.telefono"
                             name="telefono"
                             required
                             placeholder="3001234567"
                             maxlength="15"
+                            [attr.aria-invalid]="formSubmitted && !newJugador.telefono"
+                            aria-describedby="new-telefono-error"
                           />
+                          @if (formSubmitted && !newJugador.telefono) {
+                            <span id="new-telefono-error" class="field-error" role="alert">El teléfono es obligatorio</span>
+                          }
                         </div>
 
                         <div class="form-group">
@@ -453,12 +504,15 @@ interface CreateJugadorDto {
                       <h3>Categoría</h3>
 
                       <div class="form-group">
-                        <label>Categoría <span class="required">*</span></label>
+                        <label for="new-categoria">Categoría <span class="required">*</span></label>
                         <select
-                          class="form-control"
+                          id="new-categoria"
+                          [class]="'form-control' + (formSubmitted && !(newJugador.categoria_id > 0) ? ' is-invalid' : '')"
                           [(ngModel)]="newJugador.categoria_id"
                           name="categoria_id"
                           required
+                          [attr.aria-invalid]="formSubmitted && !(newJugador.categoria_id > 0)"
+                          aria-describedby="new-categoria-error"
                         >
                           <option [ngValue]="0">Seleccione una categoría</option>
                           @for (cat of categorias; track cat.id) {
@@ -467,7 +521,9 @@ interface CreateJugadorDto {
                             </option>
                           }
                         </select>
-
+                        @if (formSubmitted && !(newJugador.categoria_id > 0)) {
+                          <span id="new-categoria-error" class="field-error" role="alert">Selecciona una categoría</span>
+                        }
                         @if (selectedCategoria) {
                           <div class="categoria-info">
                             <p><strong>Mensualidad:</strong> \${{ formatNumber(selectedCategoria.valor_mensualidad) }}</p>
@@ -483,18 +539,18 @@ interface CreateJugadorDto {
                   </div>
 
                   <div class="modal-footer">
-                    <button 
-                      type="button" 
-                      class="btn btn-secondary" 
+                    <button
+                      type="button"
+                      class="btn btn-secondary"
                       (click)="closeNewForm()"
                       [disabled]="saving"
                     >
                       Cancelar
                     </button>
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       class="btn btn-primary"
-                      [disabled]="!isFormValid() || saving"
+                      [disabled]="saving"
                     >
                       {{ saving ? 'Guardando...' : '✓ Guardar Jugador' }}
                     </button>
@@ -506,11 +562,11 @@ interface CreateJugadorDto {
 
           <!-- Modal Editar Jugador -->
           @if (showEditForm && editingJugador) {
-            <div class="modal-overlay">
+            <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-edit-title">
               <div class="modal-card">
                 <div class="modal-header">
-                  <h2>✏️ Editar Jugador</h2>
-                  <button class="btn-close" (click)="closeEditForm()">✕</button>
+                  <h2 id="modal-edit-title">✏️ Editar Jugador</h2>
+                  <button class="btn-close" (click)="closeEditForm()" aria-label="Cerrar modal">✕</button>
                 </div>
                 
                 <form (ngSubmit)="onSubmitEdit()">
@@ -777,11 +833,11 @@ interface CreateJugadorDto {
 
           <!-- Modal Historial de Pagos -->
           @if (showHistorialModal && jugadorHistorial) {
-            <div class="modal-overlay">
+            <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-historial-title">
               <div class="modal-card modal-historial">
                 <div class="modal-header">
-                  <h2>📋 Historial de Pagos</h2>
-                  <button class="btn-close" (click)="closeHistorialModal()">✕</button>
+                  <h2 id="modal-historial-title">📋 Historial de Pagos</h2>
+                  <button class="btn-close" (click)="closeHistorialModal()" aria-label="Cerrar historial">✕</button>
                 </div>
                 
                 <div class="modal-body">
@@ -1144,6 +1200,88 @@ interface CreateJugadorDto {
     </div>
   `,
   styles: [`
+    /* Skeleton loader */
+    .skeleton-card { padding: 24px; }
+    .skeleton-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .skeleton-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 0;
+      border-top: 1px solid #e5e7eb;
+    }
+    .skeleton-line, .skeleton-circle {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .skeleton-circle { width: 36px; height: 36px; border-radius: 50%; }
+    .skeleton-title { width: 160px; height: 20px; }
+    .skeleton-badge { width: 80px; height: 24px; border-radius: 12px; }
+    .skeleton-xs { width: 60px; height: 14px; }
+    .skeleton-sm { width: 90px; height: 14px; }
+    .skeleton-md { width: 140px; height: 14px; }
+    @keyframes shimmer {
+      from { background-position: 200% 0; }
+      to { background-position: -200% 0; }
+    }
+
+    /* Field validation */
+    .form-control.is-invalid {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 2px rgba(239,68,68,0.15);
+    }
+    .field-error {
+      display: block;
+      margin-top: 4px;
+      font-size: 12px;
+      color: #ef4444;
+      font-weight: 500;
+    }
+
+    /* Empty state mejorado */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+      gap: 12px;
+      text-align: center;
+    }
+    .empty-state .empty-icon {
+      font-size: 48px;
+      line-height: 1;
+    }
+    .empty-state h4 {
+      margin: 0;
+      font-size: 18px;
+      color: #374151;
+      font-weight: 600;
+    }
+    .empty-state p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .filters-grid {
+        grid-template-columns: 1fr 1fr !important;
+      }
+      td, th { padding: 10px 8px !important; font-size: 13px !important; }
+    }
+    @media (max-width: 480px) {
+      .filters-grid { grid-template-columns: 1fr !important; }
+    }
+
     .layout {
       display: flex;
       flex-direction: column;
@@ -2023,18 +2161,21 @@ interface CreateJugadorDto {
     }
   `]
 })
-export class JugadoresComponent implements OnInit {
+export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
 
   jugadores: Jugador[] = [];
   categorias: Categoria[] = [];
   loading = true;
   error = '';
   showNewForm = false;
-  showEditForm = false;  // Nuevo
+  showEditForm = false;
   saving = false;
   formError = '';
   successMessage = '';
+  formSubmitted = false;
+  private filterTimeout: any;
 
   // Nuevo jugador
   newJugador: CreateJugadorDto = {
@@ -2157,10 +2298,22 @@ export class JugadoresComponent implements OnInit {
     });
   }
 
+  hasUnsavedChanges(): boolean {
+    if (this.showNewForm) {
+      return !!(this.newJugador.nombre || this.newJugador.apellido || this.newJugador.documento);
+    }
+    if (this.showEditForm) {
+      return true;
+    }
+    return false;
+  }
+
   onFilterChange() {
-    console.log('Filtro cambiado. Filtros actuales:', this.filters);
-    this.currentPage = 1;
-    this.loadJugadores();
+    clearTimeout(this.filterTimeout);
+    this.filterTimeout = setTimeout(() => {
+      this.currentPage = 1;
+      this.loadJugadores();
+    }, 300);
   }
 
   clearFilters() {
@@ -2183,12 +2336,14 @@ export class JugadoresComponent implements OnInit {
   openNewForm() {
     this.showNewForm = true;
     this.formError = '';
+    this.formSubmitted = false;
     this.resetForm();
   }
 
   closeNewForm() {
     this.showNewForm = false;
     this.formError = '';
+    this.formSubmitted = false;
     this.resetForm();
   }
 
@@ -2223,6 +2378,7 @@ export class JugadoresComponent implements OnInit {
   }
 
   onSubmit() {
+    this.formSubmitted = true;
     if (!this.isFormValid()) {
       this.formError = 'Por favor complete todos los campos obligatorios';
       return;
@@ -2255,8 +2411,7 @@ export class JugadoresComponent implements OnInit {
               this.subiendoFoto = false;
               this.saving = false;
               this.showNewForm = false;
-              this.successMessage = `Jugador ${jugador.nombre} ${jugador.apellido} creado exitosamente`;
-              setTimeout(() => { this.successMessage = ''; }, 5000);
+              this.toast.success(`Jugador ${jugador.nombre} ${jugador.apellido} creado exitosamente`);
               this.currentPage = 1;
               this.loadJugadores();
               this.resetForm();
@@ -2265,8 +2420,7 @@ export class JugadoresComponent implements OnInit {
               this.subiendoFoto = false;
               this.saving = false;
               this.showNewForm = false;
-              this.successMessage = `Jugador creado, pero hubo un error al subir la foto`;
-              setTimeout(() => { this.successMessage = ''; }, 5000);
+              this.toast.warning(`Jugador creado, pero hubo un error al subir la foto`);
               this.currentPage = 1;
               this.loadJugadores();
               this.resetForm();
@@ -2275,8 +2429,7 @@ export class JugadoresComponent implements OnInit {
         } else {
           this.saving = false;
           this.showNewForm = false;
-          this.successMessage = `Jugador ${jugador.nombre} ${jugador.apellido} creado exitosamente`;
-          setTimeout(() => { this.successMessage = ''; }, 5000);
+          this.toast.success(`Jugador ${jugador.nombre} ${jugador.apellido} creado exitosamente`);
           this.currentPage = 1;
           this.loadJugadores();
           this.resetForm();
@@ -2353,6 +2506,7 @@ export class JugadoresComponent implements OnInit {
   }
 
   onSubmitEdit() {
+    this.formSubmitted = true;
     if (!this.isEditFormValid() || !this.editingJugador) {
       this.formError = 'Por favor complete todos los campos obligatorios';
       return;
@@ -2385,32 +2539,28 @@ export class JugadoresComponent implements OnInit {
             next: () => {
               this.subiendoFoto = false;
               this.saving = false;
-              this.successMessage = `Jugador ${jugador.nombre} ${jugador.apellido} actualizado exitosamente`;
+              this.toast.success(`Jugador ${jugador.nombre} ${jugador.apellido} actualizado exitosamente`);
               this.showEditForm = false;
               this.closeEditForm();
               if (!this.currentPage || this.currentPage < 1) this.currentPage = 1;
               this.loadJugadores();
-              setTimeout(() => { this.successMessage = ''; }, 5000);
             },
-            error: (err) => {
+            error: () => {
               this.subiendoFoto = false;
               this.saving = false;
-              // Datos guardados pero foto falló
-              this.successMessage = `Jugador actualizado, pero hubo un error al subir la foto`;
+              this.toast.warning(`Jugador actualizado, pero hubo un error al subir la foto`);
               this.showEditForm = false;
               this.closeEditForm();
               this.loadJugadores();
-              setTimeout(() => { this.successMessage = ''; }, 5000);
             }
           });
         } else {
           this.saving = false;
-          this.successMessage = `Jugador ${jugador.nombre} ${jugador.apellido} actualizado exitosamente`;
+          this.toast.success(`Jugador ${jugador.nombre} ${jugador.apellido} actualizado exitosamente`);
           this.showEditForm = false;
           this.closeEditForm();
           if (!this.currentPage || this.currentPage < 1) this.currentPage = 1;
           this.loadJugadores();
-          setTimeout(() => { this.successMessage = ''; }, 5000);
         }
       },
       error: (err) => {

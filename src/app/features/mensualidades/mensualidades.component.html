@@ -201,13 +201,28 @@
 
               <!-- Tabla -->
               @if (loadingMensualidades) {
-                <div class="loading-state">
-                  <p>🔄 Cargando mensualidades...</p>
+                <div class="skeleton-table" aria-busy="true" aria-label="Cargando mensualidades">
+                  @for (i of [1,2,3,4,5]; track i) {
+                    <div class="skeleton-row">
+                      <div class="skeleton-line skeleton-md"></div>
+                      <div class="skeleton-line skeleton-sm"></div>
+                      <div class="skeleton-line skeleton-sm"></div>
+                      <div class="skeleton-line skeleton-xs"></div>
+                      <div class="skeleton-line skeleton-xs"></div>
+                      <div class="skeleton-line skeleton-xs"></div>
+                      <div class="skeleton-line skeleton-sm"></div>
+                      <div class="skeleton-line skeleton-xs"></div>
+                    </div>
+                  }
                 </div>
               } @else if (mensualidades.length === 0) {
                 <div class="empty-state">
-                  <p>No hay mensualidades registradas</p>
-                  <small>Genera mensualidades desde el tab "Generar"</small>
+                  <span class="empty-icon">📅</span>
+                  <h4>No hay mensualidades registradas</h4>
+                  <p>Genera mensualidades desde el tab <strong>Generar Mensualidades</strong></p>
+                  <button class="btn btn-primary" (click)="activeTab = 'generar'" aria-label="Ir a generar mensualidades">
+                    🎯 Generar Ahora
+                  </button>
                 </div>
               } @else {
                 <div class="table-responsive">
@@ -247,6 +262,7 @@
                               class="btn btn-small btn-edit"
                               (click)="editarMensualidad(mens)"
                               title="Editar fecha de vencimiento"
+                              [attr.aria-label]="'Editar fecha de vencimiento de ' + mens.jugador.nombre"
                             >
                               ✏️
                             </button>
@@ -255,6 +271,7 @@
                                 class="btn btn-small btn-delete"
                                 (click)="confirmarEliminar(mens)"
                                 title="Eliminar mensualidad"
+                                [attr.aria-label]="'Eliminar mensualidad de ' + mens.jugador.nombre"
                               >
                                 🗑️
                               </button>
@@ -423,9 +440,9 @@
 
         <!-- Modal de Edición -->
         @if (editandoMensualidad) {
-          <div class="modal-overlay">
+          <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-edit-mens-title">
             <div class="modal-content">
-              <h3>✏️ Editar Fecha de Vencimiento</h3>
+              <h3 id="modal-edit-mens-title">✏️ Editar Fecha de Vencimiento</h3>
               <p class="modal-subtitle">
                 {{ editandoMensualidad.jugador.nombre }} {{ editandoMensualidad.jugador.apellido }} -
                 {{ getNombreMes(editandoMensualidad.mes) }} {{ editandoMensualidad.anio }}
@@ -458,9 +475,9 @@
 
         <!-- Modal de Confirmación de Eliminación -->
         @if (eliminandoMensualidad) {
-          <div class="modal-overlay">
+          <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-delete-mens-title">
             <div class="modal-content">
-              <h3>🗑️ Eliminar Mensualidad</h3>
+              <h3 id="modal-delete-mens-title">🗑️ Eliminar Mensualidad</h3>
               <p class="modal-subtitle">
                 {{ eliminandoMensualidad.jugador.nombre }} {{ eliminandoMensualidad.jugador.apellido }} -
                 {{ getNombreMes(eliminandoMensualidad.mes) }} {{ eliminandoMensualidad.anio }}
@@ -487,12 +504,6 @@
           </div>
         }
 
-        <!-- Mensaje de Éxito -->
-        @if (successMessage) {
-          <div class="alert alert-success success-float">
-            {{ successMessage }}
-          </div>
-        }
       </div>
     </main>
   </div>

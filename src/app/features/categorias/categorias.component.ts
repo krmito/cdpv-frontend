@@ -2,6 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
+import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -68,10 +70,23 @@ interface PaginatedResponse {
             </div>
           }
 
-          <!-- Loading -->
+          <!-- Skeleton loader -->
           @if (loading) {
-            <div class="loading">
-              <p>Cargando categorias...</p>
+            <div class="card skeleton-card" aria-busy="true" aria-label="Cargando categorías">
+              <div class="skeleton-header">
+                <div class="skeleton-line skeleton-title"></div>
+                <div class="skeleton-line skeleton-badge"></div>
+              </div>
+              @for (i of [1,2,3,4]; track i) {
+                <div class="skeleton-row">
+                  <div class="skeleton-line skeleton-md"></div>
+                  <div class="skeleton-line skeleton-sm"></div>
+                  <div class="skeleton-line skeleton-sm"></div>
+                  <div class="skeleton-line skeleton-lg"></div>
+                  <div class="skeleton-line skeleton-xs"></div>
+                  <div class="skeleton-line skeleton-xs"></div>
+                </div>
+              }
             </div>
           }
 
@@ -79,15 +94,17 @@ interface PaginatedResponse {
           @if (!loading && !error) {
             <div class="card">
               <div class="table-header">
-                <h3>Lista de Categorias</h3>
-                <span class="badge">{{ categorias.length }} categorias</span>
+                <h3>Lista de Categorías</h3>
+                <span class="badge">{{ categorias.length }} categorías</span>
               </div>
 
               @if (categorias.length === 0) {
                 <div class="empty-state">
-                  <p>No hay categorias registradas</p>
-                  <button class="btn btn-primary" (click)="openNewForm()">
-                    + Crear Primera Categoria
+                  <span class="empty-icon">📁</span>
+                  <h4>No hay categorías registradas</h4>
+                  <p>Crea la primera categoría para empezar a organizar a los jugadores</p>
+                  <button class="btn btn-primary" (click)="openNewForm()" aria-label="Crear primera categoría">
+                    ➕ Crear Primera Categoría
                   </button>
                 </div>
               } @else {
@@ -129,13 +146,14 @@ interface PaginatedResponse {
                           </td>
                           <td>
                             <div class="action-buttons">
-                              <button class="btn-icon" (click)="openEditForm(categoria)" title="Editar">
+                              <button class="btn-icon" (click)="openEditForm(categoria)" title="Editar" [attr.aria-label]="'Editar categoría ' + categoria.nombre">
                                 ✏️
                               </button>
                               <button
                                 class="btn-icon"
                                 (click)="toggleActive(categoria)"
                                 [title]="categoria.activo ? 'Desactivar' : 'Activar'"
+                                [attr.aria-label]="(categoria.activo ? 'Desactivar' : 'Activar') + ' categoría ' + categoria.nombre"
                               >
                                 {{ categoria.activo ? '🔴' : '🟢' }}
                               </button>
@@ -152,31 +170,37 @@ interface PaginatedResponse {
 
           <!-- Modal Nueva Categoria -->
           @if (showNewForm) {
-            <div class="modal-overlay">
+            <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-new-cat-title">
               <div class="modal-card">
                 <div class="modal-header">
-                  <h2>+ Nueva Categoria</h2>
-                  <button class="btn-close" (click)="closeNewForm()">✕</button>
+                  <h2 id="modal-new-cat-title">➕ Nueva Categoría</h2>
+                  <button class="btn-close" (click)="closeNewForm()" aria-label="Cerrar modal">✕</button>
                 </div>
 
                 <form (ngSubmit)="onSubmit()">
                   <div class="modal-body">
                     @if (formError) {
-                      <div class="alert alert-danger">
+                      <div class="alert alert-danger" role="alert">
                         {{ formError }}
                       </div>
                     }
 
                     <div class="form-group">
-                      <label>Nombre <span class="required">*</span></label>
+                      <label for="new-cat-nombre">Nombre <span class="required">*</span></label>
                       <input
+                        id="new-cat-nombre"
                         type="text"
-                        class="form-control"
+                        [class]="'form-control' + (formSubmitted && !newCategoria.nombre ? ' is-invalid' : '')"
                         [(ngModel)]="newCategoria.nombre"
                         name="nombre"
                         required
                         placeholder="Ej: Pre-infantil, Infantil, Juvenil..."
+                        [attr.aria-invalid]="formSubmitted && !newCategoria.nombre"
+                        aria-describedby="new-cat-nombre-error"
                       />
+                      @if (formSubmitted && !newCategoria.nombre) {
+                        <span id="new-cat-nombre-error" class="field-error" role="alert">El nombre es obligatorio</span>
+                      }
                     </div>
 
                     <div class="form-row">
@@ -206,29 +230,36 @@ interface PaginatedResponse {
                     </div>
 
                     <div class="form-group">
-                      <label>Valor Mensualidad <span class="required">*</span></label>
+                      <label for="new-cat-monto">Valor Mensualidad <span class="required">*</span></label>
                       <div class="input-with-prefix">
                         <span class="prefix">$</span>
                         <input
+                          id="new-cat-monto"
                           type="number"
-                          class="form-control"
+                          [class]="'form-control' + (formSubmitted && !(newCategoria.valor_mensualidad > 0) ? ' is-invalid' : '')"
                           [(ngModel)]="newCategoria.valor_mensualidad"
                           name="valor_mensualidad"
                           required
                           min="0"
                           placeholder="40000"
+                          [attr.aria-invalid]="formSubmitted && !(newCategoria.valor_mensualidad > 0)"
+                          aria-describedby="new-cat-monto-error"
                         />
                       </div>
+                      @if (formSubmitted && !(newCategoria.valor_mensualidad > 0)) {
+                        <span id="new-cat-monto-error" class="field-error" role="alert">El valor de mensualidad es obligatorio</span>
+                      }
                     </div>
 
                     <div class="form-group">
-                      <label>Descripcion</label>
+                      <label for="new-cat-desc">Descripción</label>
                       <textarea
+                        id="new-cat-desc"
                         class="form-control"
                         [(ngModel)]="newCategoria.descripcion"
                         name="descripcion"
                         rows="3"
-                        placeholder="Descripcion de la categoria..."
+                        placeholder="Descripción de la categoría..."
                       ></textarea>
                     </div>
 
@@ -249,9 +280,9 @@ interface PaginatedResponse {
                     <button
                       type="submit"
                       class="btn btn-primary"
-                      [disabled]="!isFormValid() || saving"
+                      [disabled]="saving"
                     >
-                      {{ saving ? 'Guardando...' : 'Guardar Categoria' }}
+                      {{ saving ? 'Guardando...' : 'Guardar Categoría' }}
                     </button>
                   </div>
                 </form>
@@ -261,11 +292,11 @@ interface PaginatedResponse {
 
           <!-- Modal Editar Categoria -->
           @if (showEditForm && editingCategoria) {
-            <div class="modal-overlay">
+            <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-edit-cat-title">
               <div class="modal-card">
                 <div class="modal-header">
-                  <h2>✏️ Editar Categoria</h2>
-                  <button class="btn-close" (click)="closeEditForm()">✕</button>
+                  <h2 id="modal-edit-cat-title">✏️ Editar Categoría</h2>
+                  <button class="btn-close" (click)="closeEditForm()" aria-label="Cerrar modal">✕</button>
                 </div>
 
                 <form (ngSubmit)="onSubmitEdit()">
@@ -393,6 +424,35 @@ interface PaginatedResponse {
     </div>
   `,
   styles: [`
+    /* Skeleton */
+    .skeleton-card { padding: 24px; }
+    .skeleton-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .skeleton-row { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-top: 1px solid #e5e7eb; }
+    .skeleton-line {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+    .skeleton-title { width: 160px; height: 20px; }
+    .skeleton-badge { width: 80px; height: 24px; border-radius: 12px; }
+    .skeleton-xs { width: 60px; height: 14px; }
+    .skeleton-sm { width: 90px; height: 14px; }
+    .skeleton-md { width: 140px; height: 14px; }
+    .skeleton-lg { width: 200px; height: 14px; }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+    /* Field errors */
+    .form-control.is-invalid { border-color: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.15); }
+    .field-error { display: block; margin-top: 4px; font-size: 12px; color: #ef4444; font-weight: 500; }
+
+    /* Empty state mejorado */
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; gap: 12px; text-align: center; }
+    .empty-state .empty-icon { font-size: 48px; line-height: 1; }
+    .empty-state h4 { margin: 0; font-size: 18px; color: #374151; font-weight: 600; }
+    .empty-state p { margin: 0; color: #6b7280; font-size: 14px; }
+
     .layout {
       display: flex;
       flex-direction: column;
@@ -742,8 +802,9 @@ interface PaginatedResponse {
     }
   `]
 })
-export class CategoriasComponent implements OnInit {
+export class CategoriasComponent implements OnInit, CanComponentDeactivate {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
 
   categorias: Categoria[] = [];
   loading = true;
@@ -753,6 +814,7 @@ export class CategoriasComponent implements OnInit {
   showEditForm = false;
   saving = false;
   formError = '';
+  formSubmitted = false;
 
   // Nueva categoria
   newCategoria: CreateCategoriaDto = {
@@ -788,15 +850,23 @@ export class CategoriasComponent implements OnInit {
     });
   }
 
+  hasUnsavedChanges(): boolean {
+    if (this.showNewForm) return !!(this.newCategoria.nombre || this.newCategoria.valor_mensualidad > 0);
+    if (this.showEditForm) return true;
+    return false;
+  }
+
   openNewForm() {
     this.showNewForm = true;
     this.formError = '';
+    this.formSubmitted = false;
     this.resetForm();
   }
 
   closeNewForm() {
     this.showNewForm = false;
     this.formError = '';
+    this.formSubmitted = false;
     this.resetForm();
   }
 
@@ -818,6 +888,7 @@ export class CategoriasComponent implements OnInit {
   }
 
   onSubmit() {
+    this.formSubmitted = true;
     if (!this.isFormValid()) {
       this.formError = 'Por favor complete todos los campos obligatorios';
       return;
@@ -831,33 +902,21 @@ export class CategoriasComponent implements OnInit {
       valor_mensualidad: this.newCategoria.valor_mensualidad
     };
 
-    if (this.newCategoria.edad_minima) {
-      dataToSend.edad_minima = this.newCategoria.edad_minima;
-    }
-    if (this.newCategoria.edad_maxima) {
-      dataToSend.edad_maxima = this.newCategoria.edad_maxima;
-    }
-    if (this.newCategoria.descripcion) {
-      dataToSend.descripcion = this.newCategoria.descripcion;
-    }
+    if (this.newCategoria.edad_minima) dataToSend.edad_minima = this.newCategoria.edad_minima;
+    if (this.newCategoria.edad_maxima) dataToSend.edad_maxima = this.newCategoria.edad_maxima;
+    if (this.newCategoria.descripcion) dataToSend.descripcion = this.newCategoria.descripcion;
 
     this.api.post<any>('categorias', dataToSend).subscribe({
       next: (response) => {
         this.saving = false;
         this.showNewForm = false;
-        this.successMessage = `Categoria "${response.data?.nombre || response.nombre}" creada exitosamente`;
-
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
-
+        this.toast.success(`Categoría "${response.data?.nombre || response.nombre}" creada exitosamente`);
         this.loadCategorias();
         this.resetForm();
       },
       error: (err) => {
         this.saving = false;
-        this.formError = err.error?.message || 'Error al crear la categoria';
-        console.error('Error creating categoria:', err);
+        this.formError = err.error?.message || 'Error al crear la categoría';
       }
     });
   }
@@ -891,6 +950,7 @@ export class CategoriasComponent implements OnInit {
   }
 
   onSubmitEdit() {
+    this.formSubmitted = true;
     if (!this.isEditFormValid() || !this.editingCategoria) {
       this.formError = 'Por favor complete todos los campos obligatorios';
       return;
@@ -918,14 +978,9 @@ export class CategoriasComponent implements OnInit {
     this.api.patch<any>(`categorias/${this.editingCategoria.id}`, dataToSend).subscribe({
       next: (response) => {
         this.saving = false;
-        this.successMessage = `Categoria "${response.data?.nombre || response.nombre}" actualizada exitosamente`;
-
+        this.toast.success(`Categoría "${response.data?.nombre || response.nombre}" actualizada exitosamente`);
         this.closeEditForm();
         this.loadCategorias();
-
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
       },
       error: (err) => {
         this.saving = false;
@@ -939,16 +994,11 @@ export class CategoriasComponent implements OnInit {
     this.api.patch<any>(`categorias/${categoria.id}/toggle-active`, {}).subscribe({
       next: (response) => {
         const updated = response.data || response;
-        this.successMessage = `Categoria "${updated.nombre}" ${updated.activo ? 'activada' : 'desactivada'}`;
+        this.toast.success(`Categoría "${updated.nombre}" ${updated.activo ? 'activada' : 'desactivada'}`);
         this.loadCategorias();
-
-        setTimeout(() => {
-          this.successMessage = '';
-        }, 5000);
       },
-      error: (err) => {
-        this.error = err.error?.message || 'Error al cambiar el estado';
-        console.error('Error toggling categoria:', err);
+      error: () => {
+        this.toast.error('Error al cambiar el estado de la categoría');
       }
     });
   }

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 
 export const routes: Routes = [
   {
@@ -16,19 +17,23 @@ export const routes: Routes = [
       },
       {
         path: 'jugadores',
-        loadComponent: () => import('./features/jugadores/jugadores.component').then(m => m.JugadoresComponent)
+        loadComponent: () => import('./features/jugadores/jugadores.component').then(m => m.JugadoresComponent),
+        canDeactivate: [unsavedChangesGuard]
       },
       {
         path: 'categorias',
-        loadComponent: () => import('./features/categorias/categorias.component').then(m => m.CategoriasComponent)
+        loadComponent: () => import('./features/categorias/categorias.component').then(m => m.CategoriasComponent),
+        canDeactivate: [unsavedChangesGuard]
       },
       {
         path: 'pagos',
-        loadComponent: () => import('./features/pagos/pagos.component').then(m => m.PagosComponent)
+        loadComponent: () => import('./features/pagos/pagos.component').then(m => m.PagosComponent),
+        canDeactivate: [unsavedChangesGuard]
       },
       {
         path: 'mensualidades',
-        loadComponent: () => import('./features/mensualidades/mensualidades.component').then(m => m.MensualidadesComponent)
+        loadComponent: () => import('./features/mensualidades/mensualidades.component').then(m => m.MensualidadesComponent),
+        canDeactivate: [unsavedChangesGuard]
       },
       {
         path: 'reportes',
