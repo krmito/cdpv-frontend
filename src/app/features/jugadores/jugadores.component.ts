@@ -307,8 +307,15 @@ interface CreateJugadorDto {
                       @if (scanSuccess) {
                         <div class="scan-badge-ok">✓ Datos extraídos del documento. Revisa y completa los campos faltantes.</div>
                       }
-                      @if (scanError) {
+                      @if (scanError && !scanQuotaExceeded) {
                         <div class="alert alert-danger" role="alert">{{ scanError }}</div>
+                      }
+                      @if (scanQuotaExceeded) {
+                        <div class="scan-quota-warning" role="alert">
+                          <strong>⚠️ Límite gratuito alcanzado</strong>
+                          <p>Has usado todos los escaneos disponibles en el plan gratuito de Gemini AI (1.500/día). Para seguir usando esta función, activa un plan de pago.</p>
+                          <a href="https://ai.google.dev/pricing" target="_blank" rel="noopener" class="btn-quota-link">Ver planes de Gemini →</a>
+                        </div>
                       }
                     </div>
 
@@ -1893,6 +1900,36 @@ interface CreateJugadorDto {
       font-size: 13px;
       font-weight: 500;
     }
+    .scan-quota-warning {
+      background: #fffbeb;
+      border: 1px solid #fcd34d;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: #92400e;
+    }
+    .scan-quota-warning strong {
+      display: block;
+      margin-bottom: 4px;
+      color: #78350f;
+    }
+    .scan-quota-warning p {
+      margin: 0 0 8px;
+      line-height: 1.5;
+    }
+    .btn-quota-link {
+      display: inline-block;
+      background: #f59e0b;
+      color: white;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .btn-quota-link:hover {
+      background: #d97706;
+    }
 
     /* Foto upload */
     .foto-upload-section {
@@ -2343,6 +2380,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   escaneando = false;
   scanSuccess = false;
   scanError = '';
+  scanQuotaExceeded = false;
 
   // Foto de perfil
   fotoFile: File | null = null;
@@ -2484,6 +2522,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.escaneando = false;
     this.scanSuccess = false;
     this.scanError = '';
+    this.scanQuotaExceeded = false;
     this.resetForm();
   }
 
@@ -2496,6 +2535,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.escaneando = true;
     this.scanError = '';
     this.scanSuccess = false;
+    this.scanQuotaExceeded = false;
 
     const formData = new FormData();
     formData.append('imagen', file);
@@ -2513,7 +2553,13 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
       },
       error: (err) => {
         this.escaneando = false;
-        this.scanError = err.error?.message || 'No se pudo extraer la información del documento';
+        if (err.status === 429) {
+          this.scanQuotaExceeded = true;
+          this.scanError = '';
+        } else {
+          this.scanError = err.error?.message || 'No se pudo extraer la información del documento';
+          this.scanQuotaExceeded = false;
+        }
       },
     });
   }
