@@ -1238,6 +1238,29 @@ interface CreateJugadorDto {
               </div>
             </div>
           }
+
+          <!-- Modal Reenviar Notificaciones -->
+          @if (showReenviarModal) {
+            <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-reenviar-title">
+              <div class="modal-content modal-small">
+                <div class="modal-header">
+                  <h2 id="modal-reenviar-title">Enviar notificaciones</h2>
+                </div>
+                <div class="modal-body">
+                  <p>Se registró el correo <strong>{{ reenviarEmail }}</strong>.</p>
+                  <p>¿Deseas enviar las notificaciones de las mensualidades pendientes a este correo?</p>
+                </div>
+                <div class="form-footer">
+                  <button type="button" class="btn btn-secondary" (click)="cancelarReenviar()" [disabled]="reenviando">
+                    Ahora no
+                  </button>
+                  <button type="button" class="btn btn-primary" (click)="confirmarReenviar()" [disabled]="reenviando">
+                    {{ reenviando ? 'Enviando...' : 'Sí, enviar' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
         </main>
       </div>
     </div>
@@ -2272,6 +2295,12 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   fotoViewerUrl: string | null = null;
   fotoViewerNombre: string | null = null;
 
+  // Reenviar notificaciones
+  showReenviarModal = false;
+  reenviarJugadorId: number | null = null;
+  reenviarEmail = '';
+  reenviando = false;
+
   // Import Excel
   showImportModal = false;
   importStep = 1;
@@ -2578,10 +2607,19 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     console.log('Actualizando jugador:', dataToSend);
 
     const jugadorId = this.editingJugador.id;
+    const teniaCorreo = !!(this.editingJugador.email || this.editingJugador.email_acudiente);
+    const ahoraTieneCorreo = !!(dataToSend.email || dataToSend.email_acudiente);
 
     this.api.patch<any>(`jugadores/${jugadorId}`, dataToSend).subscribe({
       next: (response) => {
         const jugador = response.data || response;
+
+        const ofrecerReenvio = !teniaCorreo && ahoraTieneCorreo;
+        if (ofrecerReenvio) {
+          this.reenviarJugadorId = jugadorId;
+          this.reenviarEmail = dataToSend.email || dataToSend.email_acudiente || '';
+          this.showReenviarModal = true;
+        }
 
         // Si hay foto nueva, subirla
         if (this.fotoFile) {
@@ -2623,6 +2661,36 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
         console.error('Error updating jugador:', err);
       }
     });
+  }
+
+  confirmarReenviar() {
+    if (!this.reenviarJugadorId) return;
+    this.reenviando = true;
+    this.api.post<any>(`jugadores/${this.reenviarJugadorId}/reenviar-notificaciones`, {}).subscribe({
+      next: (res) => {
+        this.reenviando = false;
+        this.showReenviarModal = false;
+        const data = res.data || res;
+        if (data.enviadas > 0) {
+          this.toast.success(`Se enviaron ${data.enviadas} notificaciones al correo registrado`);
+        } else {
+          this.toast.info('No hay mensualidades pendientes para notificar');
+        }
+        this.reenviarJugadorId = null;
+        this.reenviarEmail = '';
+      },
+      error: () => {
+        this.reenviando = false;
+        this.showReenviarModal = false;
+        this.toast.error('Error al enviar las notificaciones');
+      },
+    });
+  }
+
+  cancelarReenviar() {
+    this.showReenviarModal = false;
+    this.reenviarJugadorId = null;
+    this.reenviarEmail = '';
   }
 
   formatNumber(num: number): string {
