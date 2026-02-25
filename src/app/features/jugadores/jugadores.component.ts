@@ -294,6 +294,24 @@ interface CreateJugadorDto {
                 
                 <form (ngSubmit)="onSubmit()">
                   <div class="modal-body">
+                    <div class="scan-section">
+                      <input #docScanInput type="file" accept=".jpg,.jpeg,.png,.webp"
+                             capture="environment" style="display:none"
+                             (change)="onDocScanSelected($event)">
+                      @if (!scanSuccess) {
+                        <button type="button" class="btn btn-outline-secondary btn-scan"
+                                (click)="docScanInput.click()" [disabled]="escaneando">
+                          {{ escaneando ? '⏳ Extrayendo datos...' : '📷 Escanear documento de identidad' }}
+                        </button>
+                      }
+                      @if (scanSuccess) {
+                        <div class="scan-badge-ok">✓ Datos extraídos del documento. Revisa y completa los campos faltantes.</div>
+                      }
+                      @if (scanError) {
+                        <div class="alert alert-danger" role="alert">{{ scanError }}</div>
+                      }
+                    </div>
+
                     @if (formError) {
                       <div class="alert alert-danger">
                         {{ formError }}
@@ -1840,6 +1858,42 @@ interface CreateJugadorDto {
       font-size: 28px;
     }
 
+    /* Escaneo de documento */
+    .scan-section {
+      padding: 16px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 4px;
+    }
+    .btn-scan {
+      width: 100%;
+      padding: 10px;
+      font-size: 14px;
+      border: 2px dashed #94a3b8;
+      background: #f8fafc;
+      color: #475569;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-scan:hover:not(:disabled) {
+      border-color: #3b82f6;
+      color: #3b82f6;
+      background: #eff6ff;
+    }
+    .btn-scan:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    .scan-badge-ok {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      color: #166534;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
     /* Foto upload */
     .foto-upload-section {
       display: flex;
@@ -2285,6 +2339,11 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   loadingHistorial = false;
   historialError = '';
 
+  // Escaneo de documento con IA
+  escaneando = false;
+  scanSuccess = false;
+  scanError = '';
+
   // Foto de perfil
   fotoFile: File | null = null;
   fotoPreview: string | null = null;
@@ -2422,7 +2481,41 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.formError = '';
     this.formSubmitted = false;
     this.newFormTouched = {};
+    this.escaneando = false;
+    this.scanSuccess = false;
+    this.scanError = '';
     this.resetForm();
+  }
+
+  onDocScanSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const file = input.files[0];
+    input.value = '';
+
+    this.escaneando = true;
+    this.scanError = '';
+    this.scanSuccess = false;
+
+    const formData = new FormData();
+    formData.append('imagen', file);
+
+    this.api.postFile<any>('jugadores/extraer-documento', formData).subscribe({
+      next: (res) => {
+        const data = res.data || res;
+        if (data.nombre)           this.newJugador.nombre = data.nombre;
+        if (data.apellido)         this.newJugador.apellido = data.apellido;
+        if (data.tipo_documento)   this.newJugador.tipo_documento = data.tipo_documento;
+        if (data.documento)        this.newJugador.documento = data.documento;
+        if (data.fecha_nacimiento) this.newJugador.fecha_nacimiento = data.fecha_nacimiento;
+        this.escaneando = false;
+        this.scanSuccess = true;
+      },
+      error: (err) => {
+        this.escaneando = false;
+        this.scanError = err.error?.message || 'No se pudo extraer la información del documento';
+      },
+    });
   }
 
   resetForm() {
