@@ -66,6 +66,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
                   </ol>
                   <div class="info-note">
                     💡 Al guardar un jugador nuevo, el sistema le genera automáticamente la mensualidad del mes actual si aún no existe.
+                    Si el jugador tiene correo electrónico registrado, recibirá una notificación de la mensualidad generada. Si no tiene correo, el registro continúa normalmente sin enviar notificación.
                   </div>
 
                   <h4>Editar jugador</h4>
@@ -187,6 +188,7 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
                     <li>El sistema genera las mensualidades <strong>automáticamente el primer día de cada mes</strong> para todos los jugadores activos.</li>
                     <li>El monto de cada mensualidad corresponde al valor configurado en la categoría del jugador.</li>
                     <li>No es necesario hacer nada manualmente: el proceso corre en el servidor de forma programada.</li>
+                    <li>Si el jugador tiene correo electrónico registrado (propio o del acudiente), recibirá una notificación de la nueva mensualidad y un recordatorio 2 días antes del vencimiento. Si no tiene correo, el sistema omite la notificación sin afectar el proceso.</li>
                   </ul>
                   <div class="info-note">
                     💡 Si un jugador estaba inactivo al momento de la generación automática, no se le creará mensualidad. Si luego se activa, deberá generarse manualmente.

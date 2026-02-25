@@ -2439,7 +2439,9 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     // Convertir fecha a formato ISO 8601 (agregar la hora)
     const jugadorData = {
       ...this.newJugador,
-      fecha_nacimiento: this.newJugador.fecha_nacimiento + 'T00:00:00.000Z'
+      fecha_nacimiento: this.newJugador.fecha_nacimiento + 'T00:00:00.000Z',
+      email: this.newJugador.email || undefined,
+      email_acudiente: this.newJugador.email_acudiente || undefined,
     };
 
     console.log('Enviando jugador:', jugadorData);
@@ -2568,7 +2570,9 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     // Convertir fecha a formato ISO 8601
     const dataToSend = {
       ...this.editJugadorData,
-      fecha_nacimiento: this.editJugadorData.fecha_nacimiento + 'T00:00:00.000Z'
+      fecha_nacimiento: this.editJugadorData.fecha_nacimiento + 'T00:00:00.000Z',
+      email: this.editJugadorData.email || undefined,
+      email_acudiente: this.editJugadorData.email_acudiente || undefined,
     };
 
     console.log('Actualizando jugador:', dataToSend);

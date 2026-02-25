@@ -731,3 +731,15 @@
 .btn-danger:hover:not(:disabled) {
   background: #dc2626;
 }
+
+.form-note {
+  background: #f9fafb;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-top: 8px;
+}
+.form-note p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
