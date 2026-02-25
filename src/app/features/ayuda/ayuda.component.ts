@@ -55,7 +55,22 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
                 <div class="accordion-body">
                   <p>Módulo para la gestión completa de los jugadores del club.</p>
 
-                  <h4>Crear jugador</h4>
+                  <h4>Escanear documento de identidad (IA) ✨</h4>
+                  <p>El formulario de nuevo jugador incluye un botón <strong>"📷 Escanear documento de identidad"</strong> que usa inteligencia artificial para extraer los datos directamente de una foto del documento.</p>
+                  <ol>
+                    <li>Haz clic en <strong>"Nuevo Jugador"</strong>.</li>
+                    <li>Haz clic en el botón <strong>"📷 Escanear documento de identidad"</strong> en la parte superior del formulario.</li>
+                    <li>Selecciona una foto del documento (CC, TI, CE) desde tu computadora o cámara.</li>
+                    <li>Espera unos segundos mientras el sistema extrae los datos automáticamente.</li>
+                    <li>Los campos <strong>nombre, apellido, tipo de documento, número de documento y fecha de nacimiento</strong> se pre-llenan solos.</li>
+                    <li>Aparece un banner verde <em>"✓ Datos extraídos del documento"</em> como confirmación.</li>
+                    <li>Revisa los datos, completa <strong>teléfono y categoría</strong> (obligatorios, no están en el documento), y guarda normalmente.</li>
+                  </ol>
+                  <div class="info-note">
+                    💡 Los datos pre-llenados son totalmente editables. Si el sistema no pudo leer algún campo con certeza, simplemente quedará vacío para que lo completes manualmente. Formatos de imagen aceptados: JPG, PNG, WEBP (máximo 5MB). En dispositivos móviles, el botón activa directamente la cámara.
+                  </div>
+
+                  <h4>Crear jugador manualmente</h4>
                   <ol>
                     <li>Haz clic en el botón <strong>"Nuevo Jugador"</strong>.</li>
                     <li>Completa los <strong>campos obligatorios</strong> (marcados con <span class="req-mark">*</span>): nombre, apellido, documento, fecha de nacimiento, teléfono y categoría.</li>
