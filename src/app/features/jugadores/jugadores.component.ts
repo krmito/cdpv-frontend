@@ -307,14 +307,22 @@ interface CreateJugadorDto {
                       @if (scanSuccess) {
                         <div class="scan-badge-ok">✓ Datos extraídos del documento. Revisa y completa los campos faltantes.</div>
                       }
-                      @if (scanError && !scanQuotaExceeded) {
+                      @if (scanError && !scanQuotaExceeded && !scanApiKeyError) {
                         <div class="alert alert-danger" role="alert">{{ scanError }}</div>
                       }
                       @if (scanQuotaExceeded) {
                         <div class="scan-quota-warning" role="alert">
-                          <strong>⚠️ Límite gratuito alcanzado</strong>
-                          <p>Has usado todos los escaneos disponibles en el plan gratuito de Gemini AI (1.500/día). Para seguir usando esta función, activa un plan de pago.</p>
+                          <strong>⚠️ Límite de escaneos alcanzado</strong>
+                          <p>Has superado el límite de uso de Gemini AI. Para seguir usando esta función, revisa tu plan en Google AI Studio.</p>
                           <a href="https://ai.google.dev/pricing" target="_blank" rel="noopener" class="btn-quota-link">Ver planes de Gemini →</a>
+                        </div>
+                      }
+                      @if (scanApiKeyError) {
+                        <div class="scan-quota-warning" role="alert">
+                          <strong>⚠️ Función no configurada</strong>
+                          <p>Para usar el escaneo de documentos con IA necesitas una cuenta en <strong>Google AI Studio</strong> con un método de pago activo. Una vez configurada, el costo es muy bajo: aproximadamente <strong>USD $0.10 por cada 1.000 escaneos</strong> (imágenes).</p>
+                          <p>Consulta la sección <strong>Ayuda → Jugadores</strong> para ver cómo configurarlo paso a paso.</p>
+                          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="btn-quota-link">Configurar en Google AI Studio →</a>
                         </div>
                       }
                     </div>
@@ -2381,6 +2389,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   scanSuccess = false;
   scanError = '';
   scanQuotaExceeded = false;
+  scanApiKeyError = false;
 
   // Foto de perfil
   fotoFile: File | null = null;
@@ -2523,6 +2532,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.scanSuccess = false;
     this.scanError = '';
     this.scanQuotaExceeded = false;
+    this.scanApiKeyError = false;
     this.resetForm();
   }
 
@@ -2536,6 +2546,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.scanError = '';
     this.scanSuccess = false;
     this.scanQuotaExceeded = false;
+    this.scanApiKeyError = false;
 
     const formData = new FormData();
     formData.append('imagen', file);
@@ -2555,10 +2566,16 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
         this.escaneando = false;
         if (err.status === 429) {
           this.scanQuotaExceeded = true;
+          this.scanApiKeyError = false;
+          this.scanError = '';
+        } else if (err.status === 401) {
+          this.scanApiKeyError = true;
+          this.scanQuotaExceeded = false;
           this.scanError = '';
         } else {
           this.scanError = err.error?.message || 'No se pudo extraer la información del documento';
           this.scanQuotaExceeded = false;
+          this.scanApiKeyError = false;
         }
       },
     });

@@ -56,18 +56,41 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
                   <p>Módulo para la gestión completa de los jugadores del club.</p>
 
                   <h4>Escanear documento de identidad (IA) ✨</h4>
-                  <p>El formulario de nuevo jugador incluye un botón <strong>"📷 Escanear documento de identidad"</strong> que usa inteligencia artificial para extraer los datos directamente de una foto del documento.</p>
+                  <p>El formulario de nuevo jugador incluye un botón <strong>"📷 Escanear documento de identidad"</strong> que usa inteligencia artificial (Google Gemini) para leer una foto del documento y pre-llenar automáticamente los campos del formulario.</p>
+
+                  <h4>Cómo usarlo</h4>
                   <ol>
                     <li>Haz clic en <strong>"Nuevo Jugador"</strong>.</li>
                     <li>Haz clic en el botón <strong>"📷 Escanear documento de identidad"</strong> en la parte superior del formulario.</li>
-                    <li>Selecciona una foto del documento (CC, TI, CE) desde tu computadora o cámara.</li>
+                    <li>Selecciona una <strong>fotocopia o foto del documento</strong> (CC, TI, CE) desde tu computadora, o toma la foto directamente con la cámara del celular.</li>
                     <li>Espera unos segundos mientras el sistema extrae los datos automáticamente.</li>
                     <li>Los campos <strong>nombre, apellido, tipo de documento, número de documento y fecha de nacimiento</strong> se pre-llenan solos.</li>
                     <li>Aparece un banner verde <em>"✓ Datos extraídos del documento"</em> como confirmación.</li>
                     <li>Revisa los datos, completa <strong>teléfono y categoría</strong> (obligatorios, no están en el documento), y guarda normalmente.</li>
                   </ol>
                   <div class="info-note">
-                    💡 Los datos pre-llenados son totalmente editables. Si el sistema no pudo leer algún campo con certeza, simplemente quedará vacío para que lo completes manualmente. Formatos de imagen aceptados: JPG, PNG, WEBP (máximo 5MB). En dispositivos móviles, el botón activa directamente la cámara.
+                    💡 Los datos pre-llenados son totalmente editables. Si el sistema no pudo leer algún campo con certeza, quedará vacío para completarlo manualmente. Formatos aceptados: JPG, PNG, WEBP (máximo 5MB).
+                  </div>
+
+                  <h4>Requisito: configurar Google AI Studio</h4>
+                  <p>Esta función utiliza la API de <strong>Google Gemini</strong> (inteligencia artificial de Google). Para activarla se necesita una cuenta con método de pago registrado. Si no está configurada, al escanear aparecerá un mensaje de error y los datos deberán ingresarse manualmente.</p>
+                  <ol>
+                    <li>Entra a <strong>aistudio.google.com</strong> con tu cuenta de Google.</li>
+                    <li>Ve a <strong>"Get API key"</strong> y crea una nueva API key.</li>
+                    <li>En <strong>Google Cloud Console</strong> (console.cloud.google.com), habilita la facturación del proyecto y agrega un método de pago (tarjeta de crédito o débito).</li>
+                    <li>Copia la API key y configúrala en el servidor (variable de entorno <code>GEMINI_API_KEY</code>).</li>
+                  </ol>
+
+                  <h4>¿Cuánto cuesta?</h4>
+                  <p>El modelo Gemini cobra <strong>por uso</strong>, no por suscripción mensual fija. Los costos son muy bajos para el volumen de un club deportivo:</p>
+                  <ul>
+                    <li>Cada escaneo de documento cuenta como una solicitud con imagen. El costo aproximado es de <strong>USD $0.10 por cada 1.000 imágenes</strong> procesadas.</li>
+                    <li>Si el club registra <strong>100 jugadores nuevos al año</strong>, el costo total anual sería de apenas <strong>~USD $0.01</strong> (menos de un centavo).</li>
+                    <li>Incluso registrando 1.000 jugadores nuevos en un año, el costo total sería de <strong>~USD $0.10</strong>.</li>
+                    <li>Google solo cobra lo que se consume — si no se usa, no se paga nada.</li>
+                  </ul>
+                  <div class="info-note">
+                    💡 La tarjeta de crédito se registra como garantía, pero con el volumen típico de un club el cobro mensual real será de centavos o incluso cero si no se registraron jugadores ese mes.
                   </div>
 
                   <h4>Crear jugador manualmente</h4>
