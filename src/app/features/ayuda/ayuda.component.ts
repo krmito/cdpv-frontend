@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-ayuda',
@@ -16,10 +17,103 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
         <main class="content">
           <app-page-header
             title="Ayuda"
-            subtitle="Guía de uso del sistema"
+            [subtitle]="isAcudiente() ? 'Guía para acudientes y padres de familia' : 'Guía de uso del sistema'"
             icon="❓"
           />
 
+          <!-- ===== AYUDA ACUDIENTE ===== -->
+          @if (isAcudiente()) {
+          <div class="ayuda-container">
+
+            <div class="accordion-item">
+              <button class="accordion-header" [class.active]="openSection === 'mis-hijos'" (click)="toggleSection('mis-hijos')">
+                <div class="accordion-title"><span class="accordion-icon">👨‍👧‍👦</span><span>Mis Hijos</span></div>
+                <span class="accordion-arrow" [class.open]="openSection === 'mis-hijos'">▶</span>
+              </button>
+              @if (openSection === 'mis-hijos') {
+                <div class="accordion-body">
+                  <p>En la sección <strong>Mis Hijos</strong> encuentras una tarjeta por cada jugador que el administrador te ha vinculado.</p>
+                  <h4>¿Qué muestra cada tarjeta?</h4>
+                  <ul>
+                    <li><strong>Nombre, categoría y documento</strong> del jugador.</li>
+                    <li><strong>Indicadores de mensualidades:</strong> cuántas están al día, cuántas pendientes y cuántas vencidas.</li>
+                    <li><strong>Saldo total pendiente</strong> si hay cuotas sin pagar.</li>
+                  </ul>
+                  <h4>¿Qué hago si mi hijo no aparece?</h4>
+                  <p>Comunícate con el administrador del club para que vincule a tu hijo a tu cuenta. Él es el único que puede hacer esa configuración.</p>
+                </div>
+              }
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-header" [class.active]="openSection === 'mensualidades'" (click)="toggleSection('mensualidades')">
+                <div class="accordion-title"><span class="accordion-icon">📅</span><span>Mensualidades</span></div>
+                <span class="accordion-arrow" [class.open]="openSection === 'mensualidades'">▶</span>
+              </button>
+              @if (openSection === 'mensualidades') {
+                <div class="accordion-body">
+                  <p>En la pestaña <strong>Mensualidades</strong> del detalle de tu hijo ves el estado de cada cuota mensual.</p>
+                  <h4>Estados posibles</h4>
+                  <ul>
+                    <li><strong style="color:#166534">Pagado:</strong> La mensualidad está completamente cubierta.</li>
+                    <li><strong style="color:#854d0e">Pendiente / Parcial:</strong> Aún no se ha pagado o fue pagada solo en parte.</li>
+                    <li><strong style="color:#991b1b">Vencido:</strong> La fecha límite de pago ya pasó y la mensualidad no está cubierta.</li>
+                  </ul>
+                  <h4>¿Puedo pagar desde aquí?</h4>
+                  <p>No. Los pagos se registran en el club (presencialmente, Nequi, transferencia u otro método acordado). Una vez que el tesorero o administrador registre el pago, el estado se actualizará automáticamente en tu portal.</p>
+                </div>
+              }
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-header" [class.active]="openSection === 'pagos'" (click)="toggleSection('pagos')">
+                <div class="accordion-title"><span class="accordion-icon">💰</span><span>Historial de Pagos</span></div>
+                <span class="accordion-arrow" [class.open]="openSection === 'pagos'">▶</span>
+              </button>
+              @if (openSection === 'pagos') {
+                <div class="accordion-body">
+                  <p>En la pestaña <strong>Historial de Pagos</strong> ves todos los pagos registrados para tu hijo, ordenados del más reciente al más antiguo.</p>
+                  <h4>¿Qué información aparece?</h4>
+                  <ul>
+                    <li>Fecha del pago, número de recibo, período al que corresponde, método y monto.</li>
+                    <li>Los pagos <strong>anulados</strong> aparecen en gris tachado — fueron registrados por error y no cuentan.</li>
+                  </ul>
+                  <h4>Descargar recibo PDF</h4>
+                  <ol>
+                    <li>Ubica el pago en la tabla.</li>
+                    <li>Haz clic en el botón <strong>📄 Recibo</strong>.</li>
+                    <li>El archivo PDF se descargará automáticamente a tu dispositivo.</li>
+                  </ol>
+                  <h4>Descargar comprobante</h4>
+                  <p>Si el club adjuntó un comprobante (foto de consignación, captura de transferencia, etc.), verás el botón <strong>📥 Comprobante</strong> junto al pago. Haz clic para descargarlo.</p>
+                </div>
+              }
+            </div>
+
+            <div class="accordion-item">
+              <button class="accordion-header" [class.active]="openSection === 'contacto'" (click)="toggleSection('contacto')">
+                <div class="accordion-title"><span class="accordion-icon">📞</span><span>Preguntas frecuentes</span></div>
+                <span class="accordion-arrow" [class.open]="openSection === 'contacto'">▶</span>
+              </button>
+              @if (openSection === 'contacto') {
+                <div class="accordion-body">
+                  <h4>¿Cómo pago la mensualidad?</h4>
+                  <p>Comunícate directamente con el club para conocer los métodos de pago aceptados (efectivo, Nequi, transferencia, etc.). Una vez realizado el pago, el tesorero lo registrará en el sistema.</p>
+                  <h4>¿Por qué aparece una mensualidad como vencida si ya pagué?</h4>
+                  <p>El pago puede no haber sido registrado aún en el sistema. Comunícate con el administrador o tesorero del club y proporciona tu comprobante de pago.</p>
+                  <h4>¿Puedo cambiar mi contraseña?</h4>
+                  <p>Sí. Comunícate con el administrador del club para que actualice tu contraseña de acceso.</p>
+                  <h4>¿Cómo cierro sesión?</h4>
+                  <p>Haz clic en tu nombre en la barra superior y selecciona <strong>"Cerrar sesión"</strong>.</p>
+                </div>
+              }
+            </div>
+
+          </div>
+          }
+
+          <!-- ===== AYUDA STAFF ===== -->
+          @if (!isAcudiente()) {
           <div class="ayuda-container">
             <!-- Dashboard -->
             <div class="accordion-item">
@@ -317,6 +411,8 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
               }
             </div>
           </div>
+          }
+
         </main>
       </div>
     </div>
@@ -481,7 +577,13 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
   `]
 })
 export class AyudaComponent {
+  private authService = inject(AuthService);
+
   openSection: string | null = null;
+
+  isAcudiente(): boolean {
+    return this.authService.hasRole(['acudiente']);
+  }
 
   toggleSection(section: string): void {
     this.openSection = this.openSection === section ? null : section;
