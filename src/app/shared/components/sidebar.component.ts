@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { UiService } from '../../core/services/ui.service';
+import { PermisosService } from '../../core/services/permisos.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -31,38 +32,62 @@ import { UiService } from '../../core/services/ui.service';
       <div class="menu-divider"></div>
 
       <nav class="menu">
-        <a routerLink="/dashboard" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
-          <span class="menu-icon">📊</span>
-          <span class="menu-text">Dashboard</span>
-        </a>
-        <a routerLink="/jugadores" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
-          <span class="menu-icon">👥</span>
-          <span class="menu-text">Jugadores</span>
-        </a>
-        @if (canAccessCategorias()) {
-          <a routerLink="/categorias" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
-            <span class="menu-icon">📁</span>
-            <span class="menu-text">Categorías</span>
+        @if (isAcudiente()) {
+          <a routerLink="/portal/mis-hijos" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+            <span class="menu-icon">👨‍👧‍👦</span>
+            <span class="menu-text">Mis Hijos</span>
+          </a>
+          <a routerLink="/ayuda" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+            <span class="menu-icon">❓</span>
+            <span class="menu-text">Ayuda</span>
           </a>
         }
-        @if (canAccessPagos()) {
-          <a routerLink="/pagos" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
-            <span class="menu-icon">💰</span>
-            <span class="menu-text">Pagos</span>
+        @if (!isAcudiente()) {
+          <a routerLink="/dashboard" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+            <span class="menu-icon">📊</span>
+            <span class="menu-text">Dashboard</span>
+          </a>
+          @if (isAdmin() || permisosService.canView('jugadores')) {
+            <a routerLink="/jugadores" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+              <span class="menu-icon">👥</span>
+              <span class="menu-text">Jugadores</span>
+            </a>
+          }
+          @if (isAdmin() || permisosService.canView('categorias')) {
+            <a routerLink="/categorias" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+              <span class="menu-icon">📁</span>
+              <span class="menu-text">Categorías</span>
+            </a>
+          }
+          @if (isAdmin() || permisosService.canView('pagos')) {
+            <a routerLink="/pagos" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+              <span class="menu-icon">💰</span>
+              <span class="menu-text">Pagos</span>
+            </a>
+          }
+          @if (isAdmin() || permisosService.canView('mensualidades')) {
+            <a routerLink="/mensualidades" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+              <span class="menu-icon">📅</span>
+              <span class="menu-text">Mensualidades</span>
+            </a>
+          }
+          @if (isAdmin() || permisosService.canView('reportes')) {
+            <a routerLink="/reportes" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+              <span class="menu-icon">📈</span>
+              <span class="menu-text">Reportes</span>
+            </a>
+          }
+          @if (isAdmin()) {
+            <a routerLink="/usuarios" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+              <span class="menu-icon">🔐</span>
+              <span class="menu-text">Usuarios</span>
+            </a>
+          }
+          <a routerLink="/ayuda" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
+            <span class="menu-icon">❓</span>
+            <span class="menu-text">Ayuda</span>
           </a>
         }
-        <a routerLink="/mensualidades" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
-          <span class="menu-icon">📅</span>
-          <span class="menu-text">Mensualidades</span>
-        </a>
-        <a routerLink="/reportes" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
-          <span class="menu-icon">📈</span>
-          <span class="menu-text">Reportes</span>
-        </a>
-        <a routerLink="/ayuda" routerLinkActive="active" class="menu-item" (click)="onMenuItemClick()">
-          <span class="menu-icon">❓</span>
-          <span class="menu-text">Ayuda</span>
-        </a>
       </nav>
     </aside>
   `,
@@ -324,13 +349,14 @@ import { UiService } from '../../core/services/ui.service';
 export class SidebarComponent {
   authService = inject(AuthService);
   uiService = inject(UiService);
+  permisosService = inject(PermisosService);
 
-  canAccessPagos(): boolean {
-    return this.authService.hasRole(['administrador', 'tesorero']);
+  isAdmin(): boolean {
+    return this.authService.hasRole(['administrador']);
   }
 
-  canAccessCategorias(): boolean {
-    return this.authService.hasRole(['administrador', 'tesorero']);
+  isAcudiente(): boolean {
+    return this.authService.hasRole(['acudiente']);
   }
 
   onMenuItemClick(): void {

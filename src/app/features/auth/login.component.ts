@@ -730,7 +730,9 @@ export class LoginComponent implements OnInit {
 
         // Esperar un momento para mostrar el mensaje antes de redirigir
         setTimeout(() => {
-          this.router.navigate(['/dashboard']);
+          const rol = this.authService.currentUser()?.rol;
+          const destino = rol === 'acudiente' ? '/portal/mis-hijos' : '/dashboard';
+          this.router.navigate([destino]);
         }, 1500);
       },
       error: (error) => {

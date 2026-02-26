@@ -5,6 +5,7 @@ import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
+import { PermisosService } from '../../core/services/permisos.service';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -227,6 +228,7 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
 
   private authService = inject(AuthService);
   private toast = inject(ToastService);
+  permisosService = inject(PermisosService);
 
   constructor(private api: ApiService) {}
 

@@ -12,22 +12,24 @@
 
         <!-- Tabs -->
         <div class="tabs">
-          <button 
-            class="tab" 
-            [class.active]="activeTab === 'generar'"
-            (click)="activeTab = 'generar'"
-          >
-            🎯 Generar Mensualidades
-          </button>
-          <button 
-            class="tab" 
+          @if (permisosService.canCreate('mensualidades')) {
+            <button
+              class="tab"
+              [class.active]="activeTab === 'generar'"
+              (click)="activeTab = 'generar'"
+            >
+              🎯 Generar Mensualidades
+            </button>
+          }
+          <button
+            class="tab"
             [class.active]="activeTab === 'listado'"
             (click)="changeTab('listado')"
           >
             📋 Listado
           </button>
-          <button 
-            class="tab" 
+          <button
+            class="tab"
             [class.active]="activeTab === 'resumen'"
             (click)="changeTab('resumen')"
           >
@@ -224,9 +226,11 @@
                   <span class="empty-icon">📅</span>
                   <h4>No hay mensualidades registradas</h4>
                   <p>Genera mensualidades desde el tab <strong>Generar Mensualidades</strong></p>
-                  <button class="btn btn-primary" (click)="activeTab = 'generar'" aria-label="Ir a generar mensualidades">
-                    🎯 Generar Ahora
-                  </button>
+                  @if (permisosService.canCreate('mensualidades')) {
+                    <button class="btn btn-primary" (click)="activeTab = 'generar'" aria-label="Ir a generar mensualidades">
+                      🎯 Generar Ahora
+                    </button>
+                  }
                 </div>
               } @else {
                 <div class="table-responsive">
@@ -263,15 +267,17 @@
                             </span>
                           </td>
                           <td class="actions-cell">
-                            <button
-                              class="btn btn-small btn-edit"
-                              (click)="editarMensualidad(mens)"
-                              title="Editar fecha de vencimiento"
-                              [attr.aria-label]="'Editar fecha de vencimiento de ' + mens.jugador.nombre"
-                            >
-                              ✏️
-                            </button>
-                            @if (puedeEliminar(mens)) {
+                            @if (permisosService.canEdit('mensualidades')) {
+                              <button
+                                class="btn btn-small btn-edit"
+                                (click)="editarMensualidad(mens)"
+                                title="Editar fecha de vencimiento"
+                                [attr.aria-label]="'Editar fecha de vencimiento de ' + mens.jugador.nombre"
+                              >
+                                ✏️
+                              </button>
+                            }
+                            @if (permisosService.canDelete('mensualidades') && puedeEliminar(mens)) {
                               <button
                                 class="btn btn-small btn-delete"
                                 (click)="confirmarEliminar(mens)"

@@ -1,8 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { Observable, switchMap, tap } from 'rxjs';
 import { ApiService } from './api.service';
 import { StorageService } from './storage.service';
+import { PermisosService } from './permisos.service';
 
 interface LoginRequest {
   usuario: string;
@@ -31,6 +32,7 @@ export class AuthService {
   private api = inject(ApiService);
   private storage = inject(StorageService);
   private router = inject(Router);
+  private permisosService = inject(PermisosService);
 
   currentUser = signal<Usuario | null>(null);
   isAuthenticated = signal(false);
@@ -39,19 +41,21 @@ export class AuthService {
     this.loadCurrentUser();
   }
 
-  login(credentials: LoginRequest): Observable<LoginResponse> {
+  login(credentials: LoginRequest): Observable<Record<string, any>> {
     return this.api.post<LoginResponse>('auth/login', credentials).pipe(
       tap(response => {
         this.storage.setItem('token', response.access_token);
         this.storage.setItem('user', response.usuario);
         this.currentUser.set(response.usuario);
         this.isAuthenticated.set(true);
-      })
+      }),
+      switchMap(() => this.permisosService.cargarPermisos())
     );
   }
 
   logout(): void {
     const userName = this.currentUser()?.nombre || '';
+    this.permisosService.limpiarPermisos();
     this.storage.clear();
     this.currentUser.set(null);
     this.isAuthenticated.set(false);

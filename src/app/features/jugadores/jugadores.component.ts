@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
+import { PermisosService } from '../../core/services/permisos.service';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -46,10 +47,14 @@ interface Jugador {
 
 interface PaginatedResponse {
   data: Jugador[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 interface CreateJugadorDto {
@@ -83,12 +88,14 @@ interface CreateJugadorDto {
             icon="👥"
           />
           <div class="header-actions">
-            <button class="btn btn-success btn-new" (click)="openImportModal()">
-              <span>📥</span> Importar Excel
-            </button>
-            <button class="btn btn-primary btn-new" (click)="openNewForm()">
-              <span>➕</span> Nuevo Jugador
-            </button>
+            @if (permisosService.canCreate('jugadores')) {
+              <button class="btn btn-success btn-new" (click)="openImportModal()">
+                <span>📥</span> Importar Excel
+              </button>
+              <button class="btn btn-primary btn-new" (click)="openNewForm()">
+                <span>➕</span> Nuevo Jugador
+              </button>
+            }
           </div>
 
           <!-- Mensaje de éxito -->
@@ -189,9 +196,11 @@ interface CreateJugadorDto {
                   <span class="empty-icon">👥</span>
                   <h4>No se encontraron jugadores</h4>
                   <p>Agrega el primer jugador o ajusta los filtros de búsqueda</p>
-                  <button class="btn btn-primary" (click)="openNewForm()" aria-label="Agregar primer jugador">
-                    ➕ Agregar Primer Jugador
-                  </button>
+                  @if (permisosService.canCreate('jugadores')) {
+                    <button class="btn btn-primary" (click)="openNewForm()" aria-label="Agregar primer jugador">
+                      ➕ Agregar Primer Jugador
+                    </button>
+                  }
                 </div>
               } @else {
                 <div class="table-container">
@@ -246,9 +255,11 @@ interface CreateJugadorDto {
                               <button class="btn-icon" (click)="verHistorial(jugador)" [attr.aria-label]="'Ver historial de ' + jugador.nombre + ' ' + jugador.apellido" title="Ver Historial">
                                 📋
                               </button>
-                              <button class="btn-icon" (click)="openEditForm(jugador)" [attr.aria-label]="'Editar ' + jugador.nombre + ' ' + jugador.apellido" title="Editar">
-                                ✏️
-                              </button>
+                              @if (permisosService.canEdit('jugadores')) {
+                                <button class="btn-icon" (click)="openEditForm(jugador)" [attr.aria-label]="'Editar ' + jugador.nombre + ' ' + jugador.apellido" title="Editar">
+                                  ✏️
+                                </button>
+                              }
                             </div>
                           </td>
                         </tr>
@@ -2329,6 +2340,7 @@ interface CreateJugadorDto {
 export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  permisosService = inject(PermisosService);
 
   jugadores: Jugador[] = [];
   categorias: Categoria[] = [];
@@ -2464,11 +2476,10 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.api.get<PaginatedResponse>(endpoint).subscribe({
       next: (response) => {
         this.jugadores = response.data;
-        this.totalJugadores = response.total;
-        this.totalPages = response.totalPages;
-        this.currentPage = response.page;
+        this.totalJugadores = response.meta.total;
+        this.totalPages = response.meta.totalPages;
+        this.currentPage = response.meta.page;
         this.loading = false;
-        console.log('Jugadores cargados:', response.data.length, 'de', response.total);
       },
       error: (err) => {
         this.error = 'Error al cargar los jugadores';

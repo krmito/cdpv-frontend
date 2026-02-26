@@ -12,22 +12,24 @@
 
   <!-- Tabs -->
   <div class="tabs">
-    <button 
-      class="tab" 
-      [class.active]="activeTab === 'registrar'"
-      (click)="activeTab = 'registrar'"
-    >
-      📝 Registrar Pago
-    </button>
-    <button 
-      class="tab" 
+    @if (permisosService.canCreate('pagos')) {
+      <button
+        class="tab"
+        [class.active]="activeTab === 'registrar'"
+        (click)="activeTab = 'registrar'"
+      >
+        📝 Registrar Pago
+      </button>
+    }
+    <button
+      class="tab"
       [class.active]="activeTab === 'historial'"
       (click)="changeTab('historial')"
     >
       📋 Historial de Pagos
     </button>
-    <button 
-      class="tab" 
+    <button
+      class="tab"
       [class.active]="activeTab === 'estadisticas'"
       (click)="changeTab('estadisticas')"
     >
@@ -319,9 +321,9 @@
                         >
                           👁️
                         </button>
-                        @if (!pago.anulado) {
-                          <button 
-                            class="btn-icon danger" 
+                        @if (!pago.anulado && permisosService.canDelete('pagos')) {
+                          <button
+                            class="btn-icon danger"
                             (click)="abrirModalAnular(pago)"
                             title="Anular pago"
                           >

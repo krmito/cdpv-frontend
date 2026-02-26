@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
+import { PermisosService } from '../../core/services/permisos.service';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -51,9 +52,11 @@ interface PaginatedResponse {
             icon="📁"
           />
           <div class="header-actions">
-            <button class="btn btn-primary btn-new" (click)="openNewForm()">
-              <span>➕</span> Nueva Categoría
-            </button>
+            @if (permisosService.canCreate('categorias')) {
+              <button class="btn btn-primary btn-new" (click)="openNewForm()">
+                <span>➕</span> Nueva Categoría
+              </button>
+            }
           </div>
 
           <!-- Mensaje de exito -->
@@ -103,9 +106,11 @@ interface PaginatedResponse {
                   <span class="empty-icon">📁</span>
                   <h4>No hay categorías registradas</h4>
                   <p>Crea la primera categoría para empezar a organizar a los jugadores</p>
-                  <button class="btn btn-primary" (click)="openNewForm()" aria-label="Crear primera categoría">
-                    ➕ Crear Primera Categoría
-                  </button>
+                  @if (permisosService.canCreate('categorias')) {
+                    <button class="btn btn-primary" (click)="openNewForm()" aria-label="Crear primera categoría">
+                      ➕ Crear Primera Categoría
+                    </button>
+                  }
                 </div>
               } @else {
                 <div class="table-container">
@@ -146,17 +151,19 @@ interface PaginatedResponse {
                           </td>
                           <td>
                             <div class="action-buttons">
-                              <button class="btn-icon" (click)="openEditForm(categoria)" title="Editar" [attr.aria-label]="'Editar categoría ' + categoria.nombre">
-                                ✏️
-                              </button>
-                              <button
-                                class="btn-icon"
-                                (click)="toggleActive(categoria)"
-                                [title]="categoria.activo ? 'Desactivar' : 'Activar'"
-                                [attr.aria-label]="(categoria.activo ? 'Desactivar' : 'Activar') + ' categoría ' + categoria.nombre"
-                              >
-                                {{ categoria.activo ? '🔴' : '🟢' }}
-                              </button>
+                              @if (permisosService.canEdit('categorias')) {
+                                <button class="btn-icon" (click)="openEditForm(categoria)" title="Editar" [attr.aria-label]="'Editar categoría ' + categoria.nombre">
+                                  ✏️
+                                </button>
+                                <button
+                                  class="btn-icon"
+                                  (click)="toggleActive(categoria)"
+                                  [title]="categoria.activo ? 'Desactivar' : 'Activar'"
+                                  [attr.aria-label]="(categoria.activo ? 'Desactivar' : 'Activar') + ' categoría ' + categoria.nombre"
+                                >
+                                  {{ categoria.activo ? '🔴' : '🟢' }}
+                                </button>
+                              }
                             </div>
                           </td>
                         </tr>
@@ -805,6 +812,7 @@ interface PaginatedResponse {
 export class CategoriasComponent implements OnInit, CanComponentDeactivate {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  permisosService = inject(PermisosService);
 
   categorias: Categoria[] = [];
   loading = true;

@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
+import { PermisosService } from '../../core/services/permisos.service';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -124,6 +125,8 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
     { value: 11, label: 'Noviembre' },
     { value: 12, label: 'Diciembre' }
   ];
+
+  permisosService = inject(PermisosService);
 
   constructor(private api: ApiService, private toast: ToastService) {}
 
