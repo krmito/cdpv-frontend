@@ -10,10 +10,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
-      // No mostrar toast para peticiones de auth (login)
+      // No mostrar toast para peticiones de auth (login) ni de escaneo de documentos
       const isAuthRequest = req.url.includes('/auth/');
+      const isScanRequest = req.url.includes('/extraer-documento');
 
-      if (!isAuthRequest) {
+      if (!isAuthRequest && !isScanRequest) {
         switch (err.status) {
           case 0:
             toast.error('Sin conexión con el servidor. Verifica tu red.');

@@ -2579,7 +2579,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
           this.scanQuotaExceeded = true;
           this.scanApiKeyError = false;
           this.scanError = '';
-        } else if (err.status === 401) {
+        } else if (err.status === 503) {
           this.scanApiKeyError = true;
           this.scanQuotaExceeded = false;
           this.scanError = '';
