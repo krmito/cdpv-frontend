@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { BREAKPOINTS } from '../constants/app.constants';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,7 @@ export class UiService {
 
   /** Hamburger unificado: en móvil abre el drawer, en desktop colapsa/expande */
   toggleMenu() {
-    if (window.innerWidth <= 768) {
+    if (window.innerWidth <= BREAKPOINTS.MOBILE) {
       this.sidebarOpen.update(v => !v);
     } else {
       this.sidebarCollapsed.update(v => !v);

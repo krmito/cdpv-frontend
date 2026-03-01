@@ -1,0 +1,156 @@
+:host {
+  --primary-blue: #1a3a5c;
+  --primary-yellow: #ffde00;
+  --dark-blue: #0d1f33;
+}
+
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-container {
+  display: flex;
+  flex: 1;
+}
+
+.content {
+  flex: 1;
+  padding: 24px;
+  background: #f0f2f5;
+  overflow-y: auto;
+  height: calc(100vh - 64px);
+}
+
+.ayuda-container {
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Accordion */
+.accordion-item {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: white;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary-blue);
+}
+
+.accordion-header:hover {
+  background: #f8f9fa;
+}
+
+.accordion-header.active {
+  background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+  color: var(--primary-yellow);
+}
+
+.accordion-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.accordion-icon {
+  font-size: 20px;
+}
+
+.accordion-arrow {
+  font-size: 12px;
+  transition: transform 0.3s ease;
+  color: #aaa;
+}
+
+.accordion-header.active .accordion-arrow {
+  color: var(--primary-yellow);
+}
+
+.accordion-arrow.open {
+  transform: rotate(90deg);
+}
+
+.accordion-body {
+  padding: 20px 24px 24px;
+  border-top: 1px solid #eee;
+  color: #444;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.accordion-body p {
+  margin: 0 0 14px;
+}
+
+.accordion-body h4 {
+  margin: 18px 0 8px;
+  color: var(--primary-blue);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.accordion-body h4:first-of-type {
+  margin-top: 4px;
+}
+
+.accordion-body ul,
+.accordion-body ol {
+  margin: 0 0 10px;
+  padding-left: 22px;
+}
+
+.accordion-body li {
+  margin-bottom: 6px;
+}
+
+.accordion-body strong {
+  color: #1a3a5c;
+}
+
+.info-note {
+  background: #eff6ff;
+  border-left: 3px solid #3b82f6;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin: 12px 0;
+  font-size: 13px;
+  color: #1e40af;
+  line-height: 1.5;
+}
+
+.req-mark {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .content {
+    padding: 16px;
+  }
+
+  .accordion-header {
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+
+  .accordion-body {
+    padding: 16px;
+  }
+}

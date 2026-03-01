@@ -1,0 +1,93 @@
+:host { --primary: #1a3a5c; --yellow: #ffde00; }
+
+.layout { display: flex; flex-direction: column; min-height: 100vh; }
+.main-container { display: flex; flex: 1; overflow: hidden; }
+.content { flex: 1; padding: 24px; overflow-y: auto; background: #f8fafc; }
+
+.page-top { margin-bottom: 20px; }
+.btn-back {
+  background: none; border: 1.5px solid #e2e8f0; border-radius: 8px;
+  padding: 8px 16px; font-size: 14px; color: #374151; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-back:hover { background: #f1f5f9; border-color: var(--primary); color: var(--primary); }
+
+/* Jugador card */
+.jugador-card {
+  background: white; border-radius: 14px; padding: 20px 24px;
+  display: flex; align-items: center; gap: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 20px;
+}
+.jugador-foto { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #e2e8f0; }
+.jugador-avatar-placeholder {
+  width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--primary), #2d4a6a);
+  color: white; font-size: 28px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.jugador-info h2 { margin: 0 0 8px; font-size: 22px; color: #1e293b; }
+.jugador-meta { display: flex; flex-wrap: wrap; gap: 12px; }
+.meta-item { font-size: 14px; color: #6b7280; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid #e2e8f0; }
+.tab-btn {
+  padding: 10px 20px; border: none; background: none; cursor: pointer;
+  font-size: 14px; font-weight: 500; color: #6b7280;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: all 0.2s; border-radius: 6px 6px 0 0;
+}
+.tab-btn:hover { color: var(--primary); background: #f1f5f9; }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: transparent; }
+
+/* Card */
+.card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+/* Table */
+.table-responsive { overflow-x: auto; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table th { background: #f8fafc; padding: 12px 16px; text-align: left; border-bottom: 2px solid #e2e8f0; font-weight: 600; color: #374151; white-space: nowrap; }
+.data-table td { padding: 13px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.data-table tr:hover td { background: #fafafa; }
+
+.anulado-row td { opacity: 0.55; }
+.anulado-text { text-decoration: line-through; }
+.capitalize { text-transform: capitalize; }
+
+.recibo-code { background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-family: monospace; }
+
+/* Estado badges */
+.estado-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: capitalize; }
+.estado-pagado { background: #dcfce7; color: #166534; }
+.estado-pendiente, .estado-parcial { background: #fef9c3; color: #854d0e; }
+.estado-vencido { background: #fee2e2; color: #991b1b; }
+.estado-anulado { background: #f1f5f9; color: #6b7280; }
+
+/* Acciones */
+.acciones-cell { display: flex; flex-wrap: wrap; gap: 4px; }
+.btn-accion {
+  padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 500; transition: all 0.2s;
+}
+.btn-accion:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-pdf { background: #dbeafe; color: #1e40af; }
+.btn-pdf:hover:not(:disabled) { background: #bfdbfe; }
+.btn-comprobante { background: #f0fdf4; color: #166534; }
+.btn-comprobante:hover:not(:disabled) { background: #dcfce7; }
+
+/* Empty */
+.empty-state { text-align: center; padding: 60px 20px; }
+.empty-icon { font-size: 48px; margin-bottom: 16px; }
+.empty-state h4 { margin: 0 0 8px; font-size: 18px; color: #374151; }
+.empty-state p { margin: 0; color: #9ca3af; }
+
+/* Skeleton */
+.skeleton-header { background: #e2e8f0; border-radius: 14px; height: 120px; margin-bottom: 20px; animation: pulse 1.5s infinite; }
+.skeleton-tabs { background: #e2e8f0; border-radius: 8px; height: 44px; margin-bottom: 16px; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+@media (max-width: 768px) {
+  .content { padding: 16px; }
+  .jugador-card { flex-direction: column; text-align: center; }
+  .jugador-meta { justify-content: center; }
+}

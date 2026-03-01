@@ -25,57 +25,7 @@ import { ToastService, Toast } from '../../core/services/toast.service';
       }
     </div>
   `,
-  styles: [`
-    .toast-container {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-width: 380px;
-      width: calc(100vw - 40px);
-    }
-
-    .toast {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 14px 16px;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-      animation: toast-in 0.3s ease;
-      font-size: 14px;
-      font-weight: 500;
-      color: #fff;
-    }
-
-    .toast--success { background: linear-gradient(135deg, #10b981, #059669); }
-    .toast--error   { background: linear-gradient(135deg, #ef4444, #dc2626); }
-    .toast--warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .toast--info    { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-
-    .toast__icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-    .toast__message { flex: 1; line-height: 1.4; }
-    .toast__close {
-      background: none;
-      border: none;
-      color: rgba(255,255,255,0.8);
-      cursor: pointer;
-      font-size: 14px;
-      padding: 0;
-      flex-shrink: 0;
-      line-height: 1;
-      transition: color 0.2s;
-    }
-    .toast__close:hover { color: #fff; }
-
-    @keyframes toast-in {
-      from { opacity: 0; transform: translateX(40px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-  `]
+  styleUrl: './toast.component.css'
 })
 export class ToastComponent {
   toastService = inject(ToastService);
