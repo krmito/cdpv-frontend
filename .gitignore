@@ -26,8 +26,8 @@
 # Logs
 npm-debug.log*
 yarn-debug.log*
-<<<<<<< HEAD
 yarn-error.log*
-=======
-yarn-error.log*
->>>>>>> 50c98b4 (Primer commit)
+
+# macOS
+.DS_Store
+**/.DS_Store
