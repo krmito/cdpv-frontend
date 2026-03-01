@@ -33,7 +33,7 @@ import { AuthService } from '../../core/services/auth.service';
         <!-- Escudo con efecto glow -->
         <div class="logo-container">
           <div class="logo-glow"></div>
-          <img src="assets/escudo.jpg" alt="Club Deportivo Pancho Villegas" class="logo" />
+          <img src="assets/escudo2.png" alt="Club Deportivo Pancho Villegas" class="logo" />
         </div>
 
         <h1>Club Deportivo</h1>

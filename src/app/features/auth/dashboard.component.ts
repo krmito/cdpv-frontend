@@ -47,7 +47,7 @@ interface Estadisticas {
             <div class="banner-bg"></div>
             <div class="banner-content">
               <div class="banner-logo">
-                <img src="assets/escudo.jpg" alt="Escudo" class="escudo" />
+                <img src="assets/escudo2.png" alt="Escudo" class="escudo" />
               </div>
               <div class="banner-text">
                 <h1>{{ getGreeting() }}, {{ getFirstName() }}</h1>

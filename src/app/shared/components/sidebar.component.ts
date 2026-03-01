@@ -21,7 +21,7 @@ import { PermisosService } from '../../core/services/permisos.service';
       <!-- Logo del club -->
       <div class="logo-section">
         <div class="logo-container">
-          <img src="assets/escudo.jpg" alt="Club Deportivo Pancho Villegas" class="logo" />
+          <img src="assets/escudo2.png" alt="Club Deportivo Pancho Villegas" class="logo" />
         </div>
         <div class="club-name">
           <span class="name-line">Club Deportivo</span>

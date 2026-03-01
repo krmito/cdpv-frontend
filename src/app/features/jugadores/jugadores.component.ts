@@ -484,18 +484,20 @@ interface CreateJugadorDto {
                           <input
                             id="new-telefono"
                             type="tel"
-                            [class]="'form-control' + ((formSubmitted || newFormTouched['telefono']) && !newJugador.telefono ? ' is-invalid' : '')"
+                            [class]="'form-control' + ((formSubmitted || newFormTouched['telefono']) && (!newJugador.telefono || !isValidPhone(newJugador.telefono)) ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.telefono"
                             name="telefono"
                             required
                             placeholder="3001234567"
                             maxlength="15"
                             (blur)="touchNewField('telefono')"
-                            [attr.aria-invalid]="(formSubmitted || newFormTouched['telefono']) && !newJugador.telefono"
+                            [attr.aria-invalid]="(formSubmitted || newFormTouched['telefono']) && (!newJugador.telefono || !isValidPhone(newJugador.telefono))"
                             aria-describedby="new-telefono-error"
                           />
                           @if ((formSubmitted || newFormTouched['telefono']) && !newJugador.telefono) {
                             <span id="new-telefono-error" class="field-error" role="alert">El teléfono es obligatorio</span>
+                          } @else if ((formSubmitted || newFormTouched['telefono']) && newJugador.telefono && !isValidPhone(newJugador.telefono)) {
+                            <span id="new-telefono-error" class="field-error" role="alert">Ingrese un número válido (ej: 3001234567)</span>
                           }
                         </div>
 
@@ -503,12 +505,16 @@ interface CreateJugadorDto {
                           <label>Teléfono Acudiente</label>
                           <input
                             type="tel"
-                            class="form-control"
+                            [class]="'form-control' + ((newFormTouched['telefono_acudiente']) && !isValidOptionalPhone(newJugador.telefono_acudiente) ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.telefono_acudiente"
                             name="telefono_acudiente"
                             placeholder="3109876543"
                             maxlength="15"
+                            (blur)="touchNewField('telefono_acudiente')"
                           />
+                          @if ((newFormTouched['telefono_acudiente']) && newJugador.telefono_acudiente && !isValidOptionalPhone(newJugador.telefono_acudiente)) {
+                            <span class="field-error" role="alert">Ingrese un número válido (ej: 3109876543)</span>
+                          }
                         </div>
                       </div>
 
@@ -517,22 +523,30 @@ interface CreateJugadorDto {
                           <label>Email</label>
                           <input
                             type="email"
-                            class="form-control"
+                            [class]="'form-control' + ((newFormTouched['email']) && !isValidEmail(newJugador.email) ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.email"
                             name="email"
                             placeholder="jugador@example.com"
+                            (blur)="touchNewField('email')"
                           />
+                          @if ((newFormTouched['email']) && newJugador.email && !isValidEmail(newJugador.email)) {
+                            <span class="field-error" role="alert">Ingrese un correo electrónico válido</span>
+                          }
                         </div>
 
                         <div class="form-group">
                           <label>Email Acudiente</label>
                           <input
                             type="email"
-                            class="form-control"
+                            [class]="'form-control' + ((newFormTouched['email_acudiente']) && !isValidEmail(newJugador.email_acudiente) ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.email_acudiente"
                             name="email_acudiente"
                             placeholder="acudiente@example.com"
+                            (blur)="touchNewField('email_acudiente')"
                           />
+                          @if ((newFormTouched['email_acudiente']) && newJugador.email_acudiente && !isValidEmail(newJugador.email_acudiente)) {
+                            <span class="field-error" role="alert">Ingrese un correo electrónico válido</span>
+                          }
                         </div>
                       </div>
 
@@ -768,17 +782,19 @@ interface CreateJugadorDto {
                           <input
                             id="edit-telefono"
                             type="tel"
-                            [class]="'form-control' + ((formSubmitted || editFormTouched['telefono']) && !editJugadorData.telefono ? ' is-invalid' : '')"
+                            [class]="'form-control' + ((formSubmitted || editFormTouched['telefono']) && (!editJugadorData.telefono || !isValidPhone(editJugadorData.telefono)) ? ' is-invalid' : '')"
                             [(ngModel)]="editJugadorData.telefono"
                             name="edit_telefono"
                             required
                             placeholder="3001234567"
                             maxlength="15"
                             (blur)="touchEditField('telefono')"
-                            [attr.aria-invalid]="(formSubmitted || editFormTouched['telefono']) && !editJugadorData.telefono"
+                            [attr.aria-invalid]="(formSubmitted || editFormTouched['telefono']) && (!editJugadorData.telefono || !isValidPhone(editJugadorData.telefono))"
                           />
                           @if ((formSubmitted || editFormTouched['telefono']) && !editJugadorData.telefono) {
                             <span class="field-error" role="alert">El teléfono es obligatorio</span>
+                          } @else if ((formSubmitted || editFormTouched['telefono']) && editJugadorData.telefono && !isValidPhone(editJugadorData.telefono)) {
+                            <span class="field-error" role="alert">Ingrese un número válido (ej: 3001234567)</span>
                           }
                         </div>
 
@@ -786,12 +802,16 @@ interface CreateJugadorDto {
                           <label>Teléfono Acudiente</label>
                           <input
                             type="tel"
-                            class="form-control"
+                            [class]="'form-control' + ((editFormTouched['telefono_acudiente']) && !isValidOptionalPhone(editJugadorData.telefono_acudiente) ? ' is-invalid' : '')"
                             [(ngModel)]="editJugadorData.telefono_acudiente"
                             name="edit_telefono_acudiente"
                             placeholder="3109876543"
                             maxlength="15"
+                            (blur)="touchEditField('telefono_acudiente')"
                           />
+                          @if ((editFormTouched['telefono_acudiente']) && editJugadorData.telefono_acudiente && !isValidOptionalPhone(editJugadorData.telefono_acudiente)) {
+                            <span class="field-error" role="alert">Ingrese un número válido (ej: 3109876543)</span>
+                          }
                         </div>
                       </div>
 
@@ -800,22 +820,30 @@ interface CreateJugadorDto {
                           <label>Email</label>
                           <input
                             type="email"
-                            class="form-control"
+                            [class]="'form-control' + ((editFormTouched['email']) && !isValidEmail(editJugadorData.email) ? ' is-invalid' : '')"
                             [(ngModel)]="editJugadorData.email"
                             name="edit_email"
                             placeholder="jugador@example.com"
+                            (blur)="touchEditField('email')"
                           />
+                          @if ((editFormTouched['email']) && editJugadorData.email && !isValidEmail(editJugadorData.email)) {
+                            <span class="field-error" role="alert">Ingrese un correo electrónico válido</span>
+                          }
                         </div>
 
                         <div class="form-group">
                           <label>Email Acudiente</label>
                           <input
                             type="email"
-                            class="form-control"
+                            [class]="'form-control' + ((editFormTouched['email_acudiente']) && !isValidEmail(editJugadorData.email_acudiente) ? ' is-invalid' : '')"
                             [(ngModel)]="editJugadorData.email_acudiente"
                             name="edit_email_acudiente"
                             placeholder="acudiente@example.com"
+                            (blur)="touchEditField('email_acudiente')"
                           />
+                          @if ((editFormTouched['email_acudiente']) && editJugadorData.email_acudiente && !isValidEmail(editJugadorData.email_acudiente)) {
+                            <span class="field-error" role="alert">Ingrese un correo electrónico válido</span>
+                          }
                         </div>
                       </div>
 
@@ -2611,6 +2639,23 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.fotoPreview = null;
   }
 
+  // Valida número colombiano: 7-10 dígitos, opcionalmente con +57
+  isValidPhone(phone: string): boolean {
+    if (!phone) return false;
+    return /^(\+57[\s-]?)?[1-9]\d{6,9}$/.test(phone.trim());
+  }
+
+  // Para campos opcionales: vacío es válido, pero si hay algo debe tener formato correcto
+  isValidOptionalPhone(phone: string): boolean {
+    if (!phone || !phone.trim()) return true;
+    return /^(\+57[\s-]?)?[1-9]\d{6,9}$/.test(phone.trim());
+  }
+
+  isValidEmail(email: string): boolean {
+    if (!email || !email.trim()) return true;
+    return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email.trim());
+  }
+
   isFormValid(): boolean {
     return !!(
       this.newJugador.nombre &&
@@ -2618,6 +2663,10 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
       this.newJugador.documento &&
       this.newJugador.fecha_nacimiento &&
       this.newJugador.telefono &&
+      this.isValidPhone(this.newJugador.telefono) &&
+      this.isValidOptionalPhone(this.newJugador.telefono_acudiente) &&
+      this.isValidEmail(this.newJugador.email) &&
+      this.isValidEmail(this.newJugador.email_acudiente) &&
       this.newJugador.categoria_id > 0
     );
   }
@@ -2749,6 +2798,10 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
       this.editJugadorData.documento &&
       this.editJugadorData.fecha_nacimiento &&
       this.editJugadorData.telefono &&
+      this.isValidPhone(this.editJugadorData.telefono) &&
+      this.isValidOptionalPhone(this.editJugadorData.telefono_acudiente) &&
+      this.isValidEmail(this.editJugadorData.email) &&
+      this.isValidEmail(this.editJugadorData.email_acudiente) &&
       this.editJugadorData.categoria_id > 0
     );
   }

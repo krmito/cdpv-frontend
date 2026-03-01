@@ -18,7 +18,7 @@ import { UiService } from '../../core/services/ui.service';
         </button>
         <div class="navbar-brand">
           <div class="logo-wrapper">
-            <img src="assets/escudo.jpg" alt="Escudo" class="navbar-logo" />
+            <img src="assets/escudo2.png" alt="Escudo" class="navbar-logo" />
           </div>
           <div class="brand-text">
             <span class="brand-title">Club Deportivo</span>
