@@ -11,7 +11,7 @@ import { UiService } from '../../core/services/ui.service';
   template: `
     <nav class="navbar">
       <div class="navbar-left">
-        <button class="menu-toggle" (click)="uiService.toggleSidebar()">
+        <button class="menu-toggle" (click)="uiService.toggleMenu()" aria-label="Menú">
           <span class="hamburger-line"></span>
           <span class="hamburger-line"></span>
           <span class="hamburger-line"></span>
@@ -75,7 +75,7 @@ import { UiService } from '../../core/services/ui.service';
     }
 
     .menu-toggle {
-      display: none;
+      display: flex;
       flex-direction: column;
       justify-content: center;
       gap: 5px;
@@ -87,6 +87,7 @@ import { UiService } from '../../core/services/ui.service';
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s ease;
+      flex-shrink: 0;
     }
 
     .menu-toggle:hover {
@@ -255,10 +256,6 @@ import { UiService } from '../../core/services/ui.service';
     @media (max-width: 768px) {
       .navbar {
         padding: 10px 16px;
-      }
-
-      .menu-toggle {
-        display: flex;
       }
 
       .navbar-center {

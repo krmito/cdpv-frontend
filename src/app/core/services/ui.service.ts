@@ -4,10 +4,18 @@ import { Injectable, signal } from '@angular/core';
   providedIn: 'root'
 })
 export class UiService {
+  /** Drawer abierto (móvil) */
   sidebarOpen = signal(false);
+  /** Sidebar colapsado en desktop (solo íconos) */
+  sidebarCollapsed = signal(true);
 
-  toggleSidebar() {
-    this.sidebarOpen.update(open => !open);
+  /** Hamburger unificado: en móvil abre el drawer, en desktop colapsa/expande */
+  toggleMenu() {
+    if (window.innerWidth <= 768) {
+      this.sidebarOpen.update(v => !v);
+    } else {
+      this.sidebarCollapsed.update(v => !v);
+    }
   }
 
   closeSidebar() {
@@ -16,5 +24,10 @@ export class UiService {
 
   openSidebar() {
     this.sidebarOpen.set(true);
+  }
+
+  // Compat: usado internamente por algunos guards
+  toggleSidebar() {
+    this.sidebarOpen.update(v => !v);
   }
 }
