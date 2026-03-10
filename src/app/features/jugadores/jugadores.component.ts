@@ -203,7 +203,7 @@ interface CreateJugadorDto {
                   }
                 </div>
               } @else {
-                <div class="table-container">
+                <div class="table-container card-table">
                   <table>
                     <caption>Listado de jugadores del club</caption>
                     <thead>
@@ -222,7 +222,7 @@ interface CreateJugadorDto {
                     <tbody>
                       @for (jugador of jugadores; track jugador.id) {
                         <tr>
-                          <td>
+                          <td data-label="">
                             @if (jugador.foto_url) {
                               <img [src]="getFotoUrl(jugador.foto_url)" class="avatar-sm clickable" (click)="openFotoViewer(jugador)" alt="Foto">
                             } @else {
@@ -231,26 +231,26 @@ interface CreateJugadorDto {
                               </div>
                             }
                           </td>
-                          <td><strong>{{ jugador.documento }}</strong></td>
-                          <td>{{ jugador.nombre }} {{ jugador.apellido }}</td>
-                          <td>
+                          <td data-label="Documento"><strong>{{ jugador.documento }}</strong></td>
+                          <td data-label="Nombre">{{ jugador.nombre }} {{ jugador.apellido }}</td>
+                          <td data-label="Categoría">
                             <span class="categoria-badge">
                               {{ jugador.categoria.nombre }}
                             </span>
                           </td>
-                          <td>{{ jugador.telefono || 'N/A' }}</td>
-                          <td>{{ jugador.email || 'N/A' }}</td>
-                          <td>
+                          <td data-label="Teléfono">{{ jugador.telefono || 'N/A' }}</td>
+                          <td data-label="Email">{{ jugador.email || 'N/A' }}</td>
+                          <td data-label="Estado">
                             <span [class]="jugador.activo ? 'status-active' : 'status-inactive'">
                               {{ jugador.activo ? '✓ Activo' : '✗ Inactivo' }}
                             </span>
                           </td>
-                          <td>
+                          <td data-label="Pagos">
                             <span [class]="'pago-badge ' + getEstadoPago(jugador).clase">
                               {{ getEstadoPago(jugador).texto }}
                             </span>
                           </td>
-                          <td>
+                          <td data-label="">
                             <div class="action-buttons">
                               <button class="btn-icon" (click)="verHistorial(jugador)" [attr.aria-label]="'Ver historial de ' + jugador.nombre + ' ' + jugador.apellido" title="Ver Historial">
                                 📋

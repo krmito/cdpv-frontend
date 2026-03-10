@@ -110,7 +110,7 @@ interface FormErrors {
                   <button class="btn btn-primary" (click)="openCreateModal()">➕ Nuevo Usuario</button>
                 </div>
               } @else {
-                <div class="table-responsive">
+                <div class="table-responsive card-table">
                   <table class="data-table">
                     <thead>
                       <tr>
@@ -126,7 +126,7 @@ interface FormErrors {
                     <tbody>
                       @for (u of usuarios(); track u.id) {
                         <tr [class.inactive-row]="!u.activo">
-                          <td>
+                          <td data-label="Nombre">
                             <div class="user-name">
                               <div class="avatar" [class]="'avatar-' + u.rol">{{ getInitial(u.nombre) }}</div>
                               <span>{{ u.nombre }}</span>
@@ -135,18 +135,18 @@ interface FormErrors {
                               }
                             </div>
                           </td>
-                          <td class="text-muted">{{ u.email }}</td>
-                          <td><code class="username-code">{{ u.usuario }}</code></td>
-                          <td><span class="rol-badge" [class]="'rol-' + u.rol">{{ u.rol }}</span></td>
-                          <td>
+                          <td data-label="Email" class="text-muted">{{ u.email }}</td>
+                          <td data-label="Usuario"><code class="username-code">{{ u.usuario }}</code></td>
+                          <td data-label="Rol"><span class="rol-badge" [class]="'rol-' + u.rol">{{ u.rol }}</span></td>
+                          <td data-label="Estado">
                             <span class="estado-badge" [class.estado-activo]="u.activo" [class.estado-inactivo]="!u.activo">
                               {{ u.activo ? 'Activo' : 'Inactivo' }}
                             </span>
                           </td>
-                          <td class="text-muted text-sm">
+                          <td data-label="Último acceso" class="text-muted text-sm">
                             {{ u.ultimo_acceso ? formatDate(u.ultimo_acceso) : 'Nunca' }}
                           </td>
-                          <td>
+                          <td data-label="">
                             <div class="action-btns">
                               <button class="btn-icon btn-edit" (click)="openEditModal(u)" title="Editar">✏️</button>
                               @if (u.id !== currentUserId()) {

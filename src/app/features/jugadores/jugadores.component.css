@@ -75,9 +75,19 @@
     grid-template-columns: 1fr 1fr !important;
   }
   td, th { padding: 10px 8px !important; font-size: 13px !important; }
+  /* Ocultar: Foto(1), Teléfono(5), Email(6), Pagos(8) */
+  table th:nth-child(1), table td:nth-child(1),
+  table th:nth-child(5), table td:nth-child(5),
+  table th:nth-child(6), table td:nth-child(6),
+  table th:nth-child(8), table td:nth-child(8) { display: none; }
 }
 @media (max-width: 480px) {
   .filters-grid { grid-template-columns: 1fr !important; }
+  /* Restaurar todas las celdas para card view */
+  table th:nth-child(1), table td:nth-child(1),
+  table th:nth-child(5), table td:nth-child(5),
+  table th:nth-child(6), table td:nth-child(6),
+  table th:nth-child(8), table td:nth-child(8) { display: flex; }
 }
 
 .layout {

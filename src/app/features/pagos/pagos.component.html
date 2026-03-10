@@ -269,7 +269,7 @@
             </button>
           </div>
         } @else {
-          <div class="table-responsive">
+          <div class="table-responsive card-table">
             <table class="data-table">
               <caption>Historial de pagos registrados</caption>
               <thead>
@@ -287,31 +287,31 @@
               <tbody>
                 @for (pago of pagos; track pago.id) {
                   <tr [class.anulado]="pago.anulado">
-                    <td>
+                    <td data-label="N° Recibo">
                       <span class="recibo-badge">{{ pago.numero_recibo }}</span>
                     </td>
-                    <td>{{ formatDateTime(pago.fecha_pago) }}</td>
-                    <td>
+                    <td data-label="Fecha">{{ formatDateTime(pago.fecha_pago) }}</td>
+                    <td data-label="Jugador">
                       <div class="jugador-cell">
                         <strong>{{ pago.jugador.nombre }} {{ pago.jugador.apellido }}</strong>
                         <small>{{ pago.jugador.documento }}</small>
                       </div>
                     </td>
-                    <td>{{ getNombreMes(pago.mensualidad.mes) }} {{ pago.mensualidad.anio }}</td>
-                    <td class="amount-cell">\${{ formatNumber(pago.monto_pagado) }}</td>
-                    <td>
+                    <td data-label="Período">{{ getNombreMes(pago.mensualidad.mes) }} {{ pago.mensualidad.anio }}</td>
+                    <td data-label="Monto" class="amount-cell">\${{ formatNumber(pago.monto_pagado) }}</td>
+                    <td data-label="Método">
                       <span class="metodo-badge" [class]="'metodo-' + pago.metodo_pago">
                         {{ getMetodoLabel(pago.metodo_pago) }}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Estado">
                       @if (pago.anulado) {
                         <span class="estado-badge estado-anulado">Anulado</span>
                       } @else {
                         <span class="estado-badge estado-activo">Activo</span>
                       }
                     </td>
-                    <td>
+                    <td data-label="">
                       <div class="action-buttons">
                         <button
                           class="btn-icon"

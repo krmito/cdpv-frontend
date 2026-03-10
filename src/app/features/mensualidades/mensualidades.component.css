@@ -743,3 +743,19 @@
   font-size: 0.85rem;
   color: #6b7280;
 }
+
+/* ── Responsive table ── */
+@media (max-width: 768px) {
+  /* Ocultar: Documento(2), Categoría(3), Monto(4), Vencimiento(7) */
+  .data-table th:nth-child(2), .data-table td:nth-child(2),
+  .data-table th:nth-child(3), .data-table td:nth-child(3),
+  .data-table th:nth-child(4), .data-table td:nth-child(4),
+  .data-table th:nth-child(7), .data-table td:nth-child(7) { display: none; }
+}
+@media (max-width: 480px) {
+  /* Restaurar en card view */
+  .data-table th:nth-child(2), .data-table td:nth-child(2),
+  .data-table th:nth-child(3), .data-table td:nth-child(3),
+  .data-table th:nth-child(4), .data-table td:nth-child(4),
+  .data-table th:nth-child(7), .data-table td:nth-child(7) { display: flex; }
+}

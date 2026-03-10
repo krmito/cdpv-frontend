@@ -1275,3 +1275,15 @@ textarea.form-control {
   font-size: 0.85rem;
   color: #6b7280;
 }
+
+/* ── Responsive table ── */
+@media (max-width: 768px) {
+  /* Ocultar: Fecha(2), Método(6) */
+  .data-table th:nth-child(2), .data-table td:nth-child(2),
+  .data-table th:nth-child(6), .data-table td:nth-child(6) { display: none; }
+}
+@media (max-width: 480px) {
+  /* Restaurar en card view */
+  .data-table th:nth-child(2), .data-table td:nth-child(2),
+  .data-table th:nth-child(6), .data-table td:nth-child(6) { display: flex; }
+}

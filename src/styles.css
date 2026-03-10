@@ -296,6 +296,79 @@ table tbody tr {
   }
 }
 
+/* ── Scroll shadow indicator (CSS-only) ── */
+.table-responsive,
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(to right, white 30%, rgba(255,255,255,0)) center left,
+    linear-gradient(to left,  white 30%, rgba(255,255,255,0)) center right,
+    radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.10), transparent) center left,
+    radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.10), transparent) center right;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 12px 100%, 12px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+/* ── Scrollbar delgado (tablet/desktop) ── */
+.table-responsive::-webkit-scrollbar,
+.table-container::-webkit-scrollbar { height: 5px; }
+.table-responsive::-webkit-scrollbar-track,
+.table-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.table-responsive::-webkit-scrollbar-thumb,
+.table-container::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 4px; }
+.table-responsive::-webkit-scrollbar-thumb:hover,
+.table-container::-webkit-scrollbar-thumb:hover { background: #818cf8; }
+
+/* ── Card view (activado con clase .card-table, a partir de 480px) ── */
+@media (max-width: 480px) {
+  .card-table table,
+  .card-table thead,
+  .card-table tbody,
+  .card-table th,
+  .card-table td,
+  .card-table tr { display: block; }
+
+  .card-table thead { display: none; }
+
+  .card-table tbody tr {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    padding: 4px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+
+  .card-table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border: none;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .card-table tbody td:last-child { border-bottom: none; }
+
+  .card-table tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+
+  .card-table tbody td[data-label=""]::before { display: none; }
+  .card-table tbody td[data-label=""] { justify-content: flex-end; }
+}
+
 /* === FOCUS VISIBLE (navegación por teclado) === */
 :focus-visible {
   outline: 3px solid var(--color-primary);

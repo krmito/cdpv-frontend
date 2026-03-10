@@ -113,7 +113,7 @@ interface PaginatedResponse {
                   }
                 </div>
               } @else {
-                <div class="table-container">
+                <div class="table-container card-table">
                   <table>
                     <thead>
                       <tr>
@@ -128,8 +128,8 @@ interface PaginatedResponse {
                     <tbody>
                       @for (categoria of categorias; track categoria.id) {
                         <tr>
-                          <td><strong>{{ categoria.nombre }}</strong></td>
-                          <td>
+                          <td data-label="Nombre"><strong>{{ categoria.nombre }}</strong></td>
+                          <td data-label="Rango de Edad">
                             @if (categoria.edad_minima !== null && categoria.edad_maxima !== null) {
                               {{ categoria.edad_minima }} - {{ categoria.edad_maxima }} anos
                             } @else if (categoria.edad_minima !== null) {
@@ -140,16 +140,16 @@ interface PaginatedResponse {
                               Sin restriccion
                             }
                           </td>
-                          <td class="monto">
+                          <td data-label="Mensualidad" class="monto">
                             \${{ formatNumber(categoria.valor_mensualidad) }}
                           </td>
-                          <td>{{ categoria.descripcion || '-' }}</td>
-                          <td>
+                          <td data-label="Descripción">{{ categoria.descripcion || '-' }}</td>
+                          <td data-label="Estado">
                             <span [class]="categoria.activo ? 'status-active' : 'status-inactive'">
                               {{ categoria.activo ? 'Activa' : 'Inactiva' }}
                             </span>
                           </td>
-                          <td>
+                          <td data-label="">
                             <div class="action-buttons">
                               @if (permisosService.canEdit('categorias')) {
                                 <button class="btn-icon" (click)="openEditForm(categoria)" title="Editar" [attr.aria-label]="'Editar categoría ' + categoria.nombre">

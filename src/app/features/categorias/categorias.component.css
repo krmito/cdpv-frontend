@@ -374,3 +374,15 @@ textarea.form-control {
 .toggle-switch input:checked + .toggle-slider:before {
   transform: translateX(24px);
 }
+
+/* ── Responsive table ── */
+@media (max-width: 768px) {
+  /* Ocultar: Rango de Edad(2), Descripción(4) */
+  table th:nth-child(2), table td:nth-child(2),
+  table th:nth-child(4), table td:nth-child(4) { display: none; }
+}
+@media (max-width: 480px) {
+  /* Restaurar en card view */
+  table th:nth-child(2), table td:nth-child(2),
+  table th:nth-child(4), table td:nth-child(4) { display: flex; }
+}

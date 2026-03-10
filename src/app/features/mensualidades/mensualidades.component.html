@@ -233,7 +233,7 @@
                   }
                 </div>
               } @else {
-                <div class="table-responsive">
+                <div class="table-responsive card-table">
                   <table class="data-table">
                     <caption>Listado de mensualidades del período seleccionado</caption>
                     <thead>
@@ -252,21 +252,21 @@
                     <tbody>
                       @for (mens of mensualidades; track mens.id) {
                         <tr>
-                          <td>
+                          <td data-label="Jugador">
                             <strong>{{ mens.jugador.nombre }} {{ mens.jugador.apellido }}</strong>
                           </td>
-                          <td>{{ mens.jugador.documento }}</td>
-                          <td>{{ mens.jugador.categoria.nombre }}</td>
-                          <td class="amount">\${{ formatNumber(mens.monto) }}</td>
-                          <td class="amount paid">\${{ formatNumber(mens.monto_pagado) }}</td>
-                          <td class="amount pending">\${{ formatNumber(mens.saldo_pendiente) }}</td>
-                          <td>{{ formatDate(mens.fecha_vencimiento) }}</td>
-                          <td>
+                          <td data-label="Documento">{{ mens.jugador.documento }}</td>
+                          <td data-label="Categoría">{{ mens.jugador.categoria.nombre }}</td>
+                          <td data-label="Monto" class="amount">\${{ formatNumber(mens.monto) }}</td>
+                          <td data-label="Pagado" class="amount paid">\${{ formatNumber(mens.monto_pagado) }}</td>
+                          <td data-label="Pendiente" class="amount pending">\${{ formatNumber(mens.saldo_pendiente) }}</td>
+                          <td data-label="Vencimiento">{{ formatDate(mens.fecha_vencimiento) }}</td>
+                          <td data-label="Estado">
                             <span class="estado-badge" [class]="'estado-' + mens.estado">
                               {{ getEstadoLabel(mens.estado) }}
                             </span>
                           </td>
-                          <td class="actions-cell">
+                          <td data-label="" class="actions-cell">
                             @if (permisosService.canEdit('mensualidades')) {
                               <button
                                 class="btn btn-small btn-edit"
