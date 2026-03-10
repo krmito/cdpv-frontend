@@ -480,23 +480,20 @@ interface CreateJugadorDto {
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label for="new-telefono">Teléfono <span class="required">*</span></label>
+                          <label for="new-telefono">Teléfono</label>
                           <input
                             id="new-telefono"
                             type="tel"
-                            [class]="'form-control' + ((formSubmitted || newFormTouched['telefono']) && (!newJugador.telefono || !isValidPhone(newJugador.telefono)) ? ' is-invalid' : '')"
+                            [class]="'form-control' + ((newFormTouched['telefono']) && newJugador.telefono && !isValidOptionalPhone(newJugador.telefono) ? ' is-invalid' : '')"
                             [(ngModel)]="newJugador.telefono"
                             name="telefono"
-                            required
                             placeholder="3001234567"
                             maxlength="15"
                             (blur)="touchNewField('telefono')"
-                            [attr.aria-invalid]="(formSubmitted || newFormTouched['telefono']) && (!newJugador.telefono || !isValidPhone(newJugador.telefono))"
+                            [attr.aria-invalid]="(newFormTouched['telefono']) && newJugador.telefono && !isValidOptionalPhone(newJugador.telefono)"
                             aria-describedby="new-telefono-error"
                           />
-                          @if ((formSubmitted || newFormTouched['telefono']) && !newJugador.telefono) {
-                            <span id="new-telefono-error" class="field-error" role="alert">El teléfono es obligatorio</span>
-                          } @else if ((formSubmitted || newFormTouched['telefono']) && newJugador.telefono && !isValidPhone(newJugador.telefono)) {
+                          @if ((newFormTouched['telefono']) && newJugador.telefono && !isValidOptionalPhone(newJugador.telefono)) {
                             <span id="new-telefono-error" class="field-error" role="alert">Ingrese un número válido (ej: 3001234567)</span>
                           }
                         </div>
@@ -778,22 +775,19 @@ interface CreateJugadorDto {
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label for="edit-telefono">Teléfono <span class="required">*</span></label>
+                          <label for="edit-telefono">Teléfono</label>
                           <input
                             id="edit-telefono"
                             type="tel"
-                            [class]="'form-control' + ((formSubmitted || editFormTouched['telefono']) && (!editJugadorData.telefono || !isValidPhone(editJugadorData.telefono)) ? ' is-invalid' : '')"
+                            [class]="'form-control' + ((editFormTouched['telefono']) && editJugadorData.telefono && !isValidOptionalPhone(editJugadorData.telefono) ? ' is-invalid' : '')"
                             [(ngModel)]="editJugadorData.telefono"
                             name="edit_telefono"
-                            required
                             placeholder="3001234567"
                             maxlength="15"
                             (blur)="touchEditField('telefono')"
-                            [attr.aria-invalid]="(formSubmitted || editFormTouched['telefono']) && (!editJugadorData.telefono || !isValidPhone(editJugadorData.telefono))"
+                            [attr.aria-invalid]="(editFormTouched['telefono']) && editJugadorData.telefono && !isValidOptionalPhone(editJugadorData.telefono)"
                           />
-                          @if ((formSubmitted || editFormTouched['telefono']) && !editJugadorData.telefono) {
-                            <span class="field-error" role="alert">El teléfono es obligatorio</span>
-                          } @else if ((formSubmitted || editFormTouched['telefono']) && editJugadorData.telefono && !isValidPhone(editJugadorData.telefono)) {
+                          @if ((editFormTouched['telefono']) && editJugadorData.telefono && !isValidOptionalPhone(editJugadorData.telefono)) {
                             <span class="field-error" role="alert">Ingrese un número válido (ej: 3001234567)</span>
                           }
                         </div>
@@ -1636,8 +1630,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
       this.newJugador.apellido &&
       this.newJugador.documento &&
       this.newJugador.fecha_nacimiento &&
-      this.newJugador.telefono &&
-      this.isValidPhone(this.newJugador.telefono) &&
+      this.isValidOptionalPhone(this.newJugador.telefono) &&
       this.isValidOptionalPhone(this.newJugador.telefono_acudiente) &&
       this.isValidEmail(this.newJugador.email) &&
       this.isValidEmail(this.newJugador.email_acudiente) &&
@@ -1771,8 +1764,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
       this.editJugadorData.apellido &&
       this.editJugadorData.documento &&
       this.editJugadorData.fecha_nacimiento &&
-      this.editJugadorData.telefono &&
-      this.isValidPhone(this.editJugadorData.telefono) &&
+      this.isValidOptionalPhone(this.editJugadorData.telefono) &&
       this.isValidOptionalPhone(this.editJugadorData.telefono_acudiente) &&
       this.isValidEmail(this.editJugadorData.email) &&
       this.isValidEmail(this.editJugadorData.email_acudiente) &&
