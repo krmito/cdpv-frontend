@@ -347,6 +347,8 @@ table tbody tr:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    word-break: break-all;
+    overflow-wrap: anywhere;
     padding: 8px 14px;
     border: none;
     border-bottom: 1px solid #f3f4f6;

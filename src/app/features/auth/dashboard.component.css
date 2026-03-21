@@ -594,6 +594,16 @@
 }
 
 /* === RESPONSIVE === */
+@media (max-width: 900px) {
+  .activity-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .actions-grid-secondary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .content {
     padding: 16px;
@@ -617,10 +627,6 @@
   }
 
   .actions-grid-secondary {
-    grid-template-columns: 1fr;
-  }
-
-  .activity-grid {
     grid-template-columns: 1fr;
   }
 }
