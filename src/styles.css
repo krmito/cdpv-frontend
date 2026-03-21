@@ -54,12 +54,14 @@ table th, table td {
   text-align: left;
 }
 
-table tbody tr:hover {
-  background: #f9fafb;
-}
-
 table tbody tr {
   cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+table tbody tr:hover {
+  background: #eef2ff;
+  box-shadow: inset 3px 0 0 #4f46e5;
 }
 
 /* Estilos de botones */

@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import * as XLSX from 'xlsx';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -246,7 +247,10 @@ interface CreateJugadorDto {
                             </span>
                           </td>
                           <td data-label="Pagos">
-                            <span [class]="'pago-badge ' + getEstadoPago(jugador).clase">
+                            <span
+                              [class]="'pago-badge ' + getEstadoPago(jugador).clase + (permisosService.canView('pagos') ? ' pago-badge-link' : '')"
+                              [title]="permisosService.canView('pagos') ? 'Ir a Pagos' : ''"
+                              (click)="irAPagos(jugador)">
                               {{ getEstadoPago(jugador).texto }}
                             </span>
                           </td>
@@ -1336,6 +1340,7 @@ interface CreateJugadorDto {
 export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   private api = inject(ApiService);
   private toast = inject(ToastService);
+  private router = inject(Router);
   permisosService = inject(PermisosService);
 
   jugadores: Jugador[] = [];
@@ -1928,6 +1933,11 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   // Foto helpers
   getFotoUrl(fotoUrl: string): string {
     return `${this.apiBaseUrl}${fotoUrl}`;
+  }
+
+  irAPagos(jugador: Jugador) {
+    if (!this.permisosService.canView('pagos')) return;
+    this.router.navigate(['/pagos'], { queryParams: { jugadorId: jugador.id } });
   }
 
   getEstadoPago(jugador: Jugador): { texto: string; clase: string } {

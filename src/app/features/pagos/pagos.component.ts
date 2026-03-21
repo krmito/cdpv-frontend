@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
@@ -228,6 +229,7 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
 
   private authService = inject(AuthService);
   private toast = inject(ToastService);
+  private route = inject(ActivatedRoute);
   permisosService = inject(PermisosService);
 
   constructor(private api: ApiService) {}
@@ -238,6 +240,22 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
 
   ngOnInit() {
     this.generarNumeroRecibo();
+    this.route.queryParams.subscribe(params => {
+      const jugadorId = params['jugadorId'];
+      if (jugadorId) {
+        this.activeTab = 'registrar';
+        this.api.get<Jugador>(`jugadores/${jugadorId}`).subscribe({
+          next: (jugador) => {
+            this.jugadorSeleccionado = jugador;
+            this.busquedaNombre = `${jugador.nombre} ${jugador.apellido}`;
+            this.cargarMensualidadesPendientes();
+          },
+          error: () => {
+            this.toast.error('No se pudo cargar el jugador seleccionado');
+          }
+        });
+      }
+    });
   }
 
   // ===== TAB MANAGEMENT =====

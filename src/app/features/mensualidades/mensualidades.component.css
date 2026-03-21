@@ -337,8 +337,13 @@
   font-size: 14px;
 }
 
+.data-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
 .data-table tbody tr:hover {
-  background: #f9fafb;
+  background: #eef2ff;
+  box-shadow: inset 3px 0 0 #4f46e5;
 }
 
 .amount {
