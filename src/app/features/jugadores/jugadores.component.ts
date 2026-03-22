@@ -31,8 +31,8 @@ interface Jugador {
   nombre: string;
   apellido: string;
   tipo_documento: string;
-  documento: string;
-  fecha_nacimiento: string;
+  documento?: string | null;
+  fecha_nacimiento?: string | null;
   telefono: string;
   telefono_acudiente: string;
   email: string;
@@ -62,8 +62,8 @@ interface CreateJugadorDto {
   nombre: string;
   apellido: string;
   tipo_documento: string;
-  documento: string;
-  fecha_nacimiento: string;
+  documento?: string;
+  fecha_nacimiento?: string;
   telefono: string;
   telefono_acudiente?: string;
   email?: string;
@@ -426,43 +426,29 @@ interface CreateJugadorDto {
                         </div>
 
                         <div class="form-group">
-                          <label for="new-documento">Documento <span class="required">*</span></label>
+                          <label for="new-documento">Documento</label>
                           <input
                             id="new-documento"
                             type="text"
-                            [class]="'form-control' + ((formSubmitted || newFormTouched['documento']) && !newJugador.documento ? ' is-invalid' : '')"
+                            class="form-control"
                             [(ngModel)]="newJugador.documento"
                             name="documento"
-                            required
                             placeholder="1234567890"
                             maxlength="15"
-                            (blur)="touchNewField('documento')"
-                            [attr.aria-invalid]="(formSubmitted || newFormTouched['documento']) && !newJugador.documento"
-                            aria-describedby="new-documento-error"
                           />
-                          @if ((formSubmitted || newFormTouched['documento']) && !newJugador.documento) {
-                            <span id="new-documento-error" class="field-error" role="alert">El documento es obligatorio</span>
-                          }
                         </div>
                       </div>
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label for="new-fecha">Fecha de Nacimiento <span class="required">*</span></label>
+                          <label for="new-fecha">Fecha de Nacimiento</label>
                           <input
                             id="new-fecha"
                             type="date"
-                            [class]="'form-control' + ((formSubmitted || newFormTouched['fecha_nacimiento']) && !newJugador.fecha_nacimiento ? ' is-invalid' : '')"
+                            class="form-control"
                             [(ngModel)]="newJugador.fecha_nacimiento"
                             name="fecha_nacimiento"
-                            required
-                            (blur)="touchNewField('fecha_nacimiento')"
-                            [attr.aria-invalid]="(formSubmitted || newFormTouched['fecha_nacimiento']) && !newJugador.fecha_nacimiento"
-                            aria-describedby="new-fecha-error"
                           />
-                          @if ((formSubmitted || newFormTouched['fecha_nacimiento']) && !newJugador.fecha_nacimiento) {
-                            <span id="new-fecha-error" class="field-error" role="alert">La fecha de nacimiento es obligatoria</span>
-                          }
                         </div>
 
                         <div class="form-group">
@@ -724,41 +710,29 @@ interface CreateJugadorDto {
                         </div>
 
                         <div class="form-group">
-                          <label for="edit-documento">Documento <span class="required">*</span></label>
+                          <label for="edit-documento">Documento</label>
                           <input
                             id="edit-documento"
                             type="text"
-                            [class]="'form-control' + ((formSubmitted || editFormTouched['documento']) && !editJugadorData.documento ? ' is-invalid' : '')"
+                            class="form-control"
                             [(ngModel)]="editJugadorData.documento"
                             name="edit_documento"
-                            required
                             placeholder="1234567890"
                             maxlength="15"
-                            (blur)="touchEditField('documento')"
-                            [attr.aria-invalid]="(formSubmitted || editFormTouched['documento']) && !editJugadorData.documento"
                           />
-                          @if ((formSubmitted || editFormTouched['documento']) && !editJugadorData.documento) {
-                            <span class="field-error" role="alert">El documento es obligatorio</span>
-                          }
                         </div>
                       </div>
 
                       <div class="form-row">
                         <div class="form-group">
-                          <label for="edit-fecha">Fecha de Nacimiento <span class="required">*</span></label>
+                          <label for="edit-fecha">Fecha de Nacimiento</label>
                           <input
                             id="edit-fecha"
                             type="date"
-                            [class]="'form-control' + ((formSubmitted || editFormTouched['fecha_nacimiento']) && !editJugadorData.fecha_nacimiento ? ' is-invalid' : '')"
+                            class="form-control"
                             [(ngModel)]="editJugadorData.fecha_nacimiento"
                             name="edit_fecha_nacimiento"
-                            required
-                            (blur)="touchEditField('fecha_nacimiento')"
-                            [attr.aria-invalid]="(formSubmitted || editFormTouched['fecha_nacimiento']) && !editJugadorData.fecha_nacimiento"
                           />
-                          @if ((formSubmitted || editFormTouched['fecha_nacimiento']) && !editJugadorData.fecha_nacimiento) {
-                            <span class="field-error" role="alert">La fecha de nacimiento es obligatoria</span>
-                          }
                         </div>
 
                         <div class="form-group">
@@ -1633,8 +1607,6 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     return !!(
       this.newJugador.nombre &&
       this.newJugador.apellido &&
-      this.newJugador.documento &&
-      this.newJugador.fecha_nacimiento &&
       this.isValidOptionalPhone(this.newJugador.telefono) &&
       this.isValidOptionalPhone(this.newJugador.telefono_acudiente) &&
       this.isValidEmail(this.newJugador.email) &&
@@ -1656,7 +1628,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     // Convertir fecha a formato ISO 8601 (agregar la hora)
     const jugadorData = {
       ...this.newJugador,
-      fecha_nacimiento: this.newJugador.fecha_nacimiento + 'T00:00:00.000Z',
+      fecha_nacimiento: this.newJugador.fecha_nacimiento ? this.newJugador.fecha_nacimiento + 'T00:00:00.000Z' : undefined,
       email: this.newJugador.email || undefined,
       email_acudiente: this.newJugador.email_acudiente || undefined,
     };
@@ -1737,7 +1709,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
       apellido: jugador.apellido,
       tipo_documento: jugador.tipo_documento || 'CC',
       documento: jugador.documento,
-      fecha_nacimiento: jugador.fecha_nacimiento.toString().split('T')[0], // Convertir a YYYY-MM-DD
+      fecha_nacimiento: jugador.fecha_nacimiento ? jugador.fecha_nacimiento.toString().split('T')[0] : '',
       posicion: jugador.posicion || '',
       telefono: jugador.telefono,
       telefono_acudiente: jugador.telefono_acudiente || '',
@@ -1767,8 +1739,6 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     return !!(
       this.editJugadorData.nombre &&
       this.editJugadorData.apellido &&
-      this.editJugadorData.documento &&
-      this.editJugadorData.fecha_nacimiento &&
       this.isValidOptionalPhone(this.editJugadorData.telefono) &&
       this.isValidOptionalPhone(this.editJugadorData.telefono_acudiente) &&
       this.isValidEmail(this.editJugadorData.email) &&
@@ -1790,7 +1760,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     // Convertir fecha a formato ISO 8601
     const dataToSend = {
       ...this.editJugadorData,
-      fecha_nacimiento: this.editJugadorData.fecha_nacimiento + 'T00:00:00.000Z',
+      fecha_nacimiento: this.editJugadorData.fecha_nacimiento ? this.editJugadorData.fecha_nacimiento + 'T00:00:00.000Z' : undefined,
       email: this.editJugadorData.email || undefined,
       email_acudiente: this.editJugadorData.email_acudiente || undefined,
     };
