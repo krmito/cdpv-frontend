@@ -33,6 +33,7 @@ interface Jugador {
   tipo_documento: string;
   documento?: string | null;
   fecha_nacimiento?: string | null;
+  fecha_ingreso?: string | null;
   telefono: string;
   telefono_acudiente: string;
   email: string;
@@ -64,6 +65,7 @@ interface CreateJugadorDto {
   tipo_documento: string;
   documento?: string;
   fecha_nacimiento?: string;
+  fecha_ingreso?: string;
   telefono: string;
   telefono_acudiente?: string;
   email?: string;
@@ -452,6 +454,19 @@ interface CreateJugadorDto {
                         </div>
 
                         <div class="form-group">
+                          <label for="new-fecha-ingreso">Fecha de Ingreso al Equipo</label>
+                          <input
+                            id="new-fecha-ingreso"
+                            type="date"
+                            class="form-control"
+                            [(ngModel)]="newJugador.fecha_ingreso"
+                            name="fecha_ingreso"
+                          />
+                        </div>
+                      </div>
+
+                      <div class="form-row">
+                        <div class="form-group">
                           <label for="new-posicion">Posición</label>
                           <input
                             id="new-posicion"
@@ -735,6 +750,19 @@ interface CreateJugadorDto {
                           />
                         </div>
 
+                        <div class="form-group">
+                          <label for="edit-fecha-ingreso">Fecha de Ingreso al Equipo</label>
+                          <input
+                            id="edit-fecha-ingreso"
+                            type="date"
+                            class="form-control"
+                            [(ngModel)]="editJugadorData.fecha_ingreso"
+                            name="edit_fecha_ingreso"
+                          />
+                        </div>
+                      </div>
+
+                      <div class="form-row">
                         <div class="form-group">
                           <label>Posición</label>
                           <input
@@ -1338,6 +1366,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     tipo_documento: 'CC',
     documento: '',
     fecha_nacimiento: '',
+    fecha_ingreso: '',
     telefono: '',
     telefono_acudiente: '',
     email: '',
@@ -1574,6 +1603,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
       tipo_documento: 'CC',
       documento: '',
       fecha_nacimiento: '',
+      fecha_ingreso: '',
       telefono: '',
       telefono_acudiente: '',
       email: '',
@@ -1629,6 +1659,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     const jugadorData = {
       ...this.newJugador,
       fecha_nacimiento: this.newJugador.fecha_nacimiento ? this.newJugador.fecha_nacimiento + 'T00:00:00.000Z' : undefined,
+      fecha_ingreso: this.newJugador.fecha_ingreso ? this.newJugador.fecha_ingreso + 'T00:00:00.000Z' : undefined,
       email: this.newJugador.email || undefined,
       email_acudiente: this.newJugador.email_acudiente || undefined,
     };
@@ -1710,6 +1741,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
       tipo_documento: jugador.tipo_documento || 'CC',
       documento: jugador.documento,
       fecha_nacimiento: jugador.fecha_nacimiento ? jugador.fecha_nacimiento.toString().split('T')[0] : '',
+      fecha_ingreso: jugador.fecha_ingreso ? jugador.fecha_ingreso.toString().split('T')[0] : '',
       posicion: jugador.posicion || '',
       telefono: jugador.telefono,
       telefono_acudiente: jugador.telefono_acudiente || '',
@@ -1761,6 +1793,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     const dataToSend = {
       ...this.editJugadorData,
       fecha_nacimiento: this.editJugadorData.fecha_nacimiento ? this.editJugadorData.fecha_nacimiento + 'T00:00:00.000Z' : undefined,
+      fecha_ingreso: this.editJugadorData.fecha_ingreso ? this.editJugadorData.fecha_ingreso + 'T00:00:00.000Z' : undefined,
       email: this.editJugadorData.email || undefined,
       email_acudiente: this.editJugadorData.email_acudiente || undefined,
     };
