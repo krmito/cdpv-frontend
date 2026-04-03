@@ -276,7 +276,7 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
       endpoint += `&estado=${this.filtrosMensualidades.estado}`;
     }
     if (this.filtrosMensualidades.jugador) {
-      endpoint += `&jugador=${encodeURIComponent(this.filtrosMensualidades.jugador)}`;
+      endpoint += `&search=${encodeURIComponent(this.filtrosMensualidades.jugador)}`;
     }
 
     console.log('🔍 Endpoint mensualidades:', endpoint);
