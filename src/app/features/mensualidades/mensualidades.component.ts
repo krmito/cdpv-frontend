@@ -28,6 +28,7 @@ interface Mensualidad {
   mes: number;
   anio: number;
   monto: number;
+  monto_descuento: number | null;
   monto_pagado: number;
   saldo_pendiente: number;
   fecha_vencimiento: string;
@@ -83,6 +84,7 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
   // Edición de mensualidad
   editandoMensualidad: Mensualidad | null = null;
   editFechaVencimiento = '';
+  editMontoDescuento: number | null = null;
   guardandoEdicion = false;
 
   // Eliminación de mensualidad
@@ -449,11 +451,13 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
     // Extraer solo la parte de la fecha YYYY-MM-DD
     const datePart = mensualidad.fecha_vencimiento.split('T')[0];
     this.editFechaVencimiento = datePart;
+    this.editMontoDescuento = mensualidad.monto_descuento ?? null;
   }
 
   cancelarEdicion() {
     this.editandoMensualidad = null;
     this.editFechaVencimiento = '';
+    this.editMontoDescuento = null;
   }
 
   guardarEdicion() {
@@ -461,15 +465,25 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
 
     this.guardandoEdicion = true;
 
-    this.api.patch<any>(`mensualidades/${this.editandoMensualidad.id}`, {
-      fecha_vencimiento: this.editFechaVencimiento
-    }).subscribe({
-      next: () => {
+    const payload: any = { fecha_vencimiento: this.editFechaVencimiento };
+
+    // Enviar descuento solo si cambió (incluir null para quitarlo)
+    const descuentoOriginal = this.editandoMensualidad.monto_descuento ?? null;
+    const descuentoNuevo = this.editMontoDescuento && this.editMontoDescuento > 0
+      ? this.editMontoDescuento
+      : null;
+    if (descuentoNuevo !== descuentoOriginal) {
+      payload.monto_descuento = descuentoNuevo;
+    }
+
+    this.api.patch<any>(`mensualidades/${this.editandoMensualidad.id}`, payload).subscribe({
+      next: (res) => {
         this.guardandoEdicion = false;
-        this.toast.success('Fecha de vencimiento actualizada');
+        this.toast.success('Mensualidad actualizada');
         const index = this.mensualidades.findIndex(m => m.id === this.editandoMensualidad!.id);
         if (index !== -1) {
-          this.mensualidades[index].fecha_vencimiento = this.editFechaVencimiento;
+          const updated = res?.data ?? this.mensualidades[index];
+          this.mensualidades[index] = { ...this.mensualidades[index], ...updated };
         }
         this.cancelarEdicion();
       },

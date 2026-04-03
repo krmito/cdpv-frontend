@@ -351,6 +351,32 @@
   color: #111827;
 }
 
+.monto-original {
+  text-decoration: line-through;
+  color: #9ca3af;
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+.monto-descuento {
+  font-weight: 600;
+  color: #111827;
+}
+
+.badge-descuento {
+  display: inline-block;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 8px;
+  margin-left: 4px;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
 .amount.paid {
   color: #10b981;
 }

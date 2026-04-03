@@ -257,7 +257,15 @@
                           </td>
                           <td data-label="Documento">{{ mens.jugador.documento }}</td>
                           <td data-label="Categoría">{{ mens.jugador.categoria.nombre }}</td>
-                          <td data-label="Monto" class="amount">\${{ formatNumber(mens.monto) }}</td>
+                          <td data-label="Monto" class="amount">
+                            @if (mens.monto_descuento != null) {
+                              <span class="monto-original">\${{ formatNumber(mens.monto) }}</span>
+                              <span class="monto-descuento">\${{ formatNumber(mens.monto_descuento) }}</span>
+                              <span class="badge-descuento">Desc.</span>
+                            } @else {
+                              \${{ formatNumber(mens.monto) }}
+                            }
+                          </td>
                           <td data-label="Pagado" class="amount paid">\${{ formatNumber(mens.monto_pagado) }}</td>
                           <td data-label="Pendiente" class="amount pending">\${{ formatNumber(mens.saldo_pendiente) }}</td>
                           <td data-label="Vencimiento">{{ formatDate(mens.fecha_vencimiento) }}</td>
@@ -453,7 +461,7 @@
         @if (editandoMensualidad) {
           <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-edit-mens-title">
             <div class="modal-content">
-              <h3 id="modal-edit-mens-title">✏️ Editar Fecha de Vencimiento</h3>
+              <h3 id="modal-edit-mens-title">✏️ Editar Mensualidad</h3>
               <p class="modal-subtitle">
                 {{ editandoMensualidad.jugador.nombre }} {{ editandoMensualidad.jugador.apellido }} -
                 {{ getNombreMes(editandoMensualidad.mes) }} {{ editandoMensualidad.anio }}
@@ -466,6 +474,21 @@
                   class="form-control"
                   [(ngModel)]="editFechaVencimiento"
                 />
+              </div>
+
+              <div class="form-group">
+                <label>Monto con Descuento</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  [(ngModel)]="editMontoDescuento"
+                  [placeholder]="'Precio normal: $' + formatNumber(editandoMensualidad.monto)"
+                  min="0"
+                />
+                <small class="form-hint">
+                  Deja vacío para usar el precio de la categoría (${{ formatNumber(editandoMensualidad.monto) }}).
+                  Al aplicar un descuento el saldo pendiente se recalcula automáticamente.
+                </small>
               </div>
 
               <div class="modal-actions">

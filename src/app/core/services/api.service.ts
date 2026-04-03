@@ -26,8 +26,8 @@ export class ApiService {
     return this.http.patch<T>(`${this.apiUrl}/${endpoint}`, data);
   }
 
-  delete<T>(endpoint: string): Observable<T> {
-    return this.http.delete<T>(`${this.apiUrl}/${endpoint}`);
+  delete<T>(endpoint: string, body?: any): Observable<T> {
+    return this.http.delete<T>(`${this.apiUrl}/${endpoint}`, { body });
   }
 
   postFile<T>(endpoint: string, formData: FormData): Observable<T> {

@@ -592,7 +592,7 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
     this.anulando = true;
     this.anularError = '';
 
-    this.api.delete(`pagos/${this.pagoAAnular!.id}/anular`).subscribe({
+    this.api.delete(`pagos/${this.pagoAAnular!.id}/anular`, { motivo: this.motivoAnulacion }).subscribe({
       next: () => {
         this.anulando = false;
         this.toast.success('Pago anulado exitosamente');
