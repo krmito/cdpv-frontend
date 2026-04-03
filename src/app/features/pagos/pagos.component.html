@@ -321,6 +321,15 @@
                         >
                           👁️
                         </button>
+                        @if (!pago.anulado && permisosService.canEdit('pagos')) {
+                          <button
+                            class="btn-icon"
+                            (click)="abrirEditarPago(pago)"
+                            title="Editar método de pago"
+                          >
+                            ✏️
+                          </button>
+                        }
                         @if (!pago.anulado && permisosService.canDelete('pagos')) {
                           <button
                             class="btn-icon danger"
@@ -811,6 +820,111 @@
           <button class="btn btn-secondary" (click)="cerrarDetalleModal()">
             Cerrar
           </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Editar Método de Pago -->
+  @if (showEditarPagoModal && pagoAEditar) {
+    <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-editar-pago-title">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="modal-editar-pago-title">✏️ Editar Pago</h2>
+          <button class="btn-close" (click)="cerrarEditarPago()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="anular-info">
+            <p><strong>Recibo:</strong> {{ pagoAEditar.numero_recibo }}</p>
+            <p><strong>Monto:</strong> \${{ formatNumber(pagoAEditar.monto_pagado) }}</p>
+            <p><strong>Jugador:</strong> {{ pagoAEditar.jugador.nombre }} {{ pagoAEditar.jugador.apellido }}</p>
+            <p><strong>Período:</strong> {{ getNombreMes(pagoAEditar.mensualidad.mes) }} {{ pagoAEditar.mensualidad.anio }}</p>
+          </div>
+
+          <form (ngSubmit)="guardarEditPago()">
+            @if (editPagoError) {
+              <div class="alert alert-danger" role="alert" aria-live="polite">
+                {{ editPagoError }}
+              </div>
+            }
+
+            <div class="form-group">
+              <label>Método de Pago <span class="required">*</span></label>
+              <select
+                class="form-control"
+                [(ngModel)]="editPagoData.metodo_pago"
+                name="metodo_pago"
+                required
+              >
+                <option value="">Seleccione un método</option>
+                <option value="efectivo">💵 Efectivo</option>
+                <option value="nequi">📱 Nequi</option>
+                <option value="transferencia">🏦 Transferencia Bancaria</option>
+                <option value="otro">📝 Otro</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Observaciones</label>
+              <textarea
+                class="form-control"
+                [(ngModel)]="editPagoData.observaciones"
+                name="observaciones"
+                rows="3"
+                placeholder="Notas adicionales (opcional)..."
+              ></textarea>
+            </div>
+
+            <div class="form-group comprobante-section">
+              <label>Adjuntar Comprobante</label>
+              <p class="form-text comprobante-info">Opcional. Sube el comprobante si el método lo requiere.</p>
+              @if (!editComprobanteFile) {
+                <div class="file-upload-area">
+                  <input
+                    type="file"
+                    id="edit-comprobante"
+                    accept="image/jpeg,image/png,image/jpg,application/pdf"
+                    (change)="onEditComprobanteSelected($event)"
+                    hidden
+                  />
+                  <label for="edit-comprobante" class="file-upload-label">
+                    <span class="upload-icon">📎</span>
+                    <span>Seleccionar archivo</span>
+                    <small>JPG, PNG o PDF (máx. 5MB)</small>
+                  </label>
+                </div>
+              } @else {
+                <div class="comprobante-preview">
+                  <div class="pdf-preview">
+                    <span class="pdf-icon">📄</span>
+                    <span>{{ editComprobanteFile.name }}</span>
+                  </div>
+                  <button type="button" class="btn-remove-file" (click)="editComprobanteFile = null">
+                    ✕ Quitar
+                  </button>
+                </div>
+              }
+            </div>
+
+            <div class="form-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="cerrarEditarPago()"
+                [disabled]="guardandoEditPago"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="!editPagoData.metodo_pago || guardandoEditPago"
+              >
+                {{ guardandoEditPago ? '💾 Guardando...' : '✓ Guardar Cambios' }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

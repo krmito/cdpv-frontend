@@ -189,6 +189,15 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
   anularError = '';
   searchTimeout: any;
 
+  // Tab Historial - Editar pago
+  showEditarPagoModal = false;
+  pagoAEditar: Pago | null = null;
+  editPagoData = { metodo_pago: '', observaciones: '' };
+  guardandoEditPago = false;
+  editPagoError = '';
+  editComprobanteFile: File | null = null;
+  subiendoEditComprobante = false;
+
   // Tab Estadísticas
   estadisticas: Estadisticas = {
     total_hoy: 0,
@@ -636,6 +645,83 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
         this.anulando = false;
         this.anularError = err.error?.message || 'Error al anular el pago';
         console.error('Error anulando pago:', err);
+      }
+    });
+  }
+
+  abrirEditarPago(pago: Pago) {
+    this.pagoAEditar = pago;
+    this.editPagoData = { metodo_pago: pago.metodo_pago, observaciones: pago.observaciones || '' };
+    this.editPagoError = '';
+    this.editComprobanteFile = null;
+    this.showEditarPagoModal = true;
+  }
+
+  cerrarEditarPago() {
+    this.showEditarPagoModal = false;
+    this.pagoAEditar = null;
+    this.editComprobanteFile = null;
+    this.editPagoError = '';
+  }
+
+  onEditComprobanteSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+      if (!tiposPermitidos.includes(file.type)) {
+        this.editPagoError = 'Solo se permiten archivos JPG, PNG o PDF';
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        this.editPagoError = 'El archivo no debe superar los 5MB';
+        return;
+      }
+      this.editComprobanteFile = file;
+    }
+  }
+
+  guardarEditPago() {
+    if (!this.editPagoData.metodo_pago) {
+      this.editPagoError = 'Seleccione un método de pago';
+      return;
+    }
+
+    this.guardandoEditPago = true;
+    this.editPagoError = '';
+
+    this.api.patch<any>(`pagos/${this.pagoAEditar!.id}`, this.editPagoData).subscribe({
+      next: () => {
+        if (this.editComprobanteFile) {
+          this.subiendoEditComprobante = true;
+          const formData = new FormData();
+          formData.append('file', this.editComprobanteFile);
+          this.api.postFile<any>(`pagos/${this.pagoAEditar!.id}/comprobante`, formData).subscribe({
+            next: () => {
+              this.guardandoEditPago = false;
+              this.subiendoEditComprobante = false;
+              this.toast.success('Pago actualizado con comprobante');
+              this.cerrarEditarPago();
+              this.loadPagos();
+            },
+            error: () => {
+              this.guardandoEditPago = false;
+              this.subiendoEditComprobante = false;
+              this.toast.warning('Método de pago actualizado, pero el comprobante no se pudo subir');
+              this.cerrarEditarPago();
+              this.loadPagos();
+            }
+          });
+        } else {
+          this.guardandoEditPago = false;
+          this.toast.success('Pago actualizado exitosamente');
+          this.cerrarEditarPago();
+          this.loadPagos();
+        }
+      },
+      error: (err) => {
+        this.guardandoEditPago = false;
+        this.editPagoError = err.error?.message || 'Error al actualizar el pago';
       }
     });
   }
