@@ -432,6 +432,15 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
     return new Intl.NumberFormat('es-CO').format(num);
   }
 
+  getCreditoDescuento(mens: Mensualidad): number {
+    if (mens.monto_descuento == null) return 0;
+    return Number(mens.monto) - Number(mens.monto_descuento);
+  }
+
+  getPagoEfectivo(mens: Mensualidad): number {
+    return Math.max(0, Number(mens.monto_pagado) - this.getCreditoDescuento(mens));
+  }
+
   getPorcentajeColor(porcentaje: number): string {
     if (porcentaje >= 80) return 'success';
     if (porcentaje >= 50) return 'warning';

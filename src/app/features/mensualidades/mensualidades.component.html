@@ -266,7 +266,26 @@
                               \${{ formatNumber(mens.monto) }}
                             }
                           </td>
-                          <td data-label="Pagado" class="amount paid">\${{ formatNumber(mens.monto_pagado) }}</td>
+                          <td data-label="Pagado" class="amount paid">
+                            @if (mens.monto_descuento != null) {
+                              <div class="pagado-desglose">
+                                @if (getCreditoDescuento(mens) > 0) {
+                                  <span class="pagado-linea">
+                                    <span class="pagado-label">Desc.</span>
+                                    \${{ formatNumber(getCreditoDescuento(mens)) }}
+                                  </span>
+                                }
+                                @if (getPagoEfectivo(mens) > 0) {
+                                  <span class="pagado-linea">
+                                    <span class="pagado-label">Pago</span>
+                                    \${{ formatNumber(getPagoEfectivo(mens)) }}
+                                  </span>
+                                }
+                              </div>
+                            } @else {
+                              \${{ formatNumber(mens.monto_pagado) }}
+                            }
+                          </td>
                           <td data-label="Pendiente" class="amount pending">\${{ formatNumber(mens.saldo_pendiente) }}</td>
                           <td data-label="Vencimiento">{{ formatDate(mens.fecha_vencimiento) }}</td>
                           <td data-label="Estado">

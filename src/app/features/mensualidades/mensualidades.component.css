@@ -363,6 +363,30 @@
   color: #111827;
 }
 
+.pagado-desglose {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pagado-linea {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.pagado-label {
+  font-size: 10px;
+  font-weight: 700;
+  background: #d1fae5;
+  color: #065f46;
+  padding: 1px 5px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
 .badge-descuento {
   display: inline-block;
   background: #dbeafe;
