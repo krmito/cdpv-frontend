@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { switchMap, of } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
@@ -40,6 +41,7 @@ interface Mensualidad {
   mes: number;
   anio: number;
   monto: number;
+  monto_descuento: number | null;
   monto_pagado: number;
   saldo_pendiente: number;
   fecha_vencimiento: string;
@@ -145,6 +147,7 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
 
   // Tab Registrar - Formulario de pago
   showPagoForm = false;
+  pagoDescuento: number | null = null;
   pagoData: CreatePagoDto = {
     mensualidad_id: 0,
     monto_pagado: 0,
@@ -387,6 +390,7 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
     this.showPagoForm = true;
     this.pagoData.mensualidad_id = mensualidad.id;
     this.pagoData.monto_pagado = mensualidad.saldo_pendiente;
+    this.pagoDescuento = mensualidad.monto_descuento ?? null;
 
     // Establecer fecha límite por defecto (1 mes después)
     const fechaLimite = new Date();
@@ -399,6 +403,7 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
   cerrarFormularioPago() {
     this.showPagoForm = false;
     this.mensualidadSeleccionada = null;
+    this.pagoDescuento = null;
     this.pagoData = {
       mensualidad_id: 0,
       monto_pagado: 0,
@@ -434,35 +439,65 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
     return baseValid;
   }
 
+  onDescuentoChange() {
+    if (!this.mensualidadSeleccionada) return;
+    const descuento = this.pagoDescuento && this.pagoDescuento > 0 ? this.pagoDescuento : null;
+
+    if (descuento != null) {
+      // Crédito anterior ya aplicado en monto_pagado
+      const creditoAnterior = this.mensualidadSeleccionada.monto_descuento != null
+        ? Number(this.mensualidadSeleccionada.monto) - Number(this.mensualidadSeleccionada.monto_descuento)
+        : 0;
+      // Cash real pagado = monto_pagado - crédito anterior
+      const cashPagado = Math.max(0, Number(this.mensualidadSeleccionada.monto_pagado) - creditoAnterior);
+      // Con el nuevo descuento, el nuevo crédito
+      const creditoNuevo = Number(this.mensualidadSeleccionada.monto) - descuento;
+      // Nuevo saldo = monto - (cashPagado + creditoNuevo)
+      this.pagoData.monto_pagado = Math.max(0, descuento - cashPagado);
+    } else {
+      this.pagoData.monto_pagado = Number(this.mensualidadSeleccionada.saldo_pendiente);
+    }
+  }
+
   registrarPago() {
     if (!this.isPagoFormValid()) {
       this.formError = 'Complete todos los campos obligatorios';
       return;
     }
 
-    if (this.pagoData.monto_pagado > this.mensualidadSeleccionada!.saldo_pendiente) {
-      this.formError = 'El monto no puede ser mayor al pendiente';
-      return;
-    }
-
     this.guardando = true;
     this.formError = '';
 
-    // Solo enviar campos que el backend acepta
-    const dataToSend = {
-      mensualidad_id: this.pagoData.mensualidad_id,
-      monto_pagado: this.pagoData.monto_pagado,
-      metodo_pago: this.pagoData.metodo_pago,
-      observaciones: this.pagoData.observaciones
-    };
+    // Determinar si hay un descuento nuevo a aplicar
+    const descuentoNuevo = this.pagoDescuento && this.pagoDescuento > 0 ? this.pagoDescuento : null;
+    const descuentoAnterior = this.mensualidadSeleccionada!.monto_descuento ?? null;
+    const debeAplicarDescuento = descuentoNuevo !== descuentoAnterior;
 
-    this.api.post<any>('pagos', dataToSend).subscribe({
+    // Si hay descuento nuevo, primero actualizar la mensualidad, luego registrar el pago
+    const paso1$ = debeAplicarDescuento
+      ? this.api.patch<any>(`mensualidades/${this.mensualidadSeleccionada!.id}`, { monto_descuento: descuentoNuevo })
+      : of(null);
+
+    paso1$.pipe(
+      switchMap((mensualidadActualizada) => {
+        // Si aplicamos descuento, actualizar el saldo localmente antes del pago
+        if (mensualidadActualizada?.data) {
+          this.mensualidadSeleccionada = { ...this.mensualidadSeleccionada!, ...mensualidadActualizada.data };
+        }
+        const dataToSend = {
+          mensualidad_id: this.pagoData.mensualidad_id,
+          monto_pagado: this.pagoData.monto_pagado,
+          metodo_pago: this.pagoData.metodo_pago,
+          observaciones: this.pagoData.observaciones
+        };
+        return this.api.post<any>('pagos', dataToSend);
+      })
+    ).subscribe({
       next: (response) => {
         const pago = response.data || response;
         const pagoId = pago.id;
         const numeroRecibo = response.numero_recibo || pago.numero_recibo;
 
-        // Si hay comprobante, subirlo
         if (this.comprobanteFile && pagoId) {
           this.subirComprobante(pagoId, numeroRecibo);
         } else {

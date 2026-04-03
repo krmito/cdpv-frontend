@@ -546,6 +546,26 @@
             <div class="form-section">
               <div class="form-row">
                 <div class="form-group">
+                  <label>Precio con Descuento</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    [(ngModel)]="pagoDescuento"
+                    name="descuento"
+                    min="1"
+                    [max]="mensualidadSeleccionada.monto"
+                    step="1000"
+                    placeholder="Precio normal: \${{ formatNumber(mensualidadSeleccionada.monto) }}"
+                    (ngModelChange)="onDescuentoChange()"
+                  />
+                  <small class="form-text">
+                    Opcional. Si el jugador paga un precio especial, indícalo aquí.
+                  </small>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
                   <label>Monto a Pagar <span class="required">*</span></label>
                   <input
                     type="number"
@@ -554,12 +574,14 @@
                     name="monto"
                     required
                     min="1"
-                    [max]="mensualidadSeleccionada.saldo_pendiente"
                     step="1000"
                     placeholder="0"
                   />
                   <small class="form-text">
-                    Máximo: \${{ formatNumber(mensualidadSeleccionada.saldo_pendiente) }}
+                    Pendiente: \${{ formatNumber(mensualidadSeleccionada.saldo_pendiente) }}
+                    @if (pagoDescuento && pagoDescuento > 0) {
+                      → con descuento: \${{ formatNumber(pagoDescuento) }}
+                    }
                   </small>
                 </div>
 
