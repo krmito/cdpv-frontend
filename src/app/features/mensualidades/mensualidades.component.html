@@ -271,13 +271,13 @@
                               <div class="pagado-desglose">
                                 @if (getCreditoDescuento(mens) > 0) {
                                   <span class="pagado-linea">
-                                    <span class="pagado-label">Desc.</span>
+                                    <span class="pagado-label">Pago</span>
                                     \${{ formatNumber(getCreditoDescuento(mens)) }}
                                   </span>
                                 }
                                 @if (getPagoEfectivo(mens) > 0) {
                                   <span class="pagado-linea">
-                                    <span class="pagado-label">Pago</span>
+                                    <span class="pagado-label">Desc.</span>
                                     \${{ formatNumber(getPagoEfectivo(mens)) }}
                                   </span>
                                 }
