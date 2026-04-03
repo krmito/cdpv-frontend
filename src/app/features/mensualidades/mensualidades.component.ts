@@ -224,6 +224,7 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
 
   onGenerarMesAnioChange() {
     this.verificarMensualidadesExistentes();
+    this.generarData.fecha_vencimiento = this.calcularFechaVencimientoDefault();
   }
 
   generarMensualidades() {
@@ -457,6 +458,14 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
 
   // ===== HELPER METHODS =====
   calcularFechaVencimientoDefault(): string {
+    const mes = Number(this.generarData.mes);
+    const anio = Number(this.generarData.anio);
+    if (mes && anio) {
+      // Último día del mes seleccionado: día 0 del mes siguiente
+      const ultimoDia = new Date(anio, mes, 0);
+      return ultimoDia.toISOString().split('T')[0];
+    }
+    // Fallback si aún no hay mes/año seleccionado
     const fecha = new Date();
     fecha.setDate(fecha.getDate() + 30);
     return fecha.toISOString().split('T')[0];
