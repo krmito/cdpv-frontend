@@ -33,6 +33,9 @@ interface Mensualidad {
   saldo_pendiente: number;
   fecha_vencimiento: string;
   estado: 'pendiente' | 'pagado' | 'vencido' | 'parcial';
+  anulada: boolean;
+  motivo_anulacion: string | null;
+  fecha_anulacion: string | null;
   fecha_creacion: string;
   jugador: Jugador;
 }
@@ -90,6 +93,11 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
   // Eliminación de mensualidad
   eliminandoMensualidad: Mensualidad | null = null;
   eliminando = false;
+
+  // Anulación de mensualidad
+  anulandoMensualidad: Mensualidad | null = null;
+  motivoAnulacion = '';
+  anulando = false;
 
   // Tab Listado
   mensualidades: Mensualidad[] = [];
@@ -506,6 +514,37 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
   // ===== ELIMINACIÓN DE MENSUALIDAD =====
   puedeEliminar(mensualidad: Mensualidad): boolean {
     return mensualidad.estado === 'pendiente' || mensualidad.estado === 'vencido';
+  }
+
+  confirmarAnular(mensualidad: Mensualidad) {
+    this.anulandoMensualidad = mensualidad;
+    this.motivoAnulacion = '';
+  }
+
+  cancelarAnular() {
+    this.anulandoMensualidad = null;
+    this.motivoAnulacion = '';
+  }
+
+  anularMensualidad() {
+    if (!this.anulandoMensualidad || !this.motivoAnulacion.trim()) return;
+
+    this.anulando = true;
+
+    this.api.patch<any>(`mensualidades/${this.anulandoMensualidad.id}/anular`, { motivo: this.motivoAnulacion }).subscribe({
+      next: () => {
+        this.anulando = false;
+        this.toast.success('Mensualidad anulada correctamente');
+        this.mensualidades = this.mensualidades.filter(m => m.id !== this.anulandoMensualidad!.id);
+        this.totalMensualidades--;
+        this.cancelarAnular();
+      },
+      error: (err) => {
+        this.anulando = false;
+        this.toast.error(err.error?.message || 'Error al anular la mensualidad');
+        this.cancelarAnular();
+      }
+    });
   }
 
   confirmarEliminar(mensualidad: Mensualidad) {

@@ -341,14 +341,33 @@ import { AuthService } from '../../core/services/auth.service';
                   <h4>Estados</h4>
                   <ul>
                     <li><strong>Pendiente:</strong> La mensualidad fue generada pero aún no tiene pagos.</li>
+                    <li><strong>Parcial:</strong> Se ha pagado parte del monto.</li>
                     <li><strong>Pagada:</strong> El monto total ha sido cubierto.</li>
                     <li><strong>Vencida:</strong> La fecha de vencimiento expiró sin completar el monto.</li>
                   </ul>
 
+                  <h4>Descuentos</h4>
+                  <ul>
+                    <li>Al editar una mensualidad (✏️) puedes aplicar un <strong>precio con descuento</strong> para jugadores con tarifa especial.</li>
+                    <li>El sistema acredita automáticamente la diferencia y ajusta el saldo pendiente.</li>
+                    <li>También puedes aplicar el descuento directamente al registrar el pago, sin necesidad de ir al módulo de mensualidades.</li>
+                  </ul>
+
+                  <h4>Anular mensualidades</h4>
+                  <ul>
+                    <li>Si una mensualidad fue generada por error (ej. jugador nuevo sin fecha de ingreso registrada), puedes <strong>anularla</strong> con el botón 🚫.</li>
+                    <li>Al anular debes dejar un <strong>motivo</strong> que queda registrado en el sistema.</li>
+                    <li>Las mensualidades anuladas <strong>no aparecen en el listado</strong> ni afectan las estadísticas del resumen.</li>
+                    <li>No se pueden anular mensualidades con estado <strong>Pagada</strong>. Si es necesario, primero anule los pagos asociados.</li>
+                  </ul>
+                  <div class="info-note">
+                    💡 Para evitar generar mensualidades incorrectas, registra la <strong>fecha de ingreso al equipo</strong> de cada jugador. El sistema usará esa fecha para excluirlos de períodos anteriores a su llegada.
+                  </div>
+
                   <h4>Seguimiento</h4>
                   <ul>
-                    <li>En la pestaña <strong>"Listado"</strong> podés filtrar por mes, año, categoría y estado.</li>
-                    <li>En la pestaña <strong>"Resumen"</strong> ves el total recaudado, pendiente y la tasa de cumplimiento del período.</li>
+                    <li>En la pestaña <strong>"Listado"</strong> puedes filtrar por mes, año, jugador y estado.</li>
+                    <li>En la pestaña <strong>"Resumen"</strong> ves el total recaudado, pendiente y la tasa de cumplimiento del período. Las mensualidades anuladas no se contabilizan.</li>
                   </ul>
                 </div>
               }

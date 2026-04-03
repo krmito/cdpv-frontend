@@ -314,6 +314,16 @@
                                 🗑️
                               </button>
                             }
+                            @if (permisosService.canDelete('mensualidades') && mens.estado !== 'pagado') {
+                              <button
+                                class="btn btn-small btn-anular"
+                                (click)="confirmarAnular(mens)"
+                                title="Anular mensualidad"
+                                [attr.aria-label]="'Anular mensualidad de ' + mens.jugador.nombre"
+                              >
+                                🚫
+                              </button>
+                            }
                           </td>
                         </tr>
                       }
@@ -520,6 +530,47 @@
                   [disabled]="guardandoEdicion || !editFechaVencimiento"
                 >
                   {{ guardandoEdicion ? 'Guardando...' : 'Guardar' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Modal de Anulación -->
+        @if (anulandoMensualidad) {
+          <div class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-anular-mens-title">
+            <div class="modal-content">
+              <h3 id="modal-anular-mens-title">🚫 Anular Mensualidad</h3>
+              <p class="modal-subtitle">
+                {{ anulandoMensualidad.jugador.nombre }} {{ anulandoMensualidad.jugador.apellido }} —
+                {{ getNombreMes(anulandoMensualidad.mes) }} {{ anulandoMensualidad.anio }}
+              </p>
+
+              <div class="alert alert-warning">
+                La mensualidad quedará como <strong>anulada</strong> y no afectará las estadísticas del mes.
+                Esta acción no elimina el registro.
+              </div>
+
+              <div class="form-group">
+                <label>Motivo de anulación <span class="required">*</span></label>
+                <textarea
+                  class="form-control"
+                  [(ngModel)]="motivoAnulacion"
+                  rows="3"
+                  placeholder="Ej: Jugador nuevo, no pertenecía al club en este período"
+                ></textarea>
+              </div>
+
+              <div class="modal-actions">
+                <button class="btn btn-secondary" (click)="cancelarAnular()">
+                  Cancelar
+                </button>
+                <button
+                  class="btn btn-warning"
+                  (click)="anularMensualidad()"
+                  [disabled]="anulando || !motivoAnulacion.trim()"
+                >
+                  {{ anulando ? 'Anulando...' : 'Anular Mensualidad' }}
                 </button>
               </div>
             </div>

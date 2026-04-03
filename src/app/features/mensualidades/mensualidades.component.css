@@ -777,6 +777,37 @@
   background: #fecaca;
 }
 
+/* Anular button */
+.btn-anular {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #92400e;
+}
+
+.btn-anular:hover {
+  background: #fde68a;
+}
+
+/* Warning button */
+.btn-warning {
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.btn-warning:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Danger button */
 .btn-danger {
   background: #ef4444;
