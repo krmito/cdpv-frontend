@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
-import { AuthService } from '../../core/services/auth.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
 import { PermisosService } from '../../core/services/permisos.service';
@@ -227,7 +226,6 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
   successMessage = '';
   ultimoPagoRegistradoId: number | null = null;
 
-  private authService = inject(AuthService);
   private toast = inject(ToastService);
   private route = inject(ActivatedRoute);
   permisosService = inject(PermisosService);
@@ -698,54 +696,42 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
 
     this.subiendoComprobante = true;
 
-    // Usar fetch para FormData ya que HttpClient puede tener problemas
-    fetch(`http://localhost:3000/api/v1/pagos/${pagoId}/comprobante`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.authService.getToken()}`
+    this.api.postFile<any>(`pagos/${pagoId}/comprobante`, formData).subscribe({
+      next: () => {
+        this.subiendoComprobante = false;
+        this.guardando = false;
+        this.ultimoPagoRegistradoId = pagoId;
+        this.toast.success(`Pago registrado con comprobante. Recibo: ${numeroRecibo}`);
+        this.cargarMensualidadesPendientes();
+        this.cerrarFormularioPago();
       },
-      body: formData
-    })
-    .then(response => response.json())
-    .then(() => {
-      this.subiendoComprobante = false;
-      this.guardando = false;
-      this.ultimoPagoRegistradoId = pagoId;
-      this.toast.success(`Pago registrado con comprobante. Recibo: ${numeroRecibo}`);
-      this.cargarMensualidadesPendientes();
-      this.cerrarFormularioPago();
-    })
-    .catch(() => {
-      this.subiendoComprobante = false;
-      this.guardando = false;
-      this.ultimoPagoRegistradoId = pagoId;
-      this.toast.warning(`Pago registrado. Recibo: ${numeroRecibo} (comprobante no se pudo subir)`);
-      this.cargarMensualidadesPendientes();
-      this.cerrarFormularioPago();
+      error: () => {
+        this.subiendoComprobante = false;
+        this.guardando = false;
+        this.ultimoPagoRegistradoId = pagoId;
+        this.toast.warning(`Pago registrado. Recibo: ${numeroRecibo} (comprobante no se pudo subir)`);
+        this.cargarMensualidadesPendientes();
+        this.cerrarFormularioPago();
+      }
     });
   }
 
   descargarComprobante(comprobante: Comprobante) {
-    const url = `http://localhost:3000/api/v1/pagos/comprobante/${comprobante.id}/download`;
-
-    fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${this.authService.getToken()}`
+    this.api.getBlob(`pagos/comprobante/${comprobante.id}/download`).subscribe({
+      next: (blob) => {
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = comprobante.nombre_archivo;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+      },
+      error: (err) => {
+        console.error('Error descargando comprobante:', err);
+        this.toast.error('No se pudo descargar el comprobante');
       }
-    })
-    .then(response => response.blob())
-    .then(blob => {
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = comprobante.nombre_archivo;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-    })
-    .catch(err => {
-      console.error('Error descargando comprobante:', err);
     });
   }
 
