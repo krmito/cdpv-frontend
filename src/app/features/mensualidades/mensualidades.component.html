@@ -203,6 +203,11 @@
                     />
                   </div>
                 </div>
+                <div class="filters-actions">
+                  <button class="btn btn-export" (click)="exportarXlsx()" [disabled]="exportandoXlsx || loadingMensualidades">
+                    {{ exportandoXlsx ? 'Exportando...' : '📥 Exportar XLSX' }}
+                  </button>
+                </div>
               </div>
 
               <!-- Tabla -->

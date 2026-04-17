@@ -306,6 +306,27 @@
   gap: 12px;
 }
 
+.filters-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.btn-export {
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-export:hover:not(:disabled) { background: #047857; }
+.btn-export:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* Table */
 .table-responsive {
   overflow-x: auto;

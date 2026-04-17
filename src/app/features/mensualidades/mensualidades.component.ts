@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import * as XLSX from 'xlsx';
 import { ApiService } from '../../core/services/api.service';
 import { ToastService } from '../../core/services/toast.service';
 import { CanComponentDeactivate } from '../../core/guards/unsaved-changes.guard';
@@ -102,6 +103,7 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
   // Tab Listado
   mensualidades: Mensualidad[] = [];
   loadingMensualidades = false;
+  exportandoXlsx = false;
   filtrosMensualidades = {
     mes: new Date().getMonth() + 1,
     anio: new Date().getFullYear(),
@@ -407,6 +409,46 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
     // Cargar datos
     this.currentPage = 1;
     this.loadMensualidades();
+  }
+
+  // ===== EXPORTAR XLSX =====
+  exportarXlsx() {
+    this.exportandoXlsx = true;
+    const mes = Number(this.filtrosMensualidades.mes);
+    const anio = Number(this.filtrosMensualidades.anio);
+    let endpoint = `mensualidades?page=1&limit=1000&mes=${mes}&anio=${anio}`;
+    if (this.filtrosMensualidades.estado) endpoint += `&estado=${this.filtrosMensualidades.estado}`;
+    if (this.filtrosMensualidades.jugador) endpoint += `&search=${encodeURIComponent(this.filtrosMensualidades.jugador)}`;
+
+    this.api.get<any>(endpoint).subscribe({
+      next: (response) => {
+        const datos: Mensualidad[] = response.data || response;
+        const rows = datos.map(m => ({
+          'Jugador': `${m.jugador.nombre} ${m.jugador.apellido}`,
+          'Documento': m.jugador.documento,
+          'Categoría': m.jugador.categoria?.nombre ?? 'N/A',
+          'Mes': this.getNombreMes(m.mes),
+          'Año': m.anio,
+          'Estado': this.getEstadoLabel(m.estado),
+          'Monto': Number(m.monto),
+          'Descuento': m.monto_descuento ? Number(m.monto_descuento) : 0,
+          'Pagado': Number(m.monto_pagado),
+          'Saldo Pendiente': Number(m.saldo_pendiente),
+          'Vence': m.fecha_vencimiento.split('T')[0],
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = Object.keys(rows[0] ?? {}).map(k => ({
+          wch: Math.max(k.length, ...rows.map(r => String((r as any)[k] ?? '').length))
+        }));
+        const wb = XLSX.utils.book_new();
+        const nombreMes = this.getNombreMes(mes);
+        XLSX.utils.book_append_sheet(wb, ws, `Mensualidades ${nombreMes} ${anio}`);
+        XLSX.writeFile(wb, `mensualidades_${nombreMes}_${anio}.xlsx`);
+        this.exportandoXlsx = false;
+      },
+      error: () => { this.exportandoXlsx = false; }
+    });
   }
 
   // ===== UTILIDADES =====
