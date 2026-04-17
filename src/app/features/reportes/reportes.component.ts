@@ -277,58 +277,60 @@ interface CumplimientoCategoria {
 
                 @if (loadingMorosos) {
                   <div class="loading">Cargando morosos...</div>
-                } @else if (reporteMorosos) {
-                  <div class="morosos-resumen">
-                    <div class="resumen-item red">
-                      <span class="label">Total Morosos</span>
-                      <span class="value">{{ reporteMorosos.total_morosos }}</span>
+                } @else {
+                  @if (reporteMorosos) {
+                    <div class="morosos-resumen">
+                      <div class="resumen-item red">
+                        <span class="label">Total Morosos</span>
+                        <span class="value">{{ reporteMorosos.total_morosos }}</span>
+                      </div>
+                      <div class="resumen-item red">
+                        <span class="label">Deuda Total</span>
+                        <span class="value">\${{ formatNumber(reporteMorosos.deuda_total) }}</span>
+                      </div>
                     </div>
-                    <div class="resumen-item red">
-                      <span class="label">Deuda Total</span>
-                      <span class="value">\${{ formatNumber(reporteMorosos.deuda_total) }}</span>
-                    </div>
-                  </div>
 
-                  @if (reporteMorosos.morosos.length === 0) {
-                    <div class="empty-state success">
-                      <p>🎉 No hay jugadores morosos</p>
-                      <small>Todos los pagos están al día</small>
-                    </div>
-                  } @else {
-                    <div class="table-container">
-                      <table class="data-table">
-                        <caption>Listado de jugadores con mensualidades vencidas</caption>
-                        <thead>
-                          <tr>
-                            <th>Jugador</th>
-                            <th>Documento</th>
-                            <th>Teléfono</th>
-                            <th>Categoría</th>
-                            <th>Meses Vencidos</th>
-                            <th>Deuda Total</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (moroso of reporteMorosos.morosos; track moroso.jugador.id) {
+                    @if ((reporteMorosos.morosos?.length ?? 0) === 0) {
+                      <div class="empty-state success">
+                        <p>🎉 No hay jugadores morosos</p>
+                        <small>Todos los pagos están al día</small>
+                      </div>
+                    } @else {
+                      <div class="table-container">
+                        <table class="data-table">
+                          <caption>Listado de jugadores con mensualidades vencidas</caption>
+                          <thead>
                             <tr>
-                              <td><strong>{{ moroso.jugador.nombre }} {{ moroso.jugador.apellido }}</strong></td>
-                              <td>{{ moroso.jugador.documento }}</td>
-                              <td>{{ moroso.jugador.telefono }}</td>
-                              <td>{{ moroso.jugador.categoria?.nombre || 'N/A' }}</td>
-                              <td>
-                                <div class="meses-cell">
-                                  @for (mv of moroso.mensualidades_vencidas; track mv.mes + '-' + mv.anio) {
-                                    <span class="mes-badge">{{ getMesNombre(mv.mes) }} {{ mv.anio }}</span>
-                                  }
-                                  <span class="meses-count">({{ moroso.mensualidades_vencidas.length }})</span>
-                                </div>
-                              </td>
-                              <td class="monto red">\${{ formatNumber(moroso.total_deuda) }}</td>
+                              <th>Jugador</th>
+                              <th>Documento</th>
+                              <th>Teléfono</th>
+                              <th>Categoría</th>
+                              <th>Meses Vencidos</th>
+                              <th>Deuda Total</th>
                             </tr>
-                          }
-                        </tbody>
-                      </table>
-                    </div>
+                          </thead>
+                          <tbody>
+                            @for (moroso of (reporteMorosos.morosos ?? []); track $index) {
+                              <tr>
+                                <td><strong>{{ moroso.jugador?.nombre }} {{ moroso.jugador?.apellido }}</strong></td>
+                                <td>{{ moroso.jugador?.documento }}</td>
+                                <td>{{ moroso.jugador?.telefono }}</td>
+                                <td>{{ moroso.jugador?.categoria?.nombre || 'N/A' }}</td>
+                                <td>
+                                  <div class="meses-cell">
+                                    @for (mv of (moroso.mensualidades_vencidas ?? []); track $index) {
+                                      <span class="mes-badge">{{ getMesNombre(mv.mes) }} {{ mv.anio }}</span>
+                                    }
+                                    <span class="meses-count">({{ moroso.mensualidades_vencidas?.length ?? 0 }})</span>
+                                  </div>
+                                </td>
+                                <td class="monto red">\${{ formatNumber(moroso.total_deuda) }}</td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    }
                   }
                 }
               </div>
@@ -632,9 +634,14 @@ export class ReportesComponent implements OnInit {
     if (this.filtrosMorosos.anio) params.set('anio', String(this.filtrosMorosos.anio));
     if (this.filtrosMorosos.categoriaId) params.set('categoriaId', String(this.filtrosMorosos.categoriaId));
     const query = params.toString() ? `?${params.toString()}` : '';
-    this.api.get<ReporteMorosos>(`reportes/morosos${query}`).subscribe({
+    this.api.get<any>(`reportes/morosos${query}`).subscribe({
       next: (data) => {
-        this.reporteMorosos = data;
+        console.log('[Morosos] respuesta API:', data);
+        this.reporteMorosos = {
+          total_morosos: data?.total_morosos ?? 0,
+          deuda_total: data?.deuda_total ?? 0,
+          morosos: data?.morosos ?? [],
+        };
         this.loadingMorosos = false;
       },
       error: () => this.loadingMorosos = false
