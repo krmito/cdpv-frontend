@@ -89,3 +89,10 @@
 .progress-badge.high { background: #d1fae5; color: #065f46; }
 .progress-badge.medium { background: #fef3c7; color: #92400e; }
 .progress-badge.low { background: #fee2e2; color: #991b1b; }
+
+.meses-cell { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.mes-badge { display: inline-block; padding: 2px 8px; background: #fee2e2; color: #991b1b; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.meses-count { font-size: 12px; color: #6b7280; white-space: nowrap; }
+
+.btn-outline { background: transparent; color: #6b7280; border: 1px solid #d1d5db; }
+.btn-outline:hover { background: #f3f4f6; }

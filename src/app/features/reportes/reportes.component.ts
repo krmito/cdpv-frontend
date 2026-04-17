@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgChartsModule } from 'ng2-charts';
 import { ChartConfiguration, ChartData, Chart, registerables } from 'chart.js';
+import * as XLSX from 'xlsx';
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -247,7 +248,31 @@ interface CumplimientoCategoria {
               <div class="card">
                 <div class="card-header">
                   <h3>⚠️ Listado de Morosos</h3>
-                  <button class="btn btn-secondary" (click)="exportarMorosos()">📥 Exportar</button>
+                  <button class="btn btn-secondary" (click)="exportarMorosos()" [disabled]="!reporteMorosos">📥 Exportar XLSX</button>
+                </div>
+
+                <!-- Filtros -->
+                <div class="filters-inline" style="margin-bottom: 20px;">
+                  <select class="form-control" [(ngModel)]="filtrosMorosos.mes">
+                    <option [ngValue]="null">Todos los meses</option>
+                    @for (m of meses; track m.value) {
+                      <option [ngValue]="m.value">{{ m.label }}</option>
+                    }
+                  </select>
+                  <select class="form-control" [(ngModel)]="filtrosMorosos.anio">
+                    <option [ngValue]="null">Todos los años</option>
+                    @for (a of anios; track a) {
+                      <option [ngValue]="a">{{ a }}</option>
+                    }
+                  </select>
+                  <select class="form-control" [(ngModel)]="filtrosMorosos.categoriaId">
+                    <option [ngValue]="null">Todas las categorías</option>
+                    @for (cat of categorias; track cat.id) {
+                      <option [ngValue]="cat.id">{{ cat.nombre }}</option>
+                    }
+                  </select>
+                  <button class="btn btn-primary" (click)="cargarMorosos()">Consultar</button>
+                  <button class="btn btn-outline" (click)="limpiarFiltrosMorosos()">Limpiar</button>
                 </div>
 
                 @if (loadingMorosos) {
@@ -290,7 +315,14 @@ interface CumplimientoCategoria {
                               <td>{{ moroso.jugador.documento }}</td>
                               <td>{{ moroso.jugador.telefono }}</td>
                               <td>{{ moroso.jugador.categoria?.nombre || 'N/A' }}</td>
-                              <td>{{ moroso.mensualidades_vencidas.length }}</td>
+                              <td>
+                                <div class="meses-cell">
+                                  @for (mv of moroso.mensualidades_vencidas; track mv.mes + '-' + mv.anio) {
+                                    <span class="mes-badge">{{ getMesNombre(mv.mes) }} {{ mv.anio }}</span>
+                                  }
+                                  <span class="meses-count">({{ moroso.mensualidades_vencidas.length }})</span>
+                                </div>
+                              </td>
                               <td class="monto red">\${{ formatNumber(moroso.total_deuda) }}</td>
                             </tr>
                           }
@@ -471,6 +503,8 @@ export class ReportesComponent implements OnInit {
   // Morosos
   reporteMorosos: ReporteMorosos | null = null;
   loadingMorosos = false;
+  filtrosMorosos: { mes: number | null; anio: number | null; categoriaId: number | null } = { mes: null, anio: null, categoriaId: null };
+  categorias: { id: number; nombre: string }[] = [];
 
   // Proyección
   proyeccion: ProyeccionIngresos | null = null;
@@ -540,7 +574,10 @@ export class ReportesComponent implements OnInit {
     this.activeTab = tab;
     if (tab === 'dashboard' && !this.estadisticas) this.cargarEstadisticas();
     if (tab === 'caja' && !this.reporteCaja) this.cargarReporteCaja();
-    if (tab === 'morosos' && !this.reporteMorosos) this.cargarMorosos();
+    if (tab === 'morosos') {
+      if (!this.reporteMorosos) this.cargarMorosos();
+      if (this.categorias.length === 0) this.cargarCategoriasDropdown();
+    }
     if (tab === 'proyeccion' && !this.proyeccion) this.cargarProyeccion();
     if (tab === 'categorias' && this.cumplimientoCategorias.length === 0) this.cargarCumplimiento();
   }
@@ -589,13 +626,34 @@ export class ReportesComponent implements OnInit {
 
   cargarMorosos() {
     this.loadingMorosos = true;
-    this.api.get<ReporteMorosos>('reportes/morosos').subscribe({
+    const params = new URLSearchParams();
+    if (this.filtrosMorosos.mes) params.set('mes', String(this.filtrosMorosos.mes));
+    if (this.filtrosMorosos.anio) params.set('anio', String(this.filtrosMorosos.anio));
+    if (this.filtrosMorosos.categoriaId) params.set('categoriaId', String(this.filtrosMorosos.categoriaId));
+    const query = params.toString() ? `?${params.toString()}` : '';
+    this.api.get<ReporteMorosos>(`reportes/morosos${query}`).subscribe({
       next: (data) => {
         this.reporteMorosos = data;
         this.loadingMorosos = false;
       },
       error: () => this.loadingMorosos = false
     });
+  }
+
+  cargarCategoriasDropdown() {
+    this.api.get<any[]>('categorias').subscribe({
+      next: (data) => { this.categorias = data || []; },
+      error: () => {}
+    });
+  }
+
+  limpiarFiltrosMorosos() {
+    this.filtrosMorosos = { mes: null, anio: null, categoriaId: null };
+    this.cargarMorosos();
+  }
+
+  getMesNombre(mes: number): string {
+    return this.meses.find(m => m.value === mes)?.label?.slice(0, 3) ?? String(mes);
   }
 
   cargarProyeccion() {
@@ -647,22 +705,27 @@ export class ReportesComponent implements OnInit {
   exportarMorosos() {
     if (!this.reporteMorosos) return;
 
-    const headers = ['Jugador', 'Documento', 'Telefono', 'Categoria', 'Meses Vencidos', 'Deuda Total'];
-    const rows = this.reporteMorosos.morosos.map(m => [
-      `${m.jugador.nombre} ${m.jugador.apellido}`,
-      m.jugador.documento,
-      m.jugador.telefono,
-      m.jugador.categoria?.nombre || 'N/A',
-      m.mensualidades_vencidas.length,
-      m.total_deuda
-    ]);
+    const rows = this.reporteMorosos.morosos.map(m => ({
+      'Jugador': `${m.jugador.nombre} ${m.jugador.apellido}`,
+      'Documento': m.jugador.documento,
+      'Teléfono': m.jugador.telefono,
+      'Categoría': m.jugador.categoria?.nombre || 'N/A',
+      'Meses Vencidos': m.mensualidades_vencidas.map(mv => `${this.getMesNombre(mv.mes)} ${mv.anio}`).join(', '),
+      'Cantidad Meses': m.mensualidades_vencidas.length,
+      'Deuda Total': m.total_deuda,
+    }));
 
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `morosos_${this.getToday()}.csv`;
-    link.click();
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Auto-width
+    const colWidths = Object.keys(rows[0] ?? {}).map(key => ({
+      wch: Math.max(key.length, ...rows.map(r => String((r as any)[key] ?? '').length))
+    }));
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Morosos');
+    XLSX.writeFile(wb, `morosos_${this.getToday()}.xlsx`);
   }
 
   getPercent(value: number, total: number): number {
