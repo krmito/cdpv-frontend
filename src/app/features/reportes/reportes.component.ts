@@ -641,8 +641,8 @@ export class ReportesComponent implements OnInit {
   }
 
   cargarCategoriasDropdown() {
-    this.api.get<any[]>('categorias').subscribe({
-      next: (data) => { this.categorias = data || []; },
+    this.api.get<any>('categorias/active').subscribe({
+      next: (data) => { this.categorias = Array.isArray(data) ? data : (data?.data ?? []); },
       error: () => {}
     });
   }
