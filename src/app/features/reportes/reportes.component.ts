@@ -626,6 +626,7 @@ export class ReportesComponent implements OnInit {
 
   cargarMorosos() {
     this.loadingMorosos = true;
+    this.reporteMorosos = null;
     const params = new URLSearchParams();
     if (this.filtrosMorosos.mes) params.set('mes', String(this.filtrosMorosos.mes));
     if (this.filtrosMorosos.anio) params.set('anio', String(this.filtrosMorosos.anio));
