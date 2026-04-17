@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgChartsModule } from 'ng2-charts';
@@ -484,7 +484,6 @@ interface CumplimientoCategoria {
 })
 export class ReportesComponent implements OnInit {
   private api = inject(ApiService);
-  private cdr = inject(ChangeDetectorRef);
 
   activeTab: 'dashboard' | 'caja' | 'morosos' | 'proyeccion' | 'categorias' = 'dashboard';
 
@@ -636,7 +635,6 @@ export class ReportesComponent implements OnInit {
       next: (data) => {
         this.reporteMorosos = data;
         this.loadingMorosos = false;
-        this.cdr.detectChanges();
       },
       error: () => this.loadingMorosos = false
     });
