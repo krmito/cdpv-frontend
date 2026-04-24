@@ -46,6 +46,10 @@ import { BREAKPOINTS } from '../../core/constants/app.constants';
             <span class="menu-icon">❓</span>
             <span class="menu-text">Ayuda</span>
           </a>
+          <a routerLink="/change-password" routerLinkActive="active" class="menu-item" data-label="Cambiar Contraseña" (click)="onMenuItemClick()">
+            <span class="menu-icon">🔑</span>
+            <span class="menu-text">Cambiar Contraseña</span>
+          </a>
         }
         @if (!isAcudiente()) {
           <a routerLink="/dashboard" routerLinkActive="active" class="menu-item" data-label="Dashboard" (click)="onMenuItemClick()">
@@ -91,6 +95,10 @@ import { BREAKPOINTS } from '../../core/constants/app.constants';
           <a routerLink="/ayuda" routerLinkActive="active" class="menu-item" data-label="Ayuda" (click)="onMenuItemClick()">
             <span class="menu-icon">❓</span>
             <span class="menu-text">Ayuda</span>
+          </a>
+          <a routerLink="/change-password" routerLinkActive="active" class="menu-item" data-label="Cambiar Contraseña" (click)="onMenuItemClick()">
+            <span class="menu-icon">🔑</span>
+            <span class="menu-text">Cambiar Contraseña</span>
           </a>
         }
       </nav>

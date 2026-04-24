@@ -3,6 +3,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 import { permisosGuard, adminGuard } from './core/guards/permisos.guard';
 import { acudienteGuard, staffGuard } from './core/guards/acudiente.guard';
+import { passwordExpiryGuard } from './core/guards/password-expiry.guard';
 
 export const routes: Routes = [
   {
@@ -14,8 +15,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       {
+        path: 'change-password',
+        canActivate: [passwordExpiryGuard],
+        loadComponent: () => import('./features/change-password/change-password.component').then(m => m.ChangePasswordComponent)
+      },
+      {
         path: 'dashboard',
-        canActivate: [staffGuard],
+        canActivate: [staffGuard, passwordExpiryGuard],
         loadComponent: () => import('./features/auth/dashboard.component').then(m => m.DashboardComponent)
       },
       {

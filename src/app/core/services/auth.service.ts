@@ -75,6 +75,18 @@ export class AuthService {
     }
   }
 
+  changePassword(currentPassword: string, newPassword: string) {
+    return this.api.patch<{ message: string }>('auth/change-password', { currentPassword, newPassword });
+  }
+
+  getPasswordStatus() {
+    return this.api.get<{ expirado: boolean; dias_restantes: number }>('auth/password-status');
+  }
+
+  isLoggedIn(): boolean {
+    return this.isAuthenticated();
+  }
+
   hasRole(roles: string[]): boolean {
     const user = this.currentUser();
     return user ? roles.includes(user.rol) : false;
