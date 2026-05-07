@@ -1045,3 +1045,79 @@ tbody tr:hover {
 .import-step-content {
   min-height: 200px;
 }
+
+/* Advertencia de jugadores similares */
+.duplicados-warning {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #f59e0b;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.duplicados-warning-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  justify-content: space-between;
+}
+.duplicados-warning-text strong {
+  display: block;
+  color: #78350f;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+.duplicados-warning-text p {
+  margin: 0;
+  font-size: 13px;
+  color: #92400e;
+}
+.btn-ignorar-similares {
+  background: none;
+  border: 1px solid #f59e0b;
+  color: #78350f;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.btn-ignorar-similares:hover { background: #fef3c7; }
+.similares-buscando {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: #92400e;
+}
+.similares-lista {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.similar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.similar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.similar-nombre {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+.similar-meta {
+  font-size: 12px;
+  color: #6b7280;
+}

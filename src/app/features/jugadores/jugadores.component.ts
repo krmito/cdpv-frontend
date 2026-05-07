@@ -367,6 +367,46 @@ interface CreateJugadorDto {
                       }
                     </div>
 
+                    @if (!advertenciaIgnorada && (buscandoSimilares || jugadoresSimilares.length > 0)) {
+                      <div class="duplicados-warning" role="alert" aria-live="polite">
+                        <div class="duplicados-warning-header">
+                          <div class="duplicados-warning-text">
+                            <strong>Posibles jugadores duplicados</strong>
+                            <p>Encontramos jugadores con apellido similar. Verifica que no esté ya registrado.</p>
+                          </div>
+                          <button type="button" class="btn-ignorar-similares" (click)="ignorarSimilares()">
+                            Ignorar y continuar
+                          </button>
+                        </div>
+                        @if (buscandoSimilares) {
+                          <p class="similares-buscando">Buscando...</p>
+                        }
+                        @if (!buscandoSimilares && jugadoresSimilares.length > 0) {
+                          <div class="similares-lista">
+                            @for (j of jugadoresSimilares; track j.id) {
+                              <div class="similar-item">
+                                @if (j.foto_url) {
+                                  <img [src]="apiBaseUrl + j.foto_url" class="avatar-sm" [alt]="j.nombre">
+                                } @else {
+                                  <div class="avatar-sm avatar-initials" [style.background-color]="getAvatarColor(j.nombre)">
+                                    {{ getInitials(j.nombre, j.apellido) }}
+                                  </div>
+                                }
+                                <div class="similar-info">
+                                  <span class="similar-nombre">{{ j.nombre }} {{ j.apellido }}</span>
+                                  <span class="similar-meta">
+                                    @if (j.documento) { Doc: {{ j.documento }} &middot; }
+                                    {{ j.categoria?.nombre }}
+                                    &middot; {{ j.activo ? 'Activo' : 'Inactivo' }}
+                                  </span>
+                                </div>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+
                     <div class="form-section">
                       <h3>Datos Personales</h3>
 
@@ -401,6 +441,7 @@ interface CreateJugadorDto {
                             required
                             placeholder="Pérez García"
                             (blur)="touchNewField('apellido')"
+                            (ngModelChange)="onApellidoChange()"
                             [attr.aria-invalid]="(formSubmitted || newFormTouched['apellido']) && !newJugador.apellido"
                             aria-describedby="new-apellido-error"
                           />
@@ -1433,6 +1474,12 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   isDragOver = false;
   downloadingPlantilla = false;
 
+  // Detección de duplicados al registrar
+  jugadoresSimilares: any[] = [];
+  buscandoSimilares = false;
+  advertenciaIgnorada = false;
+  private similaresTimeout: any;
+
   ngOnInit() {
     this.apiBaseUrl = this.api.getBaseUrl();
     this.loadCategorias();
@@ -1548,6 +1595,10 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.scanError = '';
     this.scanQuotaExceeded = false;
     this.scanApiKeyError = false;
+    this.jugadoresSimilares = [];
+    this.buscandoSimilares = false;
+    this.advertenciaIgnorada = false;
+    clearTimeout(this.similaresTimeout);
     this.resetForm();
   }
 
@@ -1614,6 +1665,40 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     };
     this.fotoFile = null;
     this.fotoPreview = null;
+    this.jugadoresSimilares = [];
+    this.buscandoSimilares = false;
+    this.advertenciaIgnorada = false;
+    clearTimeout(this.similaresTimeout);
+  }
+
+  onApellidoChange() {
+    this.advertenciaIgnorada = false;
+    clearTimeout(this.similaresTimeout);
+    const apellido = this.newJugador.apellido?.trim() ?? '';
+    if (apellido.length < 3) {
+      this.jugadoresSimilares = [];
+      this.buscandoSimilares = false;
+      return;
+    }
+    this.buscandoSimilares = true;
+    this.similaresTimeout = setTimeout(() => this.buscarSimilares(apellido), 500);
+  }
+
+  private buscarSimilares(apellido: string) {
+    this.api.get<any>(`jugadores?search=${encodeURIComponent(apellido)}&limit=5&page=1`).subscribe({
+      next: (res) => {
+        this.jugadoresSimilares = res?.data ?? [];
+        this.buscandoSimilares = false;
+      },
+      error: () => {
+        this.jugadoresSimilares = [];
+        this.buscandoSimilares = false;
+      },
+    });
+  }
+
+  ignorarSimilares() {
+    this.advertenciaIgnorada = true;
   }
 
   // Valida número colombiano: 7-10 dígitos, opcionalmente con +57
