@@ -422,6 +422,7 @@ interface CreateJugadorDto {
                             required
                             placeholder="Juan"
                             (blur)="touchNewField('nombre')"
+                            (ngModelChange)="onNombreChange()"
                             [attr.aria-invalid]="(formSubmitted || newFormTouched['nombre']) && !newJugador.nombre"
                             aria-describedby="new-nombre-error"
                           />
@@ -1476,6 +1477,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
 
   // Detección de duplicados al registrar
   jugadoresSimilares: any[] = [];
+  private rawSimilares: any[] = [];
   buscandoSimilares = false;
   advertenciaIgnorada = false;
   private similaresTimeout: any;
@@ -1596,6 +1598,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.scanQuotaExceeded = false;
     this.scanApiKeyError = false;
     this.jugadoresSimilares = [];
+    this.rawSimilares = [];
     this.buscandoSimilares = false;
     this.advertenciaIgnorada = false;
     clearTimeout(this.similaresTimeout);
@@ -1666,6 +1669,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     this.fotoFile = null;
     this.fotoPreview = null;
     this.jugadoresSimilares = [];
+    this.rawSimilares = [];
     this.buscandoSimilares = false;
     this.advertenciaIgnorada = false;
     clearTimeout(this.similaresTimeout);
@@ -1677,6 +1681,7 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     const apellido = this.newJugador.apellido?.trim() ?? '';
     if (apellido.length < 3) {
       this.jugadoresSimilares = [];
+      this.rawSimilares = [];
       this.buscandoSimilares = false;
       return;
     }
@@ -1687,14 +1692,36 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   private buscarSimilares(apellido: string) {
     this.api.get<any>(`jugadores?search=${encodeURIComponent(apellido)}&limit=5&page=1`).subscribe({
       next: (res) => {
-        this.jugadoresSimilares = res?.data ?? [];
+        this.rawSimilares = res?.data ?? [];
+        this.filtrarSimilares();
         this.buscandoSimilares = false;
       },
       error: () => {
+        this.rawSimilares = [];
         this.jugadoresSimilares = [];
         this.buscandoSimilares = false;
       },
     });
+  }
+
+  private normalizar(str: string): string {
+    return (str ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  }
+
+  private filtrarSimilares() {
+    const nombre = this.normalizar(this.newJugador.nombre ?? '');
+    if (nombre.length < 2) {
+      this.jugadoresSimilares = [...this.rawSimilares];
+      return;
+    }
+    this.jugadoresSimilares = this.rawSimilares.filter(j =>
+      this.normalizar(j.nombre).includes(nombre)
+    );
+  }
+
+  onNombreChange() {
+    this.advertenciaIgnorada = false;
+    this.filtrarSimilares();
   }
 
   ignorarSimilares() {
