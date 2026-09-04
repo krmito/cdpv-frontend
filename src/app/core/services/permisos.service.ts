@@ -48,7 +48,7 @@ export class PermisosService {
     localStorage.removeItem(STORAGE_KEY);
   }
 
-  private isAdmin(): boolean {
+  isAdmin(): boolean {
     try {
       const user = JSON.parse(localStorage.getItem('user') ?? 'null');
       return user?.rol === 'administrador';

@@ -8,9 +8,61 @@ import * as XLSX from 'xlsx';
 // Register Chart.js components
 Chart.register(...registerables);
 import { ApiService } from '../../core/services/api.service';
+import { ToastService } from '../../core/services/toast.service';
+import { PermisosService } from '../../core/services/permisos.service';
 import { NavbarComponent } from '../../shared/components/navbar.component';
 import { SidebarComponent } from '../../shared/components/sidebar.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
+
+interface MesAdeudado {
+  id: number;
+  mes: number;
+  anio: number;
+  mesNombre: string;
+  monto: number;
+  saldoPendiente: number;
+  estado: string;
+}
+
+interface UltimoPago {
+  fecha: string;
+  mes: number;
+  anio: number;
+  mesNombre: string;
+  monto: number;
+}
+
+interface PosibleInactivo {
+  id: number;
+  nombre: string;
+  apellido: string;
+  nombreCompleto: string;
+  documento?: string;
+  tipoDocumento?: string;
+  telefono: string;
+  telefonoAcudiente?: string;
+  email?: string;
+  emailAcudiente?: string;
+  fotoUrl?: string;
+  fechaRegistro: string;
+  categoria?: {
+    id: number;
+    nombre: string;
+    valorMensualidad: number;
+  };
+  mesesConsecutivosSinPago: number;
+  totalDeuda: number;
+  mesesAdeudados: MesAdeudado[];
+  ultimoPago?: UltimoPago | null;
+  seleccionado?: boolean;
+}
+
+interface ReportePosiblesInactivos {
+  criterioMeses: number;
+  totalDetectados: number;
+  deudaTotalAcumulada: number;
+  jugadores: PosibleInactivo[];
+}
 
 interface EstadisticasGenerales {
   jugadores: { total: number; activos: number; inactivos: number };
@@ -97,6 +149,12 @@ interface CumplimientoCategoria {
             </button>
             <button class="tab" [class.active]="activeTab === 'categorias'" (click)="changeTab('categorias')">
               🏷️ Por Categoría
+            </button>
+            <button class="tab inactivos-tab" [class.active]="activeTab === 'inactivos'" (click)="changeTab('inactivos')">
+              🚨 Posibles Inactivos
+              @if (totalInactivosDetectados > 0) {
+                <span class="badge-count">{{ totalInactivosDetectados }}</span>
+              }
             </button>
           </div>
 
@@ -476,6 +534,301 @@ interface CumplimientoCategoria {
               </div>
             </div>
           }
+
+          <!-- TAB: POSIBLES INACTIVOS (3+ MESES SIN PAGO) -->
+          @if (activeTab === 'inactivos') {
+            <div class="tab-content">
+              <!-- Header Card & Filters -->
+              <div class="card inactivos-header-card">
+                <div class="card-header">
+                  <div class="header-info">
+                    <h3>🚨 Detección de Posibles Jugadores Inactivos</h3>
+                    <p class="subtitle-text">
+                      Identifica jugadores actualmente activos que llevan {{ filtrosInactivos.mesesConsecutivos }} o más meses consecutivos sin pagar. El Administrador decide si desactiva o no a cada jugador mediante opción múltiple.
+                    </p>
+                  </div>
+                  <div class="header-actions">
+                    <button class="btn btn-outline" (click)="exportarInactivos()" [disabled]="!reporteInactivos || reporteInactivos.jugadores.length === 0">
+                      📊 Exportar a Excel
+                    </button>
+                    <button class="btn btn-primary" (click)="cargarPosiblesInactivos()">
+                      🔄 Actualizar
+                    </button>
+                  </div>
+                </div>
+
+                <!-- KPIs resumen -->
+                <div class="inactivos-kpis">
+                  <div class="resumen-item red">
+                    <span class="label">Jugadores Detectados</span>
+                    <span class="value">{{ totalInactivosDetectados }}</span>
+                  </div>
+                  <div class="resumen-item red">
+                    <span class="label">Deuda Total en Riesgo</span>
+                    <span class="value">\${{ formatNumber(deudaInactivosTotal) }}</span>
+                  </div>
+                  <div class="resumen-item" [class.highlight]="getSeleccionadosCount() > 0">
+                    <span class="label">Seleccionados para Gestión</span>
+                    <span class="value">{{ getSeleccionadosCount() }} / {{ totalInactivosDetectados }}</span>
+                  </div>
+                </div>
+
+                <!-- Barra de filtros -->
+                <div class="filters-bar-inactivos">
+                  <div class="filter-group">
+                    <label>Meses consecutivos sin pago:</label>
+                    <select class="form-control" [(ngModel)]="filtrosInactivos.mesesConsecutivos" (change)="cargarPosiblesInactivos()">
+                      <option [ngValue]="2">2 o más meses</option>
+                      <option [ngValue]="3">3 o más meses (Recomendado)</option>
+                      <option [ngValue]="4">4 o más meses</option>
+                      <option [ngValue]="5">5 o más meses</option>
+                      <option [ngValue]="6">6 o más meses</option>
+                    </select>
+                  </div>
+
+                  <div class="filter-group">
+                    <label>Categoría:</label>
+                    <select class="form-control" [(ngModel)]="filtrosInactivos.categoriaId" (change)="cargarPosiblesInactivos()">
+                      <option [ngValue]="null">Todas las Categorías</option>
+                      @for (c of categorias; track c.id) {
+                        <option [ngValue]="c.id">{{ c.nombre }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="filter-group search-group">
+                    <label>Buscar jugador:</label>
+                    <div class="search-input-wrapper">
+                      <input
+                        type="text"
+                        class="form-control"
+                        placeholder="Nombre, apellido o documento..."
+                        [(ngModel)]="filtrosInactivos.busqueda"
+                        (keyup.enter)="cargarPosiblesInactivos()"
+                      />
+                      @if (filtrosInactivos.busqueda) {
+                        <button class="btn-clear-search" (click)="filtrosInactivos.busqueda = ''; cargarPosiblesInactivos()">✕</button>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="filter-group filter-btn">
+                    <button class="btn btn-secondary" (click)="limpiarFiltrosInactivos()">Limpiar Filtros</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Barra de acción flotante cuando hay selección -->
+              @if (getSeleccionadosCount() > 0) {
+                <div class="selection-banner">
+                  <div class="selection-info">
+                    <span class="selection-badge">{{ getSeleccionadosCount() }}</span>
+                    <span>jugador(es) seleccionado(s) para desactivar</span>
+                  </div>
+                  <div class="selection-actions">
+                    <button class="btn btn-outline-white" (click)="limpiarSeleccion()">
+                      Cancelar Selección
+                    </button>
+                    @if (permisos.isAdmin()) {
+                      <button class="btn btn-danger" (click)="abrirModalDesactivar()">
+                        🚫 Desactivar Seleccionados ({{ getSeleccionadosCount() }})
+                      </button>
+                    } @else {
+                      <span class="admin-only-tag">⚠️ Solo el Administrador puede desactivar</span>
+                    }
+                  </div>
+                </div>
+              }
+
+              <!-- Tabla de candidatos -->
+              <div class="card inactivos-table-card">
+                @if (loadingInactivos) {
+                  <div class="loading">
+                    <p>Analizando registros de pagos e inactividad...</p>
+                  </div>
+                } @else if (!reporteInactivos || reporteInactivos.jugadores.length === 0) {
+                  <div class="empty-state success">
+                    <p>🎉 ¡Excelente! No se detectaron jugadores con {{ filtrosInactivos.mesesConsecutivos }} o más meses consecutivos sin pagar.</p>
+                    <small>Todos los jugadores activos se encuentran al día o dentro del margen habitual de pagos.</small>
+                  </div>
+                } @else {
+                  <div class="table-container">
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th style="width: 44px; text-align: center;">
+                            <input
+                              type="checkbox"
+                              class="custom-checkbox"
+                              [checked]="todosSeleccionados"
+                              (change)="toggleSeleccionarTodos($event)"
+                              title="Seleccionar o deseleccionar todos"
+                            />
+                          </th>
+                          <th>Jugador</th>
+                          <th>Categoría</th>
+                          <th>Contacto & Acudiente</th>
+                          <th>Meses sin Pagar</th>
+                          <th>Último Pago</th>
+                          <th>Deuda Total</th>
+                          <th style="text-align: center;">Acción</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (j of reporteInactivos.jugadores; track j.id) {
+                          <tr [class.row-selected]="j.seleccionado">
+                            <td style="text-align: center;">
+                              <input
+                                type="checkbox"
+                                class="custom-checkbox"
+                                [(ngModel)]="j.seleccionado"
+                                (change)="actualizarSeleccion()"
+                              />
+                            </td>
+                            <td>
+                              <div class="player-cell">
+                                <div class="avatar-small">
+                                  @if (j.fotoUrl) {
+                                    <img [src]="j.fotoUrl" [alt]="j.nombreCompleto" />
+                                  } @else {
+                                    <span>{{ getIniciales(j.nombre, j.apellido) }}</span>
+                                  }
+                                </div>
+                                <div class="player-details">
+                                  <strong>{{ j.nombreCompleto }}</strong>
+                                  <span class="doc-text">{{ j.tipoDocumento }} {{ j.documento || 'S/N' }}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <span class="badge-categoria">{{ j.categoria?.nombre || 'Sin Categoría' }}</span>
+                            </td>
+                            <td>
+                              <div class="contact-info">
+                                @if (j.telefono) {
+                                  <div class="contact-line">
+                                    <a [href]="getWhatsAppLink(j.telefono, j.nombreCompleto)" target="_blank" class="wa-btn" title="Enviar WhatsApp al Jugador">
+                                      💬 {{ j.telefono }}
+                                    </a>
+                                  </div>
+                                }
+                                @if (j.telefonoAcudiente && j.telefonoAcudiente !== j.telefono) {
+                                  <div class="contact-line">
+                                    <a [href]="getWhatsAppLink(j.telefonoAcudiente, j.nombreCompleto)" target="_blank" class="wa-btn wa-acudiente" title="WhatsApp Acudiente">
+                                      👨‍👩‍👦 {{ j.telefonoAcudiente }}
+                                    </a>
+                                  </div>
+                                }
+                                @if (!j.telefono && !j.telefonoAcudiente) {
+                                  <span class="text-muted">Sin teléfono</span>
+                                }
+                              </div>
+                            </td>
+                            <td>
+                              <div class="streak-wrapper">
+                                <span class="badge-streak" [class.badge-streak-high]="j.mesesConsecutivosSinPago >= 4">
+                                  ⚠️ {{ j.mesesConsecutivosSinPago }} meses
+                                </span>
+                                <div class="meses-list-pills">
+                                  @for (m of j.mesesAdeudados; track m.id) {
+                                    <span class="pill-mes" [title]="'Saldo: $' + formatNumber(m.saldoPendiente)">
+                                      {{ m.mesNombre }}
+                                    </span>
+                                  }
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              @if (j.ultimoPago) {
+                                <div class="last-payment-cell">
+                                  <span class="last-payment-date">📅 {{ formatFecha(j.ultimoPago.fecha) }}</span>
+                                  <span class="last-payment-month">{{ j.ultimoPago.mesNombre }}</span>
+                                  <span class="last-payment-amount">\${{ formatNumber(j.ultimoPago.monto) }}</span>
+                                </div>
+                              } @else {
+                                <span class="badge-no-payments">Nunca ha pagado</span>
+                              }
+                            </td>
+                            <td>
+                              <span class="monto red">\${{ formatNumber(j.totalDeuda) }}</span>
+                            </td>
+                            <td style="text-align: center;">
+                              @if (permisos.isAdmin()) {
+                                <button
+                                  class="btn btn-sm btn-outline-danger"
+                                  (click)="abrirModalDesactivar(j)"
+                                  title="Desactivar este jugador individualmente"
+                                >
+                                  🚫 Desactivar
+                                </button>
+                              } @else {
+                                <span class="text-muted" title="Solo Administrador">🔒</span>
+                              }
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- MODAL DE CONFIRMACIÓN DE DESACTIVACIÓN -->
+          @if (showModalDesactivar) {
+            <div class="modal-backdrop" (click)="cerrarModalDesactivar()">
+              <div class="modal-card" (click)="$event.stopPropagation()">
+                <div class="modal-header danger">
+                  <div class="modal-icon">⚠️</div>
+                  <div>
+                    <h3>Confirmar Desactivación de Jugadores</h3>
+                    <p>Vas a cambiar el estado a <strong>Inactivo</strong> para los jugadores seleccionados.</p>
+                  </div>
+                </div>
+
+                <div class="modal-body">
+                  <div class="alert-box warning">
+                    <p>
+                      <strong>¿Qué sucede al desactivar un jugador?</strong>
+                    </p>
+                    <ul>
+                      <li>No se le generarán cobros automáticos de mensualidad en los meses futuros.</li>
+                      <li>No aparecerá en listas de jugadores activos ni reportes de asistencia.</li>
+                      <li>Sus datos e historial de pagos y deudas <strong>permanecen guardados</strong>.</li>
+                      <li>Puedes <strong>reactivarlo en cualquier momento</strong> desde el módulo de Jugadores.</li>
+                    </ul>
+                  </div>
+
+                  <p class="players-list-title">
+                    Jugadores a desactivar ({{ jugadoresADesactivar.length }}):
+                  </p>
+                  <div class="players-chips-container">
+                    @for (j of jugadoresADesactivar; track j.id) {
+                      <div class="player-chip">
+                        <span class="chip-name">{{ j.nombreCompleto }}</span>
+                        <span class="chip-cat">{{ j.categoria?.nombre || 'General' }}</span>
+                        <span class="chip-debt">{{ j.mesesConsecutivosSinPago }} meses sin pagar (\${{ formatNumber(j.totalDeuda) }})</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <div class="modal-footer">
+                  <button class="btn btn-secondary" (click)="cerrarModalDesactivar()" [disabled]="procesandoDesactivacion">
+                    Cancelar
+                  </button>
+                  <button class="btn btn-danger" (click)="confirmarDesactivacion()" [disabled]="procesandoDesactivacion">
+                    @if (procesandoDesactivacion) {
+                      Desactivando...
+                    } @else {
+                      Confirmar Desactivación ({{ jugadoresADesactivar.length }})
+                    }
+                  </button>
+                </div>
+              </div>
+            </div>
+          }
         </main>
       </div>
     </div>
@@ -484,8 +837,27 @@ interface CumplimientoCategoria {
 })
 export class ReportesComponent implements OnInit {
   private api = inject(ApiService);
+  private toast = inject(ToastService);
+  permisos = inject(PermisosService);
 
-  activeTab: 'dashboard' | 'caja' | 'morosos' | 'proyeccion' | 'categorias' = 'dashboard';
+  activeTab: 'dashboard' | 'caja' | 'morosos' | 'proyeccion' | 'categorias' | 'inactivos' = 'dashboard';
+
+  // Posibles Inactivos (3+ meses sin pago)
+  reporteInactivos: ReportePosiblesInactivos | null = null;
+  loadingInactivos = false;
+  filtrosInactivos = {
+    mesesConsecutivos: 3,
+    categoriaId: null as number | null,
+    busqueda: ''
+  };
+  totalInactivosDetectados = 0;
+  deudaInactivosTotal = 0;
+  todosSeleccionados = false;
+
+  // Modal de desactivación
+  showModalDesactivar = false;
+  jugadoresADesactivar: PosibleInactivo[] = [];
+  procesandoDesactivacion = false;
 
   // Dashboard
   estadisticas: EstadisticasGenerales | null = null;
@@ -568,9 +940,11 @@ export class ReportesComponent implements OnInit {
 
   ngOnInit() {
     this.cargarEstadisticas();
+    this.cargarConteoInactivosBadge();
+    this.cargarCategoriasDropdown();
   }
 
-  changeTab(tab: 'dashboard' | 'caja' | 'morosos' | 'proyeccion' | 'categorias') {
+  changeTab(tab: 'dashboard' | 'caja' | 'morosos' | 'proyeccion' | 'categorias' | 'inactivos') {
     this.activeTab = tab;
     if (tab === 'dashboard' && !this.estadisticas) this.cargarEstadisticas();
     if (tab === 'caja' && !this.reporteCaja) this.cargarReporteCaja();
@@ -580,6 +954,10 @@ export class ReportesComponent implements OnInit {
     }
     if (tab === 'proyeccion' && !this.proyeccion) this.cargarProyeccion();
     if (tab === 'categorias' && this.cumplimientoCategorias.length === 0) this.cargarCumplimiento();
+    if (tab === 'inactivos') {
+      this.cargarPosiblesInactivos();
+      if (this.categorias.length === 0) this.cargarCategoriasDropdown();
+    }
   }
 
   cargarEstadisticas() {
@@ -749,5 +1127,190 @@ export class ReportesComponent implements OnInit {
   getFirstDayOfMonth(): string {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  }
+
+  // --- MÉTODOS PARA POSIBLES INACTIVOS (3+ MESES SIN PAGO) ---
+
+  cargarConteoInactivosBadge() {
+    this.api.get<ReportePosiblesInactivos>('reportes/posibles-inactivos?mesesConsecutivos=3').subscribe({
+      next: (res) => {
+        this.totalInactivosDetectados = res?.totalDetectados || 0;
+        this.deudaInactivosTotal = res?.deudaTotalAcumulada || 0;
+      },
+      error: () => {}
+    });
+  }
+
+  cargarPosiblesInactivos() {
+    this.loadingInactivos = true;
+    this.todosSeleccionados = false;
+    let query = `mesesConsecutivos=${this.filtrosInactivos.mesesConsecutivos}`;
+    if (this.filtrosInactivos.categoriaId) {
+      query += `&categoriaId=${this.filtrosInactivos.categoriaId}`;
+    }
+    if (this.filtrosInactivos.busqueda && this.filtrosInactivos.busqueda.trim()) {
+      query += `&busqueda=${encodeURIComponent(this.filtrosInactivos.busqueda.trim())}`;
+    }
+
+    this.api.get<ReportePosiblesInactivos>(`reportes/posibles-inactivos?${query}`).subscribe({
+      next: (res) => {
+        this.reporteInactivos = res;
+        this.totalInactivosDetectados = res?.totalDetectados || 0;
+        this.deudaInactivosTotal = res?.deudaTotalAcumulada || 0;
+        this.loadingInactivos = false;
+      },
+      error: () => {
+        this.toast.error('Error al cargar reporte de posibles inactivos');
+        this.loadingInactivos = false;
+      }
+    });
+  }
+
+  limpiarFiltrosInactivos() {
+    this.filtrosInactivos = {
+      mesesConsecutivos: 3,
+      categoriaId: null,
+      busqueda: ''
+    };
+    this.cargarPosiblesInactivos();
+  }
+
+  toggleSeleccionarTodos(event: any) {
+    const checked = event.target.checked;
+    this.todosSeleccionados = checked;
+    if (this.reporteInactivos?.jugadores) {
+      for (const j of this.reporteInactivos.jugadores) {
+        j.seleccionado = checked;
+      }
+    }
+  }
+
+  actualizarSeleccion() {
+    if (!this.reporteInactivos?.jugadores || this.reporteInactivos.jugadores.length === 0) {
+      this.todosSeleccionados = false;
+      return;
+    }
+    this.todosSeleccionados = this.reporteInactivos.jugadores.every(j => j.seleccionado);
+  }
+
+  getSeleccionados(): PosibleInactivo[] {
+    return this.reporteInactivos?.jugadores.filter(j => j.seleccionado) || [];
+  }
+
+  getSeleccionadosCount(): number {
+    return this.getSeleccionados().length;
+  }
+
+  limpiarSeleccion() {
+    this.todosSeleccionados = false;
+    if (this.reporteInactivos?.jugadores) {
+      for (const j of this.reporteInactivos.jugadores) {
+        j.seleccionado = false;
+      }
+    }
+  }
+
+  abrirModalDesactivar(jugador?: PosibleInactivo) {
+    if (jugador) {
+      this.jugadoresADesactivar = [jugador];
+    } else {
+      this.jugadoresADesactivar = this.getSeleccionados();
+    }
+
+    if (this.jugadoresADesactivar.length === 0) {
+      this.toast.warning('Por favor selecciona al menos un jugador');
+      return;
+    }
+
+    this.showModalDesactivar = true;
+  }
+
+  cerrarModalDesactivar() {
+    if (this.procesandoDesactivacion) return;
+    this.showModalDesactivar = false;
+    this.jugadoresADesactivar = [];
+  }
+
+  confirmarDesactivacion() {
+    if (this.jugadoresADesactivar.length === 0) return;
+
+    this.procesandoDesactivacion = true;
+    const ids = this.jugadoresADesactivar.map(j => j.id);
+    const motivo = 'Inactividad por ' + this.filtrosInactivos.mesesConsecutivos + '+ meses consecutivos sin pago';
+
+    this.api.patch<any>('jugadores/desactivar-lote', { jugadorIds: ids, motivo }).subscribe({
+      next: () => {
+        this.toast.success(ids.length + ' jugador(es) desactivado(s) exitosamente');
+        this.procesandoDesactivacion = false;
+        this.cerrarModalDesactivar();
+        this.cargarPosiblesInactivos();
+        this.cargarEstadisticas();
+      },
+      error: (err) => {
+        const msg = err?.error?.message || 'Error al desactivar jugadores';
+        this.toast.error(Array.isArray(msg) ? msg[0] : msg);
+        this.procesandoDesactivacion = false;
+      }
+    });
+  }
+
+  exportarInactivos() {
+    if (!this.reporteInactivos || this.reporteInactivos.jugadores.length === 0) return;
+
+    const rows = this.reporteInactivos.jugadores.map(j => ({
+      'Jugador': j.nombreCompleto,
+      'Documento': (j.tipoDocumento || 'CC') + ' ' + (j.documento || 'S/N'),
+      'Categoría': j.categoria?.nombre || 'Sin Categoría',
+      'Teléfono Jugador': j.telefono || 'N/A',
+      'Teléfono Acudiente': j.telefonoAcudiente || 'N/A',
+      'Email Jugador': j.email || 'N/A',
+      'Email Acudiente': j.emailAcudiente || 'N/A',
+      'Meses Sin Pagar': j.mesesConsecutivosSinPago,
+      'Meses Adeudados': j.mesesAdeudados.map(m => m.mesNombre).join(', '),
+      'Último Pago Fecha': j.ultimoPago ? this.formatFecha(j.ultimoPago.fecha) : 'Nunca',
+      'Último Pago Mes': j.ultimoPago?.mesNombre || 'N/A',
+      'Último Pago Monto': j.ultimoPago?.monto || 0,
+      'Deuda Total': j.totalDeuda,
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const colWidths = Object.keys(rows[0] ?? {}).map(key => ({
+      wch: Math.max(key.length, ...rows.map(r => String((r as any)[key] ?? '').length))
+    }));
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Posibles Inactivos');
+    XLSX.writeFile(wb, 'posibles_inactivos_' + this.getToday() + '.xlsx');
+  }
+
+  getIniciales(nombre?: string, apellido?: string): string {
+    const n = nombre ? nombre.trim().charAt(0) : '';
+    const a = apellido ? apellido.trim().charAt(0) : '';
+    return (n + a).toUpperCase() || 'JU';
+  }
+
+  getWhatsAppLink(telefono?: string, nombreCompleto?: string): string {
+    if (!telefono) return '#';
+    let digits = telefono.replace(/\D/g, '');
+    if (digits.length === 10 && digits.startsWith('3')) {
+      digits = '57' + digits;
+    }
+    const nombre = nombreCompleto || '';
+    const msg = 'Hola, nos comunicamos del Club Deportivo respecto a las mensualidades del jugador ' + nombre;
+    return 'https://wa.me/' + digits + '?text=' + encodeURIComponent(msg);
+  }
+
+  formatFecha(fechaStr?: string): string {
+    if (!fechaStr) return '';
+    try {
+      const d = new Date(fechaStr);
+      const dia = String(d.getDate()).padStart(2, '0');
+      const mes = String(d.getMonth() + 1).padStart(2, '0');
+      const anio = d.getFullYear();
+      return dia + '/' + mes + '/' + anio;
+    } catch {
+      return fechaStr;
+    }
   }
 }
