@@ -14,6 +14,14 @@
   <div class="tabs">
     @if (permisosService.canCreate('pagos')) {
       <button
+        class="tab tab-rapido"
+        [class.active]="activeTab === 'rapido'"
+        (click)="changeTab('rapido')"
+      >
+        ⚡ Registro Rápido (WhatsApp / Nequi)
+        <span class="badge-flash">Nuevo</span>
+      </button>
+      <button
         class="tab"
         [class.active]="activeTab === 'registrar'"
         (click)="activeTab = 'registrar'"
@@ -991,6 +999,552 @@
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- TAB: REGISTRO RÁPIDO (WHATSAPP / NEQUI) -->
+  @if (activeTab === 'rapido') {
+    <div class="tab-content rapido-view">
+      <!-- Header y Tips -->
+      <div class="rapido-hero card">
+        <div class="hero-text">
+          <h2>⚡ Centro de Registro Rápido en Lote</h2>
+          <p>Pega los mensajes de texto del chat de WhatsApp o sube las capturas de Nequi. El sistema interpreta nombres, meses y conceptos para registrar múltiples pagos con un solo clic.</p>
+        </div>
+        <div class="hero-actions">
+          <button type="button" class="btn btn-outline" (click)="cargarEjemploWhatsApp()">
+            📋 Cargar Ejemplo WhatsApp
+          </button>
+          <button type="button" class="btn btn-outline" (click)="agregarFilaVaciaRapida()">
+            ➕ Fila Manual
+          </button>
+          @if (itemsPagosRapidos.length > 0) {
+            <button type="button" class="btn btn-ghost text-danger" (click)="limpiarTodasFilasRapidas()">
+              🗑️ Limpiar Lista ({{ itemsPagosRapidos.length }})
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Sección de Entrada Dual: WhatsApp + Nequi -->
+      <div class="dual-input-grid">
+        <!-- Entrada A: Pegar Texto de WhatsApp -->
+        <div class="card input-card">
+          <div class="card-header-flex">
+            <div class="header-icon-title">
+              <span class="icon-bubble">💬</span>
+              <div>
+                <h3>Pegar Texto del Chat</h3>
+                <span class="subtext">Copia las líneas de WhatsApp y pégalas aquí</span>
+              </div>
+            </div>
+            @if (textoWhatsApp) {
+              <button type="button" class="btn-link" (click)="limpiarTextoWhatsApp()">Limpiar</button>
+            }
+          </div>
+          <textarea
+            class="form-control whatsapp-textarea"
+            rows="5"
+            [(ngModel)]="textoWhatsApp"
+            placeholder="Ejemplo:&#10;Juan David Caballero Sub 15 paga Agosto&#10;Dilan Dominguez Sub 14 paga Agosto y $ 60.000 de Uniforme&#10;Jeremi Mateo Quintero Sub 14 paga Agosto&#10;Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE"
+          ></textarea>
+          <div class="input-actions-row">
+            <button
+              type="button"
+              class="btn btn-primary btn-interpret"
+              (click)="interpretarTextoWhatsApp()"
+              [disabled]="!textoWhatsApp.trim() || procesandoTextoWhatsApp"
+            >
+              @if (procesandoTextoWhatsApp) {
+                <span>⏳ Interpretando...</span>
+              } @else {
+                <span>⚡ Procesar Mensajes</span>
+              }
+            </button>
+          </div>
+        </div>
+
+        <!-- Entrada B: Subir / Arrastrar Capturas de Nequi -->
+        <div
+          class="card input-card dropzone-card"
+          [class.drag-over]="arrastrandoArchivos"
+          (dragover)="onDragOver($event)"
+          (dragleave)="onDragLeave($event)"
+          (drop)="onDropComprobantes($event)"
+        >
+          <div class="card-header-flex">
+            <div class="header-icon-title">
+              <span class="icon-bubble nequi-icon">📲</span>
+              <div>
+                <h3>Comprobantes de Nequi</h3>
+                <span class="subtext">Arrastra 1 o varias capturas de Nequi</span>
+              </div>
+            </div>
+          </div>
+          <div class="dropzone-area">
+            <div class="dropzone-content">
+              <span class="dropzone-icon">🧾</span>
+              <p class="dropzone-title">Arrastra tus capturas de Nequi aquí</p>
+              <p class="dropzone-hint">o selecciona archivos de imagen de tu equipo</p>
+              <label class="btn btn-nequi cursor-pointer">
+                📂 Elegir Comprobantes
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  class="hidden-file-input"
+                  (change)="onComprobantesSeleccionados($event)"
+                />
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla Borrador de Pagos en Lote -->
+      <div class="card table-card">
+        <div class="table-card-header">
+          <div class="table-title-group">
+            <h3>Borrador de Pagos a Registrar ({{ itemsPagosRapidos.length }})</h3>
+            @if (itemsPagosRapidos.length > 0) {
+              <div class="badges-summary">
+                <span class="badge-status badge-match-exact">
+                  ✅ {{ contarCoincidenciasExactas() }} Coincidencias
+                </span>
+                <span class="badge-status badge-match-sug">
+                  ⚠️ {{ contarCoincidenciasSugeridas() }} Sugerencias
+                </span>
+                <span class="badge-status badge-match-none">
+                  ❓ {{ contarNoEncontrados() }} Sin Asignar
+                </span>
+              </div>
+            }
+          </div>
+          @if (itemsPagosRapidos.length > 0) {
+            <button type="button" class="btn btn-sm btn-outline" (click)="agregarFilaVaciaRapida()">
+              ➕ Agregar Fila
+            </button>
+          }
+        </div>
+
+        @if (itemsPagosRapidos.length === 0) {
+          <div class="empty-state-rapido">
+            <span class="empty-icon">📥</span>
+            <h4>No hay pagos en el borrador</h4>
+            <p>Pega mensajes de WhatsApp en el recuadro superior o arrastra comprobantes de Nequi para comenzar.</p>
+            <button type="button" class="btn btn-primary" (click)="cargarEjemploWhatsApp()">
+              Cargar datos de ejemplo de WhatsApp
+            </button>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="data-table tabla-lote">
+              <thead>
+                <tr>
+                  <th class="th-checkbox">
+                    <input
+                      type="checkbox"
+                      [checked]="todosRapidosSeleccionados()"
+                      (change)="toggleTodosRapidos($event)"
+                      title="Seleccionar todos los válidos"
+                    />
+                  </th>
+                  <th>Mensaje / Origen</th>
+                  <th style="min-width: 240px;">Jugador Identificado</th>
+                  <th>Mes / Período</th>
+                  <th style="width: 140px;">Monto a Pagar</th>
+                  <th>Método</th>
+                  <th>Comprobante Nequi</th>
+                  <th>Observaciones</th>
+                  <th style="width: 60px;">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of itemsPagosRapidos; track item.idTemporal) {
+                  <tr [class.row-unmatched]="item.coincidencia === 'no_encontrado'" [class.row-selected]="item.incluir">
+                    <!-- Checkbox -->
+                    <td class="td-checkbox">
+                      <input
+                        type="checkbox"
+                        [(ngModel)]="item.incluir"
+                        [disabled]="!item.jugador || !item.mensualidad"
+                      />
+                    </td>
+
+                    <!-- Mensaje original -->
+                    <td class="td-original">
+                      <div class="original-text" [title]="item.lineaOriginal || ''">
+                        {{ item.lineaOriginal || 'Entrada manual' }}
+                      </div>
+                      @if (item.categoriaPista) {
+                        <span class="pista-tag">{{ item.categoriaPista }}</span>
+                      }
+                    </td>
+
+                    <!-- Jugador -->
+                    <td class="td-jugador">
+                      @if (item.jugador) {
+                        <div class="jugador-badge-selected">
+                          <div class="jugador-info">
+                            <span class="jugador-nombre">
+                              {{ item.jugador.nombre }} {{ item.jugador.apellido }}
+                            </span>
+                            <span class="jugador-meta">
+                              Doc: {{ item.jugador.documento }} | {{ item.jugador.categoria?.nombre || 'Sin categoría' }}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            class="btn-icon-xs text-muted"
+                            (click)="toggleDropdownJugadores(item)"
+                            title="Cambiar jugador"
+                          >
+                            ✏️
+                          </button>
+                        </div>
+                      } @else {
+                        <div class="unmatched-warning">
+                          <span class="tag-sin-jugador">❓ Sin jugador</span>
+                          <button
+                            type="button"
+                            class="btn btn-xs btn-outline"
+                            (click)="toggleDropdownJugadores(item)"
+                          >
+                            Buscar y Asignar
+                          </button>
+                        </div>
+                      }
+
+                      <!-- Dropdown de búsqueda rápida de jugador -->
+                      @if (item.mostrarDropdownJugadores) {
+                        <div class="dropdown-jugadores card">
+                          <div class="dropdown-search">
+                            <input
+                              type="text"
+                              class="form-control form-control-sm"
+                              placeholder="Escribe nombre o doc..."
+                              [(ngModel)]="busquedaJugadorFila[item.idTemporal]"
+                            />
+                          </div>
+                          @if (item.sugerencias && item.sugerencias.length > 0 && !busquedaJugadorFila[item.idTemporal]) {
+                            <div class="sugerencias-label">Sugerencias encontradas:</div>
+                            <div class="dropdown-list">
+                              @for (sug of item.sugerencias; track sug.id) {
+                                <div
+                                  class="dropdown-item sug-item"
+                                  (click)="seleccionarJugadorFila(item, sug)"
+                                >
+                                  <span class="item-name">{{ sug.nombre }}</span>
+                                  <span class="item-cat">{{ sug.categoria }}</span>
+                                </div>
+                              }
+                            </div>
+                          }
+                          <div class="sugerencias-label">Todos los jugadores:</div>
+                          <div class="dropdown-list">
+                            @for (j of getJugadoresFiltrados(item.idTemporal); track j.id) {
+                              <div
+                                class="dropdown-item"
+                                (click)="seleccionarJugadorFila(item, j)"
+                              >
+                                <span class="item-name">{{ j.nombre }} {{ j.apellido }}</span>
+                                <span class="item-doc">{{ j.documento }} - {{ j.categoria?.nombre }}</span>
+                              </div>
+                            }
+                          </div>
+                          <button type="button" class="btn btn-xs btn-ghost w-100" (click)="cerrarDropdownJugadores(item)">
+                            Cerrar
+                          </button>
+                        </div>
+                      }
+                    </td>
+
+                    <!-- Mes / Mensualidad -->
+                    <td class="td-mes">
+                      @if (item.esDobleMes) {
+                        <div class="doble-mes-box">
+                          <div class="doble-mes-header">
+                            <span class="badge-doble-mes">✌️ 2 Meses ($100.000)</span>
+                            <button
+                              type="button"
+                              class="btn-toggle-doble"
+                              (click)="toggleDobleMes(item)"
+                              title="Volver a pago de 1 mes"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          <div class="doble-mes-selectores">
+                            <div class="mes-select-group">
+                              <label>Mes 1:</label>
+                              <select
+                                class="form-control form-control-xs select-mes-doble"
+                                [(ngModel)]="item.idMensualidadMes1"
+                                (change)="onMesDobleChange(item)"
+                              >
+                                @for (m of item.mensualidadesDisponibles; track m.id) {
+                                  <option [value]="m.id">
+                                    {{ m.mesNombre }} (${{ formatNumber(m.saldo_pendiente) }})
+                                  </option>
+                                }
+                              </select>
+                            </div>
+                            <div class="mes-select-group">
+                              <label>Mes 2:</label>
+                              <select
+                                class="form-control form-control-xs select-mes-doble"
+                                [(ngModel)]="item.idMensualidadMes2"
+                                (change)="onMesDobleChange(item)"
+                              >
+                                @for (m of item.mensualidadesDisponibles; track m.id) {
+                                  <option [value]="m.id">
+                                    {{ m.mesNombre }} (${{ formatNumber(m.saldo_pendiente) }})
+                                  </option>
+                                }
+                              </select>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            class="btn-desglosar"
+                            (click)="desglosarEnDosFilas(item)"
+                            title="Desglosar en 2 filas individuales de $50.000"
+                          >
+                            ✂️ Desglosar en 2 filas
+                          </button>
+                        </div>
+                      } @else {
+                        <div class="single-mes-box">
+                          @if (item.mensualidad) {
+                            <span class="badge-mes">
+                              {{ item.mesNombre || ('Mes ' + item.mensualidad.mes) }}
+                            </span>
+                            <div class="saldo-hint">
+                              Saldo: ${{ formatNumber(item.mensualidad.saldo_pendiente) }}
+                            </div>
+                          } @else {
+                            <span class="badge-mes text-muted">
+                              {{ item.mesNombre || 'Mes actual' }}
+                            </span>
+                          }
+                          <button
+                            type="button"
+                            class="btn-activar-doble"
+                            (click)="toggleDobleMes(item)"
+                            title="Convertir a pago de 2 meses"
+                          >
+                            ✌️ 2 Meses
+                          </button>
+                        </div>
+                      }
+                    </td>
+
+                    <!-- Monto a pagar -->
+                    <td class="td-monto">
+                      <div class="input-monto-group">
+                        <span class="currency-symbol">$</span>
+                        <input
+                          type="number"
+                          class="form-control form-control-sm text-right"
+                          [(ngModel)]="item.montoPagar"
+                          (ngModelChange)="onMontoDobleChange(item)"
+                          min="0"
+                          step="1000"
+                        />
+                      </div>
+                      @if (item.esDobleMes) {
+                        <div class="desglose-doble-info" title="Este pago se divide automáticamente para cada mes">
+                          <span class="desglose-sub">
+                            M1: <strong>${{ formatNumber(item.montoMes1 || (item.montoPagar / 2)) }}</strong>
+                          </span>
+                          <span class="desglose-sep">+</span>
+                          <span class="desglose-sub">
+                            M2: <strong>${{ formatNumber(item.montoMes2 || (item.montoPagar / 2)) }}</strong>
+                          </span>
+                        </div>
+                      }
+                    </td>
+
+                    <!-- Método -->
+                    <td class="td-metodo">
+                      <div class="metodo-toggle-group">
+                        <button
+                          type="button"
+                          class="btn-toggle-metodo"
+                          [class.active-efectivo]="item.metodoPago === 'efectivo'"
+                          (click)="cambiarMetodoFila(item, 'efectivo')"
+                        >
+                          💵 Efectivo
+                        </button>
+                        <button
+                          type="button"
+                          class="btn-toggle-metodo"
+                          [class.active-nequi]="item.metodoPago === 'nequi'"
+                          (click)="cambiarMetodoFila(item, 'nequi')"
+                        >
+                          📱 Nequi
+                        </button>
+                      </div>
+                    </td>
+
+                    <!-- Comprobante Nequi -->
+                    <td class="td-comprobante">
+                      @if (item.comprobantePreview || item.comprobanteBase64) {
+                        <div class="comprobante-thumb-wrapper">
+                          <img
+                            [src]="item.comprobantePreview || item.comprobanteBase64"
+                            alt="Comprobante"
+                            class="comprobante-thumb"
+                            (click)="verComprobanteEnModal(item)"
+                            title="Ver en grande"
+                          />
+                          <button
+                            type="button"
+                            class="btn-icon-xs text-danger"
+                            (click)="quitarComprobanteFila(item)"
+                            title="Quitar comprobante"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      } @else {
+                        <label class="btn-adjuntar-comprobante" title="Subir imagen de Nequi">
+                          📎 Adjuntar
+                          <input
+                            type="file"
+                            accept="image/*"
+                            class="hidden-file-input"
+                            (change)="asociarComprobanteFila(item, $event)"
+                          />
+                        </label>
+                      }
+                    </td>
+
+                    <!-- Observaciones -->
+                    <td class="td-obs">
+                      <div class="obs-container">
+                        @if (item.referencia) {
+                          <span class="badge-ref-factura" title="Referencia / Factura Nequi detectada">
+                            🧾 {{ item.referencia }}
+                          </span>
+                        }
+                        <input
+                          type="text"
+                          class="form-control form-control-sm"
+                          [(ngModel)]="item.observaciones"
+                          placeholder="Ej. Uniforme, Abono..."
+                        />
+                      </div>
+                    </td>
+
+                    <!-- Acciones -->
+                    <td class="td-acciones">
+                      <button
+                        type="button"
+                        class="btn-delete-row"
+                        (click)="eliminarFilaRapida(item.idTemporal)"
+                        title="Eliminar fila"
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Barra de Totales y Acción en Lote -->
+          <div class="lote-action-bar">
+            <div class="totales-resumen">
+              <div class="total-pill total-general">
+                <span class="total-label">Total a Registrar:</span>
+                <span class="total-val">${{ formatNumber(totalMontoRapido()) }}</span>
+              </div>
+              <div class="total-pill total-sub">
+                <span class="total-label">💵 Efectivo:</span>
+                <span class="total-val">${{ formatNumber(totalEfectivoRapido()) }}</span>
+              </div>
+              <div class="total-pill total-sub">
+                <span class="total-label">📱 Nequi:</span>
+                <span class="total-val">${{ formatNumber(totalNequiRapido()) }}</span>
+              </div>
+              <div class="total-pill total-sub">
+                <span class="total-label">Seleccionados:</span>
+                <span class="total-val">{{ contarRapidosSeleccionados() }} de {{ itemsPagosRapidos.length }}</span>
+              </div>
+            </div>
+
+            <div class="action-buttons-group">
+              <button
+                type="button"
+                class="btn btn-success btn-lg btn-confirmar-lote"
+                (click)="registrarLoteRapido()"
+                [disabled]="contarRapidosSeleccionados() === 0 || guardandoLoteRapido"
+              >
+                @if (guardandoLoteRapido) {
+                  <span>⏳ Registrando pagos...</span>
+                } @else {
+                  <span>✅ Confirmar y Registrar {{ contarRapidosSeleccionados() }} Pago(s)</span>
+                }
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Modal para ver Comprobante en Grande -->
+  @if (modalComprobanteVisible && comprobanteModalUrl) {
+    <div class="modal-overlay" (click)="cerrarModalComprobante()">
+      <div class="modal-content modal-img-preview" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>{{ comprobanteModalTitulo }}</h3>
+          <button type="button" class="btn-close" (click)="cerrarModalComprobante()">✕</button>
+        </div>
+        <div class="modal-body text-center">
+          <img [src]="comprobanteModalUrl" alt="Comprobante Nequi" class="img-fluid modal-full-img" />
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal de Éxito de Pagos en Lote -->
+  @if (modalExitoLoteVisible && resultadoLoteExitoso) {
+    <div class="modal-overlay">
+      <div class="modal-content modal-exito-lote">
+        <div class="modal-header header-success">
+          <h3>🎉 ¡Pagos Registrados con Éxito!</h3>
+        </div>
+        <div class="modal-body">
+          <p class="exito-resumen-text">
+            Se generaron <strong>{{ resultadoLoteExitoso.exitosos }}</strong> recibos de pago correctamente en el sistema.
+          </p>
+
+          <div class="recibos-generados-list">
+            @for (p of resultadoLoteExitoso.pagos; track p.id) {
+              <div class="recibo-item-card">
+                <div class="recibo-badge">🧾 {{ p.numero_recibo }}</div>
+                <div class="recibo-jugador">{{ p.jugador }}</div>
+                <div class="recibo-monto">${{ formatNumber(p.monto) }} ({{ p.metodo_pago }})</div>
+                <button
+                  type="button"
+                  class="btn btn-xs btn-outline"
+                  (click)="descargarRecibo(p.id)"
+                >
+                  📄 PDF
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" (click)="cerrarModalExitoLote()">
+            Ver en Historial de Pagos
+          </button>
         </div>
       </div>
     </div>

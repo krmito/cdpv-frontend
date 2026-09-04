@@ -118,6 +118,40 @@ interface Estadisticas {
   cantidad_pagos_mes: number;
 }
 
+export interface ItemPagoRapido {
+  idTemporal: string;
+  lineaOriginal?: string;
+  nombreCandidato?: string;
+  categoriaPista?: string;
+  mesDetectado?: number;
+  mesNombre?: string;
+  anioDetectado?: number;
+  conceptosAdicionales?: string[];
+  montoAdicional?: number;
+  metodoPago: 'efectivo' | 'nequi' | 'transferencia';
+  observaciones: string;
+  montoPagar: number;
+  coincidencia: 'exacta' | 'sugerida' | 'no_encontrado';
+  score: number;
+  jugador: Jugador | null;
+  mensualidad: Mensualidad | null;
+  sugerencias: { id: number; nombre: string; documento: string; categoria: string; score: number }[];
+  incluir: boolean;
+  comprobanteBase64?: string;
+  comprobanteNombre?: string;
+  comprobantePreview?: string;
+  referencia?: string;
+  mostrarDropdownJugadores?: boolean;
+  esDobleMes?: boolean;
+  montoMes1?: number;
+  montoMes2?: number;
+  idMensualidadMes1?: number | null;
+  idMensualidadMes2?: number | null;
+  mensualidadMes1?: Mensualidad | null;
+  mensualidadMes2?: Mensualidad | null;
+  mensualidadesDisponibles?: any[];
+}
+
 @Component({
   selector: 'app-pagos',
   standalone: true,
@@ -127,7 +161,22 @@ interface Estadisticas {
 })
 export class PagosComponent implements OnInit, CanComponentDeactivate {
   // Tabs
-  activeTab: 'registrar' | 'historial' | 'estadisticas' = 'registrar';
+  activeTab: 'registrar' | 'historial' | 'estadisticas' | 'rapido' = 'registrar';
+
+  // ===== REGISTRO RÁPIDO (WHATSAPP / NEQUI) =====
+  textoWhatsApp = '';
+  procesandoTextoWhatsApp = false;
+  guardandoLoteRapido = false;
+  itemsPagosRapidos: ItemPagoRapido[] = [];
+  todosJugadores: Jugador[] = [];
+  cargandoTodosJugadores = false;
+  busquedaJugadorFila: { [idTemporal: string]: string } = {};
+  modalComprobanteVisible = false;
+  comprobanteModalUrl: string | null = null;
+  comprobanteModalTitulo = '';
+  modalExitoLoteVisible = false;
+  resultadoLoteExitoso: any = null;
+  arrastrandoArchivos = false;
 
   // Tab Registrar - Búsqueda de jugador
   documentoBusqueda = '';
@@ -269,12 +318,14 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
   }
 
   // ===== TAB MANAGEMENT =====
-  changeTab(tab: 'registrar' | 'historial' | 'estadisticas') {
+  changeTab(tab: 'registrar' | 'historial' | 'estadisticas' | 'rapido') {
     this.activeTab = tab;
     if (tab === 'historial') {
       this.loadPagos();
     } else if (tab === 'estadisticas') {
       this.loadEstadisticas();
+    } else if (tab === 'rapido') {
+      this.cargarTodosJugadores();
     }
   }
 
@@ -1023,5 +1074,667 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
 
   formatNumber(num: number): string {
     return new Intl.NumberFormat('es-CO').format(num);
+  }
+
+  // ===== MÉTODOS DE REGISTRO RÁPIDO (WHATSAPP / NEQUI) =====
+
+  cargarTodosJugadores() {
+    if (this.todosJugadores.length > 0) return;
+    this.cargandoTodosJugadores = true;
+    this.api.get<any>('jugadores?limit=300').subscribe({
+      next: (res) => {
+        this.todosJugadores = res.data || res || [];
+        this.cargandoTodosJugadores = false;
+      },
+      error: () => {
+        this.cargandoTodosJugadores = false;
+      }
+    });
+  }
+
+  interpretarTextoWhatsApp() {
+    if (!this.textoWhatsApp.trim()) {
+      this.toast.error('Por favor escribe o pega texto del chat de WhatsApp');
+      return;
+    }
+
+    this.procesandoTextoWhatsApp = true;
+    this.api.post<any>('pagos/interpretar-whatsapp', { texto: this.textoWhatsApp }).subscribe({
+      next: (res) => {
+        this.procesandoTextoWhatsApp = false;
+        const nuevosItems: ItemPagoRapido[] = (res.items || []).map((it: any) => ({
+          idTemporal: it.idTemporal || Math.random().toString(36).substring(2, 9),
+          lineaOriginal: it.lineaOriginal,
+          nombreCandidato: it.nombreCandidato,
+          categoriaPista: it.categoriaPista,
+          mesDetectado: it.mesDetectado,
+          mesNombre: it.mesNombre,
+          anioDetectado: it.anioDetectado,
+          conceptosAdicionales: it.conceptosAdicionales || [],
+          montoAdicional: it.montoAdicional,
+          metodoPago: it.metodoSugerido || 'efectivo',
+          observaciones: it.observaciones || '',
+          montoPagar: it.montoPagar || 0,
+          coincidencia: it.coincidencia || 'no_encontrado',
+          score: it.score || 0,
+          jugador: it.jugador || null,
+          mensualidad: it.mensualidad || null,
+          sugerencias: it.sugerencias || [],
+          incluir: it.incluir !== undefined ? it.incluir : (it.coincidencia !== 'no_encontrado' && !!it.mensualidad),
+          mostrarDropdownJugadores: false,
+        }));
+
+        this.itemsPagosRapidos = [...this.itemsPagosRapidos, ...nuevosItems];
+        this.toast.success(`Se interpretaron ${nuevosItems.length} líneas. ${res.coincidenciasExactas || 0} coincidencias directas.`);
+        this.textoWhatsApp = '';
+      },
+      error: (err) => {
+        this.procesandoTextoWhatsApp = false;
+        this.toast.error(err.error?.message || 'Error al procesar el texto de WhatsApp');
+      }
+    });
+  }
+
+  cargarEjemploWhatsApp() {
+    this.textoWhatsApp =
+`Juan David Caballero Sub 15 paga Agosto
+Dilan Dominguez Sub 14 paga Agosto y $ 60.000 de Uniforme
+Jeremi Mateo Quintero Sub 14 paga Agosto
+Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
+  }
+
+  limpiarTextoWhatsApp() {
+    this.textoWhatsApp = '';
+  }
+
+  onComprobantesSeleccionados(event: any) {
+    const files: FileList = event.target?.files;
+    if (files && files.length > 0) {
+      this.procesarArchivosComprobantes(files);
+      event.target.value = '';
+    }
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.arrastrandoArchivos = true;
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.arrastrandoArchivos = false;
+  }
+
+  onDropComprobantes(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.arrastrandoArchivos = false;
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.procesarArchivosComprobantes(files);
+    }
+  }
+
+  procesarArchivosComprobantes(files: FileList | File[]) {
+    const imageFiles: File[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type.startsWith('image/')) {
+        imageFiles.push(file);
+      }
+    }
+
+    if (imageFiles.length === 0) {
+      this.toast.error('Solo se admiten archivos de imagen (capturas de Nequi)');
+      return;
+    }
+
+    this.toast.info(`Escaneando ${imageFiles.length} comprobante(s) de Nequi...`);
+
+    imageFiles.forEach((file) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      this.api.post<any>('pagos/escanear-nequi', formData).subscribe({
+        next: (itemEscaneado) => {
+          // 1. ¿Existe una fila que ya tenga a este jugador o candidado?
+          const filaMismoJugador = itemEscaneado.jugador
+            ? this.itemsPagosRapidos.find(it => it.jugador?.id === itemEscaneado.jugador.id && !it.comprobanteBase64)
+            : null;
+
+          // 2. O una fila manual completamente vacía
+          const filaVacia = this.itemsPagosRapidos.find(it =>
+            !it.comprobanteBase64 &&
+            !it.jugador &&
+            (it.lineaOriginal === 'Registro Manual' || it.montoPagar === 0)
+          );
+
+          const filaDestino = filaMismoJugador || filaVacia;
+
+          if (filaDestino) {
+            filaDestino.comprobanteBase64 = itemEscaneado.comprobanteBase64;
+            filaDestino.comprobanteNombre = file.name;
+            filaDestino.comprobantePreview = itemEscaneado.comprobantePreview;
+            filaDestino.metodoPago = 'nequi';
+            filaDestino.montoPagar = itemEscaneado.montoPagar || filaDestino.montoPagar;
+            filaDestino.lineaOriginal = itemEscaneado.lineaOriginal;
+            filaDestino.nombreCandidato = itemEscaneado.nombreCandidato;
+            filaDestino.categoriaPista = itemEscaneado.categoriaPista;
+            filaDestino.mesDetectado = itemEscaneado.mesDetectado;
+            filaDestino.mesNombre = itemEscaneado.mesNombre;
+            filaDestino.anioDetectado = itemEscaneado.anioDetectado;
+            filaDestino.observaciones = itemEscaneado.observaciones || filaDestino.observaciones;
+            filaDestino.referencia = itemEscaneado.referencia;
+            filaDestino.coincidencia = itemEscaneado.coincidencia;
+            filaDestino.score = itemEscaneado.score;
+            filaDestino.jugador = itemEscaneado.jugador || filaDestino.jugador;
+            filaDestino.mensualidad = itemEscaneado.mensualidad || filaDestino.mensualidad;
+            filaDestino.sugerencias = itemEscaneado.sugerencias || [];
+            filaDestino.incluir = itemEscaneado.incluir;
+            filaDestino.mostrarDropdownJugadores = !filaDestino.jugador;
+
+            if (itemEscaneado.esDobleMes) {
+              filaDestino.esDobleMes = true;
+              filaDestino.montoMes1 = itemEscaneado.montoMes1 || 50000;
+              filaDestino.montoMes2 = itemEscaneado.montoMes2 || 50000;
+              filaDestino.idMensualidadMes1 = itemEscaneado.idMensualidadMes1;
+              filaDestino.idMensualidadMes2 = itemEscaneado.idMensualidadMes2;
+              filaDestino.mensualidadMes1 = itemEscaneado.mensualidadMes1;
+              filaDestino.mensualidadMes2 = itemEscaneado.mensualidadMes2;
+              filaDestino.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
+            }
+
+            const jugadorNom = filaDestino.jugador ? `${filaDestino.jugador.nombre} ${filaDestino.jugador.apellido}` : filaDestino.nombreCandidato;
+            this.toast.success(`Comprobante adjuntado: ${jugadorNom} - $${this.formatNumber(filaDestino.montoPagar)} ${itemEscaneado.referencia ? '(' + itemEscaneado.referencia + ')' : ''}`);
+          } else {
+            this.itemsPagosRapidos.push(itemEscaneado);
+            const msg = itemEscaneado.jugador
+              ? `Comprobante leído: ${itemEscaneado.jugador.nombre} ${itemEscaneado.jugador.apellido} - $${this.formatNumber(itemEscaneado.montoPagar)}`
+              : `Comprobante leído: $${this.formatNumber(itemEscaneado.montoPagar)} - ${itemEscaneado.lineaOriginal}`;
+            this.toast.success(msg);
+          }
+        },
+        error: (err) => {
+          console.error('Error al escanear comprobante:', err);
+          this.toast.error(err.error?.message || 'Error al procesar el comprobante mediante OCR.');
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            const base64Data = e.target.result;
+            const nuevaFila: ItemPagoRapido = {
+              idTemporal: Math.random().toString(36).substring(2, 9),
+              lineaOriginal: `Comprobante Nequi (${file.name})`,
+              nombreCandidato: '',
+              metodoPago: 'nequi',
+              observaciones: 'Pago Nequi',
+              montoPagar: 0,
+              coincidencia: 'no_encontrado',
+              score: 0,
+              jugador: null,
+              mensualidad: null,
+              sugerencias: [],
+              incluir: false,
+              comprobanteBase64: base64Data,
+              comprobanteNombre: file.name,
+              comprobantePreview: base64Data,
+              mostrarDropdownJugadores: true,
+            };
+            this.itemsPagosRapidos.push(nuevaFila);
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    });
+  }
+
+  asociarComprobanteFila(item: ItemPagoRapido, event: any) {
+    const file: File = event.target?.files?.[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      this.toast.info('Extrayendo datos del comprobante con OCR...');
+
+      this.api.post<any>('pagos/escanear-nequi', formData).subscribe({
+        next: (itemEscaneado) => {
+          item.comprobanteBase64 = itemEscaneado.comprobanteBase64;
+          item.comprobanteNombre = file.name;
+          item.comprobantePreview = itemEscaneado.comprobantePreview;
+          item.metodoPago = 'nequi';
+
+          if (itemEscaneado.montoPagar > 0) {
+            item.montoPagar = itemEscaneado.montoPagar;
+          }
+          if (itemEscaneado.observaciones) {
+            item.observaciones = itemEscaneado.observaciones;
+          }
+          if (itemEscaneado.referencia) {
+            item.referencia = itemEscaneado.referencia;
+          }
+          if (itemEscaneado.lineaOriginal) {
+            item.lineaOriginal = itemEscaneado.lineaOriginal;
+          }
+          if (itemEscaneado.nombreCandidato) {
+            item.nombreCandidato = itemEscaneado.nombreCandidato;
+          }
+          if (itemEscaneado.categoriaPista) {
+            item.categoriaPista = itemEscaneado.categoriaPista;
+          }
+          if (itemEscaneado.mesNombre) {
+            item.mesNombre = itemEscaneado.mesNombre;
+            item.mesDetectado = itemEscaneado.mesDetectado;
+            item.anioDetectado = itemEscaneado.anioDetectado;
+          }
+          if (itemEscaneado.sugerencias && itemEscaneado.sugerencias.length > 0) {
+            item.sugerencias = itemEscaneado.sugerencias;
+          }
+          if (itemEscaneado.esDobleMes) {
+            item.esDobleMes = true;
+            item.montoMes1 = itemEscaneado.montoMes1 || 50000;
+            item.montoMes2 = itemEscaneado.montoMes2 || 50000;
+            item.idMensualidadMes1 = itemEscaneado.idMensualidadMes1;
+            item.idMensualidadMes2 = itemEscaneado.idMensualidadMes2;
+            item.mensualidadMes1 = itemEscaneado.mensualidadMes1;
+            item.mensualidadMes2 = itemEscaneado.mensualidadMes2;
+            item.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
+          }
+          if (!item.jugador && itemEscaneado.jugador) {
+            item.jugador = itemEscaneado.jugador;
+            item.mensualidad = itemEscaneado.mensualidad;
+            item.coincidencia = itemEscaneado.coincidencia;
+            item.score = itemEscaneado.score;
+            item.incluir = itemEscaneado.incluir;
+            item.mostrarDropdownJugadores = false;
+          }
+          this.toast.success(`Datos extraídos: $${this.formatNumber(item.montoPagar)} ${item.referencia ? '(' + item.referencia + ')' : ''}`);
+        },
+        error: (err) => {
+          console.error('Error al escanear comprobante fila:', err);
+          this.toast.error(err.error?.message || 'Error al procesar el comprobante mediante OCR.');
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            item.comprobanteBase64 = e.target.result;
+            item.comprobanteNombre = file.name;
+            item.comprobantePreview = e.target.result;
+            item.metodoPago = 'nequi';
+            this.toast.success('Comprobante adjuntado (sin OCR)');
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      event.target.value = '';
+    }
+  }
+
+  toggleDobleMes(item: ItemPagoRapido) {
+    item.esDobleMes = !item.esDobleMes;
+    if (item.esDobleMes) {
+      const mitad = Math.round(Number(item.montoPagar || 100000) / 2);
+      item.montoMes1 = mitad || 50000;
+      item.montoMes2 = mitad || 50000;
+      if (item.jugador && (!item.mensualidadesDisponibles || item.mensualidadesDisponibles.length === 0)) {
+        this.cargarMensualidadesDobleMes(item);
+      }
+    }
+  }
+
+  cargarMensualidadesDobleMes(item: ItemPagoRapido) {
+    if (!item.jugador) return;
+    this.api.get<Mensualidad[]>(`mensualidades/jugador/${item.jugador.id}`).subscribe({
+      next: (mensualidades) => {
+        const ordenadas = [...mensualidades].sort((a, b) => {
+          if (a.anio !== b.anio) return a.anio - b.anio;
+          return a.mes - b.mes;
+        });
+        item.mensualidadesDisponibles = ordenadas.map(m => ({
+          id: m.id,
+          mes: m.mes,
+          anio: m.anio,
+          mesNombre: `${this.getNombreMes(m.mes)} ${m.anio}`,
+          monto: Number(m.monto),
+          saldo_pendiente: Number(m.saldo_pendiente),
+          estado: m.estado
+        }));
+
+        const pendientes = ordenadas.filter(m => m.estado !== 'pagado' && Number(m.saldo_pendiente) > 0);
+        if (pendientes.length >= 2) {
+          item.idMensualidadMes1 = pendientes[pendientes.length - 2].id;
+          item.mensualidadMes1 = pendientes[pendientes.length - 2];
+          item.idMensualidadMes2 = pendientes[pendientes.length - 1].id;
+          item.mensualidadMes2 = pendientes[pendientes.length - 1];
+        } else if (pendientes.length === 1) {
+          item.idMensualidadMes1 = pendientes[0].id;
+          item.mensualidadMes1 = pendientes[0];
+          item.idMensualidadMes2 = pendientes[0].id;
+          item.mensualidadMes2 = pendientes[0];
+        } else if (ordenadas.length > 0) {
+          item.idMensualidadMes1 = ordenadas[ordenadas.length - 1].id;
+          item.mensualidadMes1 = ordenadas[ordenadas.length - 1];
+          item.idMensualidadMes2 = ordenadas[ordenadas.length - 1].id;
+          item.mensualidadMes2 = ordenadas[ordenadas.length - 1];
+        }
+        this.onMesDobleChange(item);
+      }
+    });
+  }
+
+  onMesDobleChange(item: ItemPagoRapido) {
+    if (!item.mensualidadesDisponibles) return;
+    const m1 = item.mensualidadesDisponibles.find(m => m.id === Number(item.idMensualidadMes1));
+    const m2 = item.mensualidadesDisponibles.find(m => m.id === Number(item.idMensualidadMes2));
+    if (m1) item.mensualidadMes1 = m1;
+    if (m2) item.mensualidadMes2 = m2;
+
+    if (m1 && m2) {
+      item.mesNombre = `${this.getNombreMes(m1.mes)} y ${this.getNombreMes(m2.mes)} ${m2.anio}`;
+    }
+  }
+
+  onMontoDobleChange(item: ItemPagoRapido) {
+    if (item.esDobleMes) {
+      const mitad = Math.round(Number(item.montoPagar || 0) / 2);
+      item.montoMes1 = mitad;
+      item.montoMes2 = mitad;
+    }
+  }
+
+  desglosarEnDosFilas(item: ItemPagoRapido) {
+    const idx = this.itemsPagosRapidos.findIndex(it => it.idTemporal === item.idTemporal);
+    if (idx === -1) return;
+
+    let m1 = item.mensualidadMes1;
+    let m2 = item.mensualidadMes2;
+
+    if (!m1 && item.idMensualidadMes1 && item.mensualidadesDisponibles) {
+      m1 = item.mensualidadesDisponibles.find(m => m.id === Number(item.idMensualidadMes1));
+    }
+    if (!m2 && item.idMensualidadMes2 && item.mensualidadesDisponibles) {
+      m2 = item.mensualidadesDisponibles.find(m => m.id === Number(item.idMensualidadMes2));
+    }
+
+    m1 = m1 || item.mensualidad;
+    m2 = m2 || item.mensualidad;
+
+    const monto1 = Number(item.montoMes1) || Math.round(Number(item.montoPagar || 100000) / 2);
+    const monto2 = Number(item.montoMes2) || Math.round(Number(item.montoPagar || 100000) / 2);
+
+    const fila1: ItemPagoRapido = {
+      idTemporal: Math.random().toString(36).substring(2, 9),
+      lineaOriginal: `${item.lineaOriginal || 'Pago'} (Mes 1)`,
+      nombreCandidato: item.nombreCandidato,
+      categoriaPista: item.categoriaPista,
+      mesDetectado: m1?.mes,
+      mesNombre: m1 ? `${this.getNombreMes(m1.mes)} ${m1.anio}` : 'Mes 1',
+      anioDetectado: m1?.anio,
+      metodoPago: item.metodoPago,
+      observaciones: item.observaciones ? `${item.observaciones} (Mes 1/2: ${m1 ? this.getNombreMes(m1.mes) : ''})`.trim() : 'Mes 1/2',
+      montoPagar: monto1,
+      referencia: item.referencia,
+      coincidencia: item.coincidencia,
+      score: item.score,
+      jugador: item.jugador,
+      mensualidad: m1,
+      sugerencias: item.sugerencias || [],
+      incluir: true,
+      comprobanteBase64: item.comprobanteBase64,
+      comprobanteNombre: item.comprobanteNombre,
+      comprobantePreview: item.comprobantePreview,
+      esDobleMes: false,
+    };
+
+    const fila2: ItemPagoRapido = {
+      idTemporal: Math.random().toString(36).substring(2, 9),
+      lineaOriginal: `${item.lineaOriginal || 'Pago'} (Mes 2)`,
+      nombreCandidato: item.nombreCandidato,
+      categoriaPista: item.categoriaPista,
+      mesDetectado: m2?.mes,
+      mesNombre: m2 ? `${this.getNombreMes(m2.mes)} ${m2.anio}` : 'Mes 2',
+      anioDetectado: m2?.anio,
+      metodoPago: item.metodoPago,
+      observaciones: item.observaciones ? `${item.observaciones} (Mes 2/2: ${m2 ? this.getNombreMes(m2.mes) : ''})`.trim() : 'Mes 2/2',
+      montoPagar: monto2,
+      referencia: item.referencia,
+      coincidencia: item.coincidencia,
+      score: item.score,
+      jugador: item.jugador,
+      mensualidad: m2,
+      sugerencias: item.sugerencias || [],
+      incluir: true,
+      comprobanteBase64: item.comprobanteBase64,
+      comprobanteNombre: item.comprobanteNombre,
+      comprobantePreview: item.comprobantePreview,
+      esDobleMes: false,
+    };
+
+    this.itemsPagosRapidos.splice(idx, 1, fila1, fila2);
+    this.toast.success(`Desglosado en 2 filas: $${this.formatNumber(monto1)} y $${this.formatNumber(monto2)}`);
+  }
+
+  quitarComprobanteFila(item: ItemPagoRapido) {
+    item.comprobanteBase64 = undefined;
+    item.comprobanteNombre = undefined;
+    item.comprobantePreview = undefined;
+  }
+
+  verComprobanteEnModal(item: ItemPagoRapido) {
+    if (item.comprobantePreview || item.comprobanteBase64) {
+      this.comprobanteModalUrl = item.comprobantePreview || item.comprobanteBase64 || null;
+      this.comprobanteModalTitulo = `Comprobante: ${item.jugador ? (item.jugador.nombre + ' ' + item.jugador.apellido) : item.nombreCandidato || 'Sin asignar'}`;
+      this.modalComprobanteVisible = true;
+    }
+  }
+
+  cerrarModalComprobante() {
+    this.modalComprobanteVisible = false;
+    this.comprobanteModalUrl = null;
+  }
+
+  contarCoincidenciasExactas(): number {
+    return this.itemsPagosRapidos.filter(r => r.coincidencia === 'exacta').length;
+  }
+
+  contarCoincidenciasSugeridas(): number {
+    return this.itemsPagosRapidos.filter(r => r.coincidencia === 'sugerida').length;
+  }
+
+  contarNoEncontrados(): number {
+    return this.itemsPagosRapidos.filter(r => r.coincidencia === 'no_encontrado').length;
+  }
+
+  toggleDropdownJugadores(item: ItemPagoRapido) {
+    item.mostrarDropdownJugadores = !item.mostrarDropdownJugadores;
+    if (item.mostrarDropdownJugadores) {
+      this.cargarTodosJugadores();
+    }
+  }
+
+  cerrarDropdownJugadores(item: ItemPagoRapido) {
+    item.mostrarDropdownJugadores = false;
+  }
+
+  seleccionarJugadorFila(item: ItemPagoRapido, jugadorInput: any) {
+    const jugadorReal = this.todosJugadores.find(j => j.id === jugadorInput.id) || jugadorInput;
+    item.jugador = jugadorReal;
+    item.coincidencia = 'exacta';
+    item.score = 1;
+    item.mostrarDropdownJugadores = false;
+
+    // Buscar mensualidad del mes detectado o la primera pendiente
+    const anio = item.anioDetectado || new Date().getFullYear();
+    const mes = item.mesDetectado || new Date().getMonth() + 1;
+
+    // Obtener mensualidades del jugador seleccionado
+    this.api.get<Mensualidad[]>(`mensualidades/jugador/${jugadorReal.id}`).subscribe({
+      next: (mensualidades) => {
+        let mens = mensualidades.find(m => m.mes === mes && m.anio === anio);
+        if (!mens) {
+          mens = mensualidades.find(m => m.estado !== 'pagado' && Number(m.saldo_pendiente) > 0);
+        }
+
+        if (mens) {
+          item.mensualidad = mens;
+          item.montoPagar = Number(mens.saldo_pendiente);
+          item.mesNombre = `Mes ${mens.mes}`;
+          item.incluir = true;
+        } else {
+          item.montoPagar = jugadorReal.categoria?.valor_mensualidad || 50000;
+          this.toast.info(`El jugador no tiene mensualidad pendiente registrada. Creando para Mes ${mes}.`);
+          item.incluir = true;
+        }
+      },
+      error: () => {
+        item.montoPagar = jugadorReal.categoria?.valor_mensualidad || 50000;
+        item.incluir = true;
+      }
+    });
+  }
+
+  getJugadoresFiltrados(idTemporal: string): Jugador[] {
+    const query = (this.busquedaJugadorFila[idTemporal] || '').toLowerCase().trim();
+    if (!query) return this.todosJugadores.slice(0, 15);
+    return this.todosJugadores.filter(j =>
+      `${j.nombre} ${j.apellido}`.toLowerCase().includes(query) ||
+      j.documento.includes(query)
+    ).slice(0, 15);
+  }
+
+  cambiarMetodoFila(item: ItemPagoRapido, metodo: 'efectivo' | 'nequi' | 'transferencia') {
+    item.metodoPago = metodo;
+  }
+
+  eliminarFilaRapida(idTemporal: string) {
+    this.itemsPagosRapidos = this.itemsPagosRapidos.filter(it => it.idTemporal !== idTemporal);
+  }
+
+  agregarFilaVaciaRapida() {
+    this.cargarTodosJugadores();
+    this.itemsPagosRapidos.push({
+      idTemporal: Math.random().toString(36).substring(2, 9),
+      lineaOriginal: 'Registro Manual',
+      nombreCandidato: '',
+      metodoPago: 'efectivo',
+      observaciones: '',
+      montoPagar: 0,
+      coincidencia: 'no_encontrado',
+      score: 0,
+      jugador: null,
+      mensualidad: null,
+      sugerencias: [],
+      incluir: false,
+      mostrarDropdownJugadores: true,
+    });
+  }
+
+  limpiarTodasFilasRapidas() {
+    if (confirm('¿Deseas vaciar la lista de pagos rápidos?')) {
+      this.itemsPagosRapidos = [];
+    }
+  }
+
+  toggleTodosRapidos(event: any) {
+    const checked = event.target?.checked;
+    this.itemsPagosRapidos.forEach(it => {
+      if (it.jugador && it.mensualidad) {
+        it.incluir = checked;
+      }
+    });
+  }
+
+  todosRapidosSeleccionados(): boolean {
+    const validos = this.itemsPagosRapidos.filter(it => it.jugador && it.mensualidad);
+    return validos.length > 0 && validos.every(it => it.incluir);
+  }
+
+  contarRapidosSeleccionados(): number {
+    return this.itemsPagosRapidos.filter(it => it.incluir && it.jugador && it.mensualidad).length;
+  }
+
+  totalMontoRapido(): number {
+    return this.itemsPagosRapidos
+      .filter(it => it.incluir && it.jugador && it.mensualidad)
+      .reduce((sum, it) => sum + (Number(it.montoPagar) || 0), 0);
+  }
+
+  totalEfectivoRapido(): number {
+    return this.itemsPagosRapidos
+      .filter(it => it.incluir && it.jugador && it.mensualidad && it.metodoPago === 'efectivo')
+      .reduce((sum, it) => sum + (Number(it.montoPagar) || 0), 0);
+  }
+
+  totalNequiRapido(): number {
+    return this.itemsPagosRapidos
+      .filter(it => it.incluir && it.jugador && it.mensualidad && it.metodoPago === 'nequi')
+      .reduce((sum, it) => sum + (Number(it.montoPagar) || 0), 0);
+  }
+
+  registrarLoteRapido() {
+    const itemsValidos = this.itemsPagosRapidos.filter(it => it.incluir && it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1)));
+
+    if (itemsValidos.length === 0) {
+      this.toast.error('No hay pagos seleccionados con jugador y mensualidad válidos.');
+      return;
+    }
+
+    this.guardandoLoteRapido = true;
+
+    const pagosPayload: any[] = [];
+    for (const it of itemsValidos) {
+      if (it.esDobleMes && it.idMensualidadMes1 && it.idMensualidadMes2) {
+        const monto1 = Number(it.montoMes1) || Math.round(Number(it.montoPagar || 100000) / 2);
+        const monto2 = Number(it.montoMes2) || Math.round(Number(it.montoPagar || 100000) / 2);
+        pagosPayload.push({
+          mensualidad_id: Number(it.idMensualidadMes1),
+          monto_pagado: monto1,
+          metodo_pago: it.metodoPago,
+          observaciones: (it.observaciones ? `${it.observaciones} - Mes 1/2` : 'Pago Mes 1/2').trim(),
+          comprobante_archivo: it.comprobanteBase64 || undefined,
+          jugador_id: it.jugador!.id,
+        });
+        pagosPayload.push({
+          mensualidad_id: Number(it.idMensualidadMes2),
+          monto_pagado: monto2,
+          metodo_pago: it.metodoPago,
+          observaciones: (it.observaciones ? `${it.observaciones} - Mes 2/2` : 'Pago Mes 2/2').trim(),
+          comprobante_archivo: it.comprobanteBase64 || undefined,
+          jugador_id: it.jugador!.id,
+        });
+      } else {
+        pagosPayload.push({
+          mensualidad_id: it.mensualidad!.id,
+          monto_pagado: Number(it.montoPagar),
+          metodo_pago: it.metodoPago,
+          observaciones: it.observaciones || undefined,
+          comprobante_archivo: it.comprobanteBase64 || undefined,
+          jugador_id: it.jugador!.id,
+        });
+      }
+    }
+
+    const payload = { pagos: pagosPayload };
+
+    this.api.post<any>('pagos/lote', payload).subscribe({
+      next: (res) => {
+        this.guardandoLoteRapido = false;
+        this.resultadoLoteExitoso = res;
+        this.modalExitoLoteVisible = true;
+
+        // Quitar de la lista los que se registraron
+        const idsProcesados = new Set(itemsValidos.map(it => it.idTemporal));
+        this.itemsPagosRapidos = this.itemsPagosRapidos.filter(it => !idsProcesados.has(it.idTemporal));
+
+        this.toast.success(res.message || `Se registraron ${res.exitosos} pagos exitosamente.`);
+      },
+      error: (err) => {
+        this.guardandoLoteRapido = false;
+        this.toast.error(err.error?.message || 'Error al registrar el lote de pagos');
+      }
+    });
+  }
+
+  cerrarModalExitoLote() {
+    this.modalExitoLoteVisible = false;
+    this.resultadoLoteExitoso = null;
+    this.changeTab('historial');
   }
 }
