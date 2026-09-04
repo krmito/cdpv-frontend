@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-04T16:10:26Z",
+  "title": "Design System: Club Deportivo Pancho Villegas — Sistema de Gestión",
+  "extensions": {
+    "colorMeta": {
+      "club-navy": {
+        "role": "primary",
+        "displayName": "Club Navy",
+        "canonical": "#1a3a5c",
+        "tonalRamp": ["#0d1f33", "#142c47", "#1a3a5c", "#234a72", "#2d5a88", "#4a7aa8", "#7ba3c4", "#eaf2f8"]
+      },
+      "club-navy-deep": {
+        "role": "primary",
+        "displayName": "Club Navy Deep",
+        "canonical": "#0d1f33",
+        "tonalRamp": []
+      },
+      "club-gold": {
+        "role": "secondary",
+        "displayName": "Crest Gold",
+        "canonical": "#ffde00",
+        "tonalRamp": ["#7a5c00", "#a37a00", "#cc9900", "#e6b800", "#ffde00", "#ffe94d", "#fff08c", "#fffdf0"]
+      },
+      "action-blue": {
+        "role": "secondary",
+        "displayName": "Action Blue",
+        "canonical": "#3b82f6",
+        "tonalRamp": ["#1e3a8a", "#1e40af", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#eff6ff"]
+      },
+      "action-blue-deep": {
+        "role": "secondary",
+        "displayName": "Action Blue Deep",
+        "canonical": "#2563eb",
+        "tonalRamp": []
+      },
+      "success": {
+        "role": "status",
+        "displayName": "Success Emerald",
+        "canonical": "#10b981",
+        "tonalRamp": ["#064e3b", "#065f46", "#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#ecfdf5"]
+      },
+      "success-deep": { "role": "status", "displayName": "Success Emerald Deep", "canonical": "#065f46" },
+      "success-bg": { "role": "status", "displayName": "Success Emerald Tint", "canonical": "#d1fae5" },
+      "warning": {
+        "role": "status",
+        "displayName": "Warning Amber",
+        "canonical": "#f59e0b",
+        "tonalRamp": ["#78350f", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fcd34d", "#fffbeb"]
+      },
+      "warning-deep": { "role": "status", "displayName": "Warning Amber Deep", "canonical": "#92400e" },
+      "warning-bg": { "role": "status", "displayName": "Warning Amber Tint", "canonical": "#fef3c7" },
+      "danger": {
+        "role": "status",
+        "displayName": "Danger Red",
+        "canonical": "#ef4444",
+        "tonalRamp": ["#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fca5a5", "#fef2f2"]
+      },
+      "danger-deep": { "role": "status", "displayName": "Danger Red Deep", "canonical": "#991b1b" },
+      "danger-bg": { "role": "status", "displayName": "Danger Red Tint", "canonical": "#fee2e2" },
+      "info-deep": { "role": "status", "displayName": "Info Blue Deep", "canonical": "#1e40af" },
+      "info-bg": { "role": "status", "displayName": "Info Blue Tint", "canonical": "#dbeafe" },
+      "neutral-ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#111827",
+        "tonalRamp": ["#111827", "#1f2937", "#374151", "#4b5563", "#6b7280", "#9ca3af", "#d1d5db", "#f9fafb"]
+      },
+      "neutral-slate": { "role": "neutral", "displayName": "Slate", "canonical": "#374151" },
+      "neutral-gray": { "role": "neutral", "displayName": "Gray", "canonical": "#6b7280" },
+      "neutral-mist": { "role": "neutral", "displayName": "Mist", "canonical": "#9ca3af" },
+      "neutral-border": { "role": "neutral", "displayName": "Border", "canonical": "#e5e7eb" },
+      "neutral-surface": { "role": "neutral", "displayName": "Surface White", "canonical": "#ffffff" },
+      "neutral-bg": { "role": "neutral", "displayName": "Page Canvas", "canonical": "#f5f7fa" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (Ledger Numbers)", "purpose": "Dashboard stat-card totals only — the single headline figure on a card." },
+      "headline": { "displayName": "Headline", "purpose": "Page-header titles and the dashboard welcome banner h1." },
+      "title": { "displayName": "Title", "purpose": "Card section headers within a page (e.g. \"Resumen del Mes\")." },
+      "body": { "displayName": "Body", "purpose": "Default UI text, table cells, form values." },
+      "label": { "displayName": "Label", "purpose": "Uppercase eyebrow labels, badge text, form field labels." }
+    },
+    "shadows": [
+      { "name": "ambient-card", "value": "0 2px 4px rgba(0,0,0,0.1)", "purpose": "Default resting elevation for cards, tables, stat cards." },
+      { "name": "lifted-card", "value": "0 8px 25px rgba(0,0,0,0.12)", "purpose": "Hover state for interactive stat cards and clickable cards." },
+      { "name": "brand-glow", "value": "0 10px 40px rgba(26,58,92,0.3), 0 0 30px rgba(255,222,0,0.2)", "purpose": "Page headers, welcome banner, login card, crest image glow." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "all 0.3s ease", "purpose": "Default transition for hover/focus state changes across buttons, cards, and nav items." },
+      { "name": "ease-quick", "value": "all 0.2s ease", "purpose": "Fast micro-interactions: button hover, menu item hover." },
+      { "name": "crest-glow-pulse", "value": "logo-glow 3s infinite ease-in-out", "purpose": "Brand-only pulsing glow on the crest image (login, sidebar, dashboard banner). Never used outside brand surfaces." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "768px" },
+      { "name": "card-table", "value": "480px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Interior work-screen primary action (registrar pago, guardar, etc.).",
+      "html": "<button class=\"ds-btn-primary\">Registrar Pago</button>",
+      "css": ".ds-btn-primary { background: #3b82f6; color: #ffffff; padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; } .ds-btn-primary:hover { background: #2563eb; } .ds-btn-primary:focus-visible { outline: 3px solid #3b82f6; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }"
+    },
+    {
+      "name": "Brand Button",
+      "kind": "button",
+      "refersTo": "button-brand",
+      "description": "Login and other crest-context primary actions — navy gradient with a gold-tinted hover glow.",
+      "html": "<button class=\"ds-btn-brand\">Ingresar</button>",
+      "css": ".ds-btn-brand { background: linear-gradient(135deg, #1a3a5c 0%, #2d4a6a 100%); color: #ffffff; padding: 16px 24px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; } .ds-btn-brand:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(26,58,92,0.4), 0 0 20px rgba(255,222,0,0.3); background: linear-gradient(135deg, #2d4a6a 0%, #1a3a5c 100%); }"
+    },
+    {
+      "name": "Estado Badge — Pagado",
+      "kind": "chip",
+      "refersTo": "badge-success",
+      "description": "Fully-paid dues status pill.",
+      "html": "<span class=\"ds-badge ds-badge-success\">Pagado</span>",
+      "css": ".ds-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; } .ds-badge-success { background: #d1fae5; color: #065f46; }"
+    },
+    {
+      "name": "Estado Badge — Pendiente",
+      "kind": "chip",
+      "refersTo": "badge-warning",
+      "description": "Unpaid dues status pill.",
+      "html": "<span class=\"ds-badge ds-badge-warning\">Pendiente</span>",
+      "css": ".ds-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; } .ds-badge-warning { background: #fef3c7; color: #92400e; }"
+    },
+    {
+      "name": "Estado Badge — Vencido",
+      "kind": "chip",
+      "refersTo": "badge-danger",
+      "description": "Overdue dues status pill.",
+      "html": "<span class=\"ds-badge ds-badge-danger\">Vencido</span>",
+      "css": ".ds-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; } .ds-badge-danger { background: #fee2e2; color: #991b1b; }"
+    },
+    {
+      "name": "Stat Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Dashboard metric card: colored left border + tinted icon well + Fira Code display number.",
+      "html": "<div class=\"ds-stat-card\"><div class=\"ds-stat-icon\">👥</div><div class=\"ds-stat-info\"><h3>Jugadores Activos</h3><div class=\"ds-stat-value\">128</div><p>de 140 totales</p></div></div>",
+      "css": ".ds-stat-card { background: #ffffff; padding: 24px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 18px; border-left: 4px solid #3b82f6; transition: all 0.3s ease; } .ds-stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); } .ds-stat-icon { font-size: 36px; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 14px; background: #eff6ff; } .ds-stat-info h3 { font-size: 13px; color: #6b7280; margin: 0 0 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; } .ds-stat-value { font-family: 'Fira Code', 'Courier New', monospace; font-size: 32px; font-weight: 700; color: #1a3a5c; line-height: 1.1; } .ds-stat-info p { font-size: 13px; color: #9ca3af; margin: 4px 0 0; }"
+    },
+    {
+      "name": "Form Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Interior form field with blue focus ring.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Nombre del jugador\" />",
+      "css": ".ds-input { width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; background: #ffffff; transition: all 0.2s ease; } .ds-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }"
+    },
+    {
+      "name": "Advisory Warning Card",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Non-blocking heads-up pattern (e.g. possible duplicate player) — amber left-border card, distinct from the danger/error alert.",
+      "html": "<div class=\"ds-warning-card\"><strong>Posibles jugadores similares</strong><p>Encontramos 2 jugadores con nombre parecido.</p></div>",
+      "css": ".ds-warning-card { background: #fffbeb; border: 1px solid #fcd34d; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px 16px; } .ds-warning-card strong { display: block; color: #78350f; font-size: 14px; margin-bottom: 2px; } .ds-warning-card p { margin: 0; font-size: 13px; color: #92400e; }"
+    },
+    {
+      "name": "Navbar",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "Top brand bar: navy-to-dark-navy gradient, gold wordmark, translucent centered system-title capsule.",
+      "html": "<nav class=\"ds-navbar\"><div class=\"ds-navbar-brand\">Sistema de Gestión</div><span class=\"ds-navbar-title\">Panel de Control</span></nav>",
+      "css": ".ds-navbar { background: linear-gradient(90deg, #1a3a5c 0%, #0d1f33 100%); padding: 12px 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; } .ds-navbar-brand { font-size: 16px; font-weight: 700; color: #ffde00; letter-spacing: 0.5px; } .ds-navbar-title { font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.85); letter-spacing: 2px; text-transform: uppercase; padding: 8px 20px; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; background: rgba(255,255,255,0.05); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Sala de Control del Escudo",
+    "overview": "The system has two honest layers, and the design works because it keeps them separate on purpose. The club's own colors — deep navy (#1a3a5c fading to #0d1f33) and a bright crest gold (#ffde00) — command every frame the visitor enters or leaves through: the login screen, the navbar, the sidebar, and every page header. That's the crest. Inside that frame, the actual work — rosters, dues, payments, reports — runs on a calmer, purpose-built control-room palette: neutral grays for structure, a functional blue for interactive focus, and a strict green/amber/red stoplight vocabulary for anything the staff needs to act on (paid / pending / overdue). That's the control room. The voice is trustworthy and composed: warm enough to feel like a club, restrained enough to feel like a place where a family's dues are handled correctly. Brand energy — the floating particles, the pulsing crest glow, the button shine — belongs to the crest layer only (login, navbar, sidebar, page headers). The interior work screens do not audition for that energy; they stay quiet, dense-information, and fast to scan.",
+    "keyCharacteristics": [
+      "A two-layer identity: crest colors (navy/gold) own the frame, a neutral+blue control-room palette owns the work.",
+      "Brand motion (glow, particles, shine) is reserved for login/nav/sidebar/headers — never the interior.",
+      "A strict, reused stoplight system for status: green = pagado, amber = pendiente, red = vencido.",
+      "Monospace for anything numeric or code-like (amounts, stat values, receipt/usernames); Fira Sans for everything else.",
+      "Soft, low-contrast shadows and generous rounding (6–20px) throughout; no hard-edged, flat-bordered surfaces."
+    ],
+    "rules": [
+      { "name": "The Crest-Only Motion Rule", "body": "Particles, pulsing glow, button shine, and hover-lift belong to brand surfaces only (login, navbar, sidebar, page headers). A work screen never adopts them — it stays calm so the person scanning it on a phone at practice can act fast.", "section": "colors" },
+      { "name": "The Stoplight Consistency Rule", "body": "Green/amber/red always mean pagado/pendiente/vencido, system-wide, using the exact bg+deep-text pairs. Don't invent a fourth status color or repurpose the stoplight hues for anything unrelated to payment/dues state.", "section": "colors" },
+      { "name": "The Ledger Font Rule", "body": "Any rendered number that represents money, a count, or an identifier code is set in Fira Code. Everything else is Fira Sans. Mixing them the other way breaks the system's one legible signature.", "section": "typography" },
+      { "name": "The Hover-Lift Rule", "body": "Elevation increases only on interaction (hover/focus), never as a static decoration. A flat card that never changes shadow on hover is a signal something is non-interactive.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep crest colors (navy/gold) confined to navbar, sidebar, login, and page headers; keep interior work surfaces on the neutral/blue/stoplight palette.",
+      "Do use the exact stoplight pairs (success/warning/danger/info bg+deep-text) for any payment/dues status; don't introduce a new status color.",
+      "Do set money amounts, stat totals, and code-like identifiers in Fira Code; everything else in Fira Sans.",
+      "Do use #3b82f6 (action-blue) as the primary interior accent for buttons, active tabs, and focus rings.",
+      "Do reserve motion (glow, particle, shine, pulse) for brand surfaces; interior cards only animate on hover/focus state changes.",
+      "Do use the amber left-border-card treatment for inline advisory warnings like the duplicate-player check.",
+      "Do switch dense tables to the .card-table stacked pattern below 480px rather than shrinking table cells further."
+    ],
+    "donts": [
+      "Don't use indigo #4f46e5 for new work — it was the original root token and had drifted across several pages (categorias, reportes, change-password, data-table headers/hover in mensualidades/pagos/jugadores, two chart colors, the global :focus-visible ring); all migrated to #3b82f6 as of this pass. Treat any indigo you find as regression, not precedent.",
+      "Don't give interior work screens the login page's particle/glow/shine treatment.",
+      "Don't use amber for a \"partial payment\" state — that's specifically the info-blue pair; amber means pendiente (nothing paid yet).",
+      "Don't introduce hard (0px) corners or unrounded flat cards.",
+      "Don't style the guardian portal (acudiente) screens with denser, more operational chrome than staff screens need."
+    ]
+  }
+}

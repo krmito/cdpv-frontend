@@ -47,8 +47,8 @@ import { ApiService } from '../../core/services/api.service';
                 <div class="hijo-card">
                   <div class="card-header">
                     <div class="avatar-container">
-                      @if (hijo.foto_url) {
-                        <img [src]="getFotoUrl(hijo.foto_url)" [alt]="hijo.nombre" class="avatar-foto" />
+                      @if (hijo.foto_url && !fotoErrorIds.has(hijo.id)) {
+                        <img [src]="getFotoUrl(hijo.foto_url)" [alt]="hijo.nombre" class="avatar-foto" (error)="onFotoError(hijo.id)" />
                       } @else {
                         <div class="avatar-placeholder">{{ getInitials(hijo.nombre, hijo.apellido) }}</div>
                       }
@@ -103,6 +103,7 @@ export class MisHijosComponent implements OnInit {
 
   loading = signal(true);
   hijos = signal<any[]>([]);
+  fotoErrorIds = new Set<number>();
 
   ngOnInit() {
     this.acudienteService.getMisHijos().subscribe({
@@ -123,6 +124,10 @@ export class MisHijosComponent implements OnInit {
 
   getFotoUrl(fotoUrl: string): string {
     return `${this.apiService.getBaseUrl()}/${fotoUrl}`;
+  }
+
+  onFotoError(id: number) {
+    this.fotoErrorIds.add(id);
   }
 
   getInitials(nombre: string, apellido: string): string {

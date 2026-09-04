@@ -108,8 +108,8 @@ tbody tr {
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 tbody tr:hover {
-  background: #eef2ff;
-  box-shadow: inset 3px 0 0 #4f46e5;
+  background: #eff6ff;
+  box-shadow: inset 3px 0 0 #3b82f6;
 }
 .monto {
   font-weight: 600;
@@ -177,14 +177,14 @@ tbody tr:hover {
   transition: all 0.2s;
 }
 .btn-primary {
-  background: #4f46e5;
+  background: #3b82f6;
   color: white;
 }
 .btn-primary:hover {
-  background: #4338ca;
+  background: #2563eb;
 }
 .btn-primary:disabled {
-  background: #a5b4fc;
+  background: #93c5fd;
   cursor: not-allowed;
 }
 .btn-secondary {
@@ -275,8 +275,8 @@ tbody tr:hover {
 }
 .form-control:focus {
   outline: none;
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 textarea.form-control {
   resize: vertical;

@@ -340,7 +340,7 @@
 }
 
 .data-table thead {
-  background: #4f46e5;
+  background: #3b82f6;
   color: white;
 }
 
@@ -363,8 +363,8 @@
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 .data-table tbody tr:hover {
-  background: #eef2ff;
-  box-shadow: inset 3px 0 0 #4f46e5;
+  background: #eff6ff;
+  box-shadow: inset 3px 0 0 #3b82f6;
 }
 
 .amount {

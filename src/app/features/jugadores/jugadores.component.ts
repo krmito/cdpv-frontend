@@ -226,8 +226,8 @@ interface CreateJugadorDto {
                       @for (jugador of jugadores; track jugador.id) {
                         <tr>
                           <td data-label="">
-                            @if (jugador.foto_url) {
-                              <img [src]="getFotoUrl(jugador.foto_url)" class="avatar-sm clickable" (click)="openFotoViewer(jugador)" alt="Foto">
+                            @if (jugador.foto_url && !fotoErrorIds.has(jugador.id)) {
+                              <img [src]="getFotoUrl(jugador.foto_url)" class="avatar-sm clickable" (click)="openFotoViewer(jugador)" (error)="onFotoError(jugador.id)" alt="Foto">
                             } @else {
                               <div class="avatar-sm avatar-initials" [style.background-color]="getAvatarColor(jugador.nombre)">
                                 {{ getInitials(jugador.nombre, jugador.apellido) }}
@@ -352,7 +352,7 @@ interface CreateJugadorDto {
 
                     <div class="foto-upload-section">
                       @if (fotoPreview) {
-                        <img [src]="fotoPreview" class="foto-preview" alt="Preview">
+                        <img [src]="fotoPreview" class="foto-preview" alt="Preview" (error)="fotoPreview = null">
                       } @else {
                         <div class="avatar-lg avatar-initials" style="background-color: #94a3b8;">
                           {{ getInitials(newJugador.nombre || '?', newJugador.apellido || '?') }}
@@ -385,8 +385,8 @@ interface CreateJugadorDto {
                           <div class="similares-lista">
                             @for (j of jugadoresSimilares; track j.id) {
                               <div class="similar-item">
-                                @if (j.foto_url) {
-                                  <img [src]="apiBaseUrl + j.foto_url" class="avatar-sm" [alt]="j.nombre">
+                                @if (j.foto_url && !fotoErrorIds.has(j.id)) {
+                                  <img [src]="apiBaseUrl + j.foto_url" class="avatar-sm" [alt]="j.nombre" (error)="onFotoError(j.id)">
                                 } @else {
                                   <div class="avatar-sm avatar-initials" [style.background-color]="getAvatarColor(j.nombre)">
                                     {{ getInitials(j.nombre, j.apellido) }}
@@ -692,9 +692,9 @@ interface CreateJugadorDto {
 
                     <div class="foto-upload-section">
                       @if (fotoPreview) {
-                        <img [src]="fotoPreview" class="foto-preview" alt="Preview">
-                      } @else if (editingJugador.foto_url) {
-                        <img [src]="getFotoUrl(editingJugador.foto_url)" class="foto-preview" alt="Foto actual">
+                        <img [src]="fotoPreview" class="foto-preview" alt="Preview" (error)="fotoPreview = null">
+                      } @else if (editingJugador.foto_url && !fotoErrorIds.has(editingJugador.id)) {
+                        <img [src]="getFotoUrl(editingJugador.foto_url)" class="foto-preview" alt="Foto actual" (error)="onFotoError(editingJugador.id)">
                       } @else {
                         <div class="avatar-lg avatar-initials" [style.background-color]="getAvatarColor(editingJugador.nombre)">
                           {{ getInitials(editingJugador.nombre, editingJugador.apellido) }}
@@ -1001,8 +1001,8 @@ interface CreateJugadorDto {
                   <!-- Información del jugador -->
                   <div class="jugador-info-card">
                     <div class="info-row" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
-                      @if (jugadorHistorial.foto_url) {
-                        <img [src]="getFotoUrl(jugadorHistorial.foto_url)" class="avatar clickable" (click)="openFotoViewer(jugadorHistorial)" alt="Foto">
+                      @if (jugadorHistorial.foto_url && !fotoErrorIds.has(jugadorHistorial.id)) {
+                        <img [src]="getFotoUrl(jugadorHistorial.foto_url)" class="avatar clickable" (click)="openFotoViewer(jugadorHistorial)" (error)="onFotoError(jugadorHistorial.id)" alt="Foto">
                       } @else {
                         <div class="avatar avatar-initials" [style.background-color]="getAvatarColor(jugadorHistorial.nombre)">
                           {{ getInitials(jugadorHistorial.nombre, jugadorHistorial.apellido) }}
@@ -1345,7 +1345,14 @@ interface CreateJugadorDto {
             <div class="foto-viewer-overlay" (click)="closeFotoViewer()">
               <div class="foto-viewer-content" (click)="$event.stopPropagation()">
                 <button class="foto-viewer-close" (click)="closeFotoViewer()">✕</button>
-                <img [src]="fotoViewerUrl" class="foto-viewer-img" alt="Foto del jugador">
+                @if (!fotoViewerError) {
+                  <img [src]="fotoViewerUrl" class="foto-viewer-img" alt="Foto del jugador" (error)="fotoViewerError = true">
+                } @else {
+                  <div class="foto-viewer-error">
+                    <span class="foto-viewer-error-icon">🖼️</span>
+                    <span>No se pudo cargar la foto</span>
+                  </div>
+                }
                 @if (fotoViewerNombre) {
                   <p class="foto-viewer-nombre">{{ fotoViewerNombre }}</p>
                 }
@@ -1458,6 +1465,10 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
   // Foto viewer
   fotoViewerUrl: string | null = null;
   fotoViewerNombre: string | null = null;
+  fotoViewerError = false;
+
+  // Fotos que fallaron al cargar (404, archivo eliminado, etc.) — se cae a las iniciales
+  fotoErrorIds = new Set<number>();
 
   // Reenviar notificaciones
   showReenviarModal = false;
@@ -2111,12 +2122,18 @@ export class JugadoresComponent implements OnInit, CanComponentDeactivate {
     if (jugador.foto_url) {
       this.fotoViewerUrl = this.getFotoUrl(jugador.foto_url);
       this.fotoViewerNombre = `${jugador.nombre} ${jugador.apellido}`;
+      this.fotoViewerError = false;
     }
   }
 
   closeFotoViewer() {
     this.fotoViewerUrl = null;
     this.fotoViewerNombre = null;
+    this.fotoViewerError = false;
+  }
+
+  onFotoError(id: number) {
+    this.fotoErrorIds.add(id);
   }
 
   getMesNombre(mes: number): string {

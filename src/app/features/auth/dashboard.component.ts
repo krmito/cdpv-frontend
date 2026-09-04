@@ -131,7 +131,7 @@ interface Estadisticas {
                       <span class="progress-percent">{{ stats.proyeccion.porcentaje_cumplimiento | number:'1.0-0' }}%</span>
                     </div>
                     <div class="progress-bar-container">
-                      <div class="progress-bar-fill" [style.width.%]="stats.proyeccion.porcentaje_cumplimiento > 100 ? 100 : stats.proyeccion.porcentaje_cumplimiento"></div>
+                      <div class="progress-bar-fill" [style.transform]="'scaleX(' + getProyeccionFraction() + ')'"></div>
                     </div>
                     <div class="progress-amounts">
                       <span>\${{ formatNumber(stats.proyeccion.total_recaudado) }} recaudado</span>
@@ -365,6 +365,11 @@ export class DashboardComponent implements OnInit {
 
   formatNumber(num: number): string {
     return new Intl.NumberFormat('es-CO').format(num);
+  }
+
+  getProyeccionFraction(): number {
+    const pct = this.stats.proyeccion?.porcentaje_cumplimiento ?? 0;
+    return Math.min(pct, 100) / 100;
   }
 
   navigate(url: string) {

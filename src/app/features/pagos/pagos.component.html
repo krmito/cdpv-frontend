@@ -455,7 +455,7 @@
                 <span class="metodo-label">Efectivo</span>
                 <span class="metodo-value">\${{ formatNumber(estadisticas.total_por_metodo.efectivo) }}</span>
                 <div class="metodo-bar">
-                  <div class="metodo-bar-fill" [style.width.%]="getPorcentajeMetodo('efectivo')"></div>
+                  <div class="metodo-bar-fill" [style.transform]="'scaleX(' + (getPorcentajeMetodo('efectivo') / 100) + ')'"></div>
                 </div>
                 <span class="metodo-percent">{{ getPorcentajeMetodo('efectivo') }}%</span>
               </div>
@@ -467,7 +467,7 @@
                 <span class="metodo-label">Nequi</span>
                 <span class="metodo-value">\${{ formatNumber(estadisticas.total_por_metodo.nequi) }}</span>
                 <div class="metodo-bar">
-                  <div class="metodo-bar-fill" [style.width.%]="getPorcentajeMetodo('nequi')"></div>
+                  <div class="metodo-bar-fill" [style.transform]="'scaleX(' + (getPorcentajeMetodo('nequi') / 100) + ')'"></div>
                 </div>
                 <span class="metodo-percent">{{ getPorcentajeMetodo('nequi') }}%</span>
               </div>
@@ -479,7 +479,7 @@
                 <span class="metodo-label">Transferencia</span>
                 <span class="metodo-value">\${{ formatNumber(estadisticas.total_por_metodo.transferencia) }}</span>
                 <div class="metodo-bar">
-                  <div class="metodo-bar-fill" [style.width.%]="getPorcentajeMetodo('transferencia')"></div>
+                  <div class="metodo-bar-fill" [style.transform]="'scaleX(' + (getPorcentajeMetodo('transferencia') / 100) + ')'"></div>
                 </div>
                 <span class="metodo-percent">{{ getPorcentajeMetodo('transferencia') }}%</span>
               </div>
@@ -491,7 +491,7 @@
                 <span class="metodo-label">Otro</span>
                 <span class="metodo-value">\${{ formatNumber(estadisticas.total_por_metodo.otro) }}</span>
                 <div class="metodo-bar">
-                  <div class="metodo-bar-fill" [style.width.%]="getPorcentajeMetodo('otro')"></div>
+                  <div class="metodo-bar-fill" [style.transform]="'scaleX(' + (getPorcentajeMetodo('otro') / 100) + ')'"></div>
                 </div>
                 <span class="metodo-percent">{{ getPorcentajeMetodo('otro') }}%</span>
               </div>
@@ -664,7 +664,7 @@
                   } @else {
                     <div class="comprobante-preview">
                       @if (comprobantePreview) {
-                        <img [src]="comprobantePreview" alt="Comprobante" class="preview-image" />
+                        <img [src]="comprobantePreview" alt="Comprobante" class="preview-image" (error)="comprobantePreview = null" />
                       } @else {
                         <div class="pdf-preview">
                           <span class="pdf-icon">📄</span>

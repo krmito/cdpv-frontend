@@ -31,3 +31,8 @@ yarn-error.log*
 # macOS
 .DS_Store
 **/.DS_Store
+
+# Impeccable: machine-local session state (not project config)
+.impeccable/config.local.json
+.impeccable/live/roots.json
+.impeccable/live/sessions/

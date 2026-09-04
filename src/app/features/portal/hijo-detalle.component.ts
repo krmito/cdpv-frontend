@@ -31,8 +31,8 @@ const MESES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
             <!-- Card del jugador -->
             <div class="jugador-card">
               <div class="jugador-avatar-wrap">
-                @if (historial()!.jugador.foto_url) {
-                  <img [src]="getFotoUrl(historial()!.jugador.foto_url)" [alt]="historial()!.jugador.nombre" class="jugador-foto" />
+                @if (historial()!.jugador.foto_url && !fotoError()) {
+                  <img [src]="getFotoUrl(historial()!.jugador.foto_url)" [alt]="historial()!.jugador.nombre" class="jugador-foto" (error)="fotoError.set(true)" />
                 } @else {
                   <div class="jugador-avatar-placeholder">{{ getInitials() }}</div>
                 }
@@ -182,6 +182,7 @@ export class HijoDetalleComponent implements OnInit {
   historial = signal<any>(null);
   activeTab = signal<'mensualidades' | 'pagos'>('mensualidades');
   descargando = signal<Record<string, boolean>>({});
+  fotoError = signal(false);
 
   private jugadorId!: number;
 

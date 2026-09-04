@@ -550,7 +550,7 @@ export class ReportesComponent implements OnInit {
 
   cajaChartData: ChartData<'bar'> = {
     labels: [],
-    datasets: [{ data: [], label: 'Recaudado', backgroundColor: '#4f46e5', borderRadius: 4 }]
+    datasets: [{ data: [], label: 'Recaudado', backgroundColor: '#3b82f6', borderRadius: 4 }]
   };
 
   proyeccionChartData: ChartData<'doughnut'> = {
@@ -620,7 +620,7 @@ export class ReportesComponent implements OnInit {
     this.cajaItems = items;
     this.cajaChartData = {
       labels,
-      datasets: [{ data: values, label: 'Recaudado', backgroundColor: '#4f46e5', borderRadius: 4 }]
+      datasets: [{ data: values, label: 'Recaudado', backgroundColor: '#3b82f6', borderRadius: 4 }]
     };
   }
 
