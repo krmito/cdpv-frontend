@@ -150,6 +150,7 @@ export interface ItemPagoRapido {
   mensualidadMes1?: Mensualidad | null;
   mensualidadMes2?: Mensualidad | null;
   mensualidadesDisponibles?: any[];
+  selectedMesKey?: string;
 }
 
 @Component({
@@ -1254,6 +1255,7 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
             filaDestino.incluir = itemEscaneado.incluir;
             filaDestino.mostrarDropdownJugadores = !filaDestino.jugador;
 
+            filaDestino.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
             if (itemEscaneado.esDobleMes) {
               filaDestino.esDobleMes = true;
               filaDestino.montoMes1 = itemEscaneado.montoMes1 || 50000;
@@ -1262,12 +1264,14 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
               filaDestino.idMensualidadMes2 = itemEscaneado.idMensualidadMes2;
               filaDestino.mensualidadMes1 = itemEscaneado.mensualidadMes1;
               filaDestino.mensualidadMes2 = itemEscaneado.mensualidadMes2;
-              filaDestino.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
             }
+            filaDestino.selectedMesKey = this.determinarSelectedMesKey(filaDestino);
 
             const jugadorNom = filaDestino.jugador ? `${filaDestino.jugador.nombre} ${filaDestino.jugador.apellido}` : filaDestino.nombreCandidato;
             this.toast.success(`Comprobante adjuntado: ${jugadorNom} - $${this.formatNumber(filaDestino.montoPagar)} ${itemEscaneado.referencia ? '(' + itemEscaneado.referencia + ')' : ''}`);
           } else {
+            itemEscaneado.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
+            itemEscaneado.selectedMesKey = this.determinarSelectedMesKey(itemEscaneado);
             this.itemsPagosRapidos.push(itemEscaneado);
             const msg = itemEscaneado.jugador
               ? `Comprobante leído: ${itemEscaneado.jugador.nombre} ${itemEscaneado.jugador.apellido} - $${this.formatNumber(itemEscaneado.montoPagar)}`
@@ -1348,6 +1352,7 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
           if (itemEscaneado.sugerencias && itemEscaneado.sugerencias.length > 0) {
             item.sugerencias = itemEscaneado.sugerencias;
           }
+          item.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
           if (itemEscaneado.esDobleMes) {
             item.esDobleMes = true;
             item.montoMes1 = itemEscaneado.montoMes1 || 50000;
@@ -1356,7 +1361,6 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
             item.idMensualidadMes2 = itemEscaneado.idMensualidadMes2;
             item.mensualidadMes1 = itemEscaneado.mensualidadMes1;
             item.mensualidadMes2 = itemEscaneado.mensualidadMes2;
-            item.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
           }
           if (!item.jugador && itemEscaneado.jugador) {
             item.jugador = itemEscaneado.jugador;
@@ -1366,6 +1370,7 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
             item.incluir = itemEscaneado.incluir;
             item.mostrarDropdownJugadores = false;
           }
+          item.selectedMesKey = this.determinarSelectedMesKey(item);
           this.toast.success(`Datos extraídos: $${this.formatNumber(item.montoPagar)} ${item.referencia ? '(' + item.referencia + ')' : ''}`);
         },
         error: (err) => {
@@ -1654,9 +1659,11 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
             }
           }
         }
+        item.selectedMesKey = this.determinarSelectedMesKey(item);
         item.incluir = true;
       },
       error: () => {
+        item.selectedMesKey = this.determinarSelectedMesKey(item);
         item.incluir = true;
         if (!item.montoPagar || item.montoPagar <= 0) {
           item.montoPagar = item.jugador?.categoria?.valor_mensualidad || 50000;
@@ -1665,8 +1672,8 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
     });
   }
 
-  getMesSingleValue(item: ItemPagoRapido): string {
-    if (item.mensualidad?.id) {
+  determinarSelectedMesKey(item: ItemPagoRapido): string {
+    if (item.mensualidad?.id && item.mensualidadesDisponibles && item.mensualidadesDisponibles.some(m => m.id === item.mensualidad?.id)) {
       return `id:${item.mensualidad.id}`;
     }
     const mes = item.mesDetectado || (item.mensualidad ? (item.mensualidad as any).mes : (new Date().getMonth() + 1));
@@ -1674,12 +1681,20 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
     return `mes:${mes}:${anio}`;
   }
 
-  onMesSingleChange(item: ItemPagoRapido, event: Event) {
-    const val = (event.target as HTMLSelectElement).value;
-    if (!val) return;
+  getMesSingleValue(item: ItemPagoRapido): string {
+    if (!item.selectedMesKey) {
+      item.selectedMesKey = this.determinarSelectedMesKey(item);
+    }
+    return item.selectedMesKey;
+  }
 
-    if (val.startsWith('id:')) {
-      const id = parseInt(val.substring(3), 10);
+  onMesSingleChange(item: ItemPagoRapido, val: any) {
+    const strVal = typeof val === 'string' ? val : (val?.target?.value || '');
+    if (!strVal) return;
+    item.selectedMesKey = strVal;
+
+    if (strVal.startsWith('id:')) {
+      const id = parseInt(strVal.substring(3), 10);
       const m = item.mensualidadesDisponibles?.find(x => x.id === id);
       if (m) {
         item.mensualidad = m;
@@ -1688,8 +1703,8 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
         item.mesNombre = m.mesNombre;
         item.montoPagar = Number(m.saldo_pendiente) > 0 ? Number(m.saldo_pendiente) : (Number(item.montoPagar) || Number(m.monto) || 50000);
       }
-    } else if (val.startsWith('mes:')) {
-      const parts = val.split(':');
+    } else if (strVal.startsWith('mes:')) {
+      const parts = strVal.split(':');
       const mes = parseInt(parts[1], 10);
       const anio = parseInt(parts[2], 10);
       item.mesDetectado = mes;
@@ -1701,6 +1716,7 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
         const m = item.mensualidadesDisponibles.find(x => x.mes === mes && x.anio === anio);
         if (m) {
           item.mensualidad = m;
+          item.selectedMesKey = `id:${m.id}`;
           item.montoPagar = Number(m.saldo_pendiente) > 0 ? Number(m.saldo_pendiente) : (Number(item.montoPagar) || Number(m.monto) || 50000);
           return;
         }

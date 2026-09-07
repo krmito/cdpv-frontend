@@ -1276,8 +1276,8 @@
                         <div class="single-mes-box">
                           <select
                             class="form-control form-control-xs select-mes-single"
-                            [value]="getMesSingleValue(item)"
-                            (change)="onMesSingleChange(item, $event)"
+                            [(ngModel)]="item.selectedMesKey"
+                            (ngModelChange)="onMesSingleChange(item, $event)"
                             title="Modificar mes de pago"
                           >
                             @if (item.mensualidadesDisponibles && item.mensualidadesDisponibles.length > 0) {
