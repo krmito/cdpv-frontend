@@ -171,6 +171,21 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
   todosJugadores: Jugador[] = [];
   cargandoTodosJugadores = false;
   busquedaJugadorFila: { [idTemporal: string]: string } = {};
+  anioActual: number = new Date().getFullYear();
+  mesesDelAnio = [
+    { num: 1, nombre: 'Enero' },
+    { num: 2, nombre: 'Febrero' },
+    { num: 3, nombre: 'Marzo' },
+    { num: 4, nombre: 'Abril' },
+    { num: 5, nombre: 'Mayo' },
+    { num: 6, nombre: 'Junio' },
+    { num: 7, nombre: 'Julio' },
+    { num: 8, nombre: 'Agosto' },
+    { num: 9, nombre: 'Septiembre' },
+    { num: 10, nombre: 'Octubre' },
+    { num: 11, nombre: 'Noviembre' },
+    { num: 12, nombre: 'Diciembre' },
+  ];
   modalComprobanteVisible = false;
   comprobanteModalUrl: string | null = null;
   comprobanteModalTitulo = '';
@@ -1081,7 +1096,7 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
   cargarTodosJugadores() {
     if (this.todosJugadores.length > 0) return;
     this.cargandoTodosJugadores = true;
-    this.api.get<any>('jugadores?limit=300').subscribe({
+    this.api.get<any>('jugadores?limit=1000').subscribe({
       next: (res) => {
         this.todosJugadores = res.data || res || [];
         this.cargandoTodosJugadores = false;
@@ -1380,43 +1395,7 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
   }
 
   cargarMensualidadesDobleMes(item: ItemPagoRapido) {
-    if (!item.jugador) return;
-    this.api.get<Mensualidad[]>(`mensualidades/jugador/${item.jugador.id}`).subscribe({
-      next: (mensualidades) => {
-        const ordenadas = [...mensualidades].sort((a, b) => {
-          if (a.anio !== b.anio) return a.anio - b.anio;
-          return a.mes - b.mes;
-        });
-        item.mensualidadesDisponibles = ordenadas.map(m => ({
-          id: m.id,
-          mes: m.mes,
-          anio: m.anio,
-          mesNombre: `${this.getNombreMes(m.mes)} ${m.anio}`,
-          monto: Number(m.monto),
-          saldo_pendiente: Number(m.saldo_pendiente),
-          estado: m.estado
-        }));
-
-        const pendientes = ordenadas.filter(m => m.estado !== 'pagado' && Number(m.saldo_pendiente) > 0);
-        if (pendientes.length >= 2) {
-          item.idMensualidadMes1 = pendientes[pendientes.length - 2].id;
-          item.mensualidadMes1 = pendientes[pendientes.length - 2];
-          item.idMensualidadMes2 = pendientes[pendientes.length - 1].id;
-          item.mensualidadMes2 = pendientes[pendientes.length - 1];
-        } else if (pendientes.length === 1) {
-          item.idMensualidadMes1 = pendientes[0].id;
-          item.mensualidadMes1 = pendientes[0];
-          item.idMensualidadMes2 = pendientes[0].id;
-          item.mensualidadMes2 = pendientes[0];
-        } else if (ordenadas.length > 0) {
-          item.idMensualidadMes1 = ordenadas[ordenadas.length - 1].id;
-          item.mensualidadMes1 = ordenadas[ordenadas.length - 1];
-          item.idMensualidadMes2 = ordenadas[ordenadas.length - 1].id;
-          item.mensualidadMes2 = ordenadas[ordenadas.length - 1];
-        }
-        this.onMesDobleChange(item);
-      }
-    });
+    this.cargarMensualidadesJugador(item);
   }
 
   onMesDobleChange(item: ItemPagoRapido) {
@@ -1559,44 +1538,160 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
     item.coincidencia = 'exacta';
     item.score = 1;
     item.mostrarDropdownJugadores = false;
+    delete this.busquedaJugadorFila[item.idTemporal];
 
-    // Buscar mensualidad del mes detectado o la primera pendiente
-    const anio = item.anioDetectado || new Date().getFullYear();
-    const mes = item.mesDetectado || new Date().getMonth() + 1;
+    // Cargar mensualidades del jugador seleccionado
+    this.cargarMensualidadesJugador(item);
+  }
 
-    // Obtener mensualidades del jugador seleccionado
-    this.api.get<Mensualidad[]>(`mensualidades/jugador/${jugadorReal.id}`).subscribe({
+  cargarMensualidadesJugador(item: ItemPagoRapido) {
+    if (!item.jugador) return;
+    const anio = item.anioDetectado || this.anioActual;
+    const mes = item.mesDetectado || (new Date().getMonth() + 1);
+
+    this.api.get<Mensualidad[]>(`mensualidades/jugador/${item.jugador.id}`).subscribe({
       next: (mensualidades) => {
-        let mens = mensualidades.find(m => m.mes === mes && m.anio === anio);
-        if (!mens) {
-          mens = mensualidades.find(m => m.estado !== 'pagado' && Number(m.saldo_pendiente) > 0);
-        }
+        const ordenadas = [...(mensualidades || [])].sort((a, b) => {
+          if (a.anio !== b.anio) return a.anio - b.anio;
+          return a.mes - b.mes;
+        });
 
-        if (mens) {
-          item.mensualidad = mens;
-          item.montoPagar = Number(mens.saldo_pendiente);
-          item.mesNombre = `Mes ${mens.mes}`;
-          item.incluir = true;
+        item.mensualidadesDisponibles = ordenadas.map(m => ({
+          id: m.id,
+          mes: m.mes,
+          anio: m.anio,
+          mesNombre: `${this.getNombreMes(m.mes)} ${m.anio}`,
+          monto: Number(m.monto),
+          saldo_pendiente: Number(m.saldo_pendiente),
+          estado: m.estado
+        }));
+
+        if (item.esDobleMes) {
+          const pendientes = ordenadas.filter(m => m.estado !== 'pagado' && Number(m.saldo_pendiente) > 0);
+          if (pendientes.length >= 2) {
+            item.idMensualidadMes1 = pendientes[pendientes.length - 2].id;
+            item.mensualidadMes1 = pendientes[pendientes.length - 2];
+            item.idMensualidadMes2 = pendientes[pendientes.length - 1].id;
+            item.mensualidadMes2 = pendientes[pendientes.length - 1];
+          } else if (pendientes.length === 1) {
+            item.idMensualidadMes1 = pendientes[0].id;
+            item.mensualidadMes1 = pendientes[0];
+            item.idMensualidadMes2 = pendientes[0].id;
+            item.mensualidadMes2 = pendientes[0];
+          } else if (ordenadas.length > 0) {
+            item.idMensualidadMes1 = ordenadas[ordenadas.length - 1].id;
+            item.mensualidadMes1 = ordenadas[ordenadas.length - 1];
+            item.idMensualidadMes2 = ordenadas[ordenadas.length - 1].id;
+            item.mensualidadMes2 = ordenadas[ordenadas.length - 1];
+          }
+          this.onMesDobleChange(item);
         } else {
-          item.montoPagar = jugadorReal.categoria?.valor_mensualidad || 50000;
-          this.toast.info(`El jugador no tiene mensualidad pendiente registrada. Creando para Mes ${mes}.`);
-          item.incluir = true;
+          // Modo mes único:
+          // 1. Buscar si existe mensualidad para el mes que se detectó o seleccionó
+          let mens: any = null;
+          if (item.mesDetectado) {
+            mens = ordenadas.find(m => m.mes === item.mesDetectado && m.anio === anio);
+          }
+          // 2. Si no hay para ese mes exacto pero no hay selección explícita previa, buscar la más antigua pendiente
+          if (!mens && !item.mesDetectado) {
+            mens = ordenadas.find(m => m.estado !== 'pagado' && Number(m.saldo_pendiente) > 0);
+          }
+
+          if (mens) {
+            item.mensualidad = mens;
+            item.mesDetectado = mens.mes;
+            item.anioDetectado = mens.anio;
+            item.mesNombre = `${this.getNombreMes(mens.mes)} ${mens.anio}`;
+            if (!item.montoPagar || item.montoPagar <= 0) {
+              item.montoPagar = Number(mens.saldo_pendiente);
+            }
+          } else {
+            // El jugador no tiene mensualidad en BD para ese mes aún (se creará bajo demanda al registrar)
+            item.mesDetectado = mes;
+            item.anioDetectado = anio;
+            item.mesNombre = `${this.getNombreMes(mes)} ${anio}`;
+            item.mensualidad = null;
+            if (!item.montoPagar || item.montoPagar <= 0) {
+              item.montoPagar = item.jugador.categoria?.valor_mensualidad || 50000;
+            }
+          }
         }
+        item.incluir = true;
       },
       error: () => {
-        item.montoPagar = jugadorReal.categoria?.valor_mensualidad || 50000;
         item.incluir = true;
+        if (!item.montoPagar || item.montoPagar <= 0) {
+          item.montoPagar = item.jugador?.categoria?.valor_mensualidad || 50000;
+        }
       }
     });
   }
 
+  getMesSingleValue(item: ItemPagoRapido): string {
+    if (item.mensualidad?.id) {
+      return `id:${item.mensualidad.id}`;
+    }
+    const mes = item.mesDetectado || (item.mensualidad ? (item.mensualidad as any).mes : (new Date().getMonth() + 1));
+    const anio = item.anioDetectado || (item.mensualidad ? (item.mensualidad as any).anio : this.anioActual);
+    return `mes:${mes}:${anio}`;
+  }
+
+  onMesSingleChange(item: ItemPagoRapido, event: Event) {
+    const val = (event.target as HTMLSelectElement).value;
+    if (!val) return;
+
+    if (val.startsWith('id:')) {
+      const id = parseInt(val.substring(3), 10);
+      const m = item.mensualidadesDisponibles?.find(x => x.id === id);
+      if (m) {
+        item.mensualidad = m;
+        item.mesDetectado = m.mes;
+        item.anioDetectado = m.anio;
+        item.mesNombre = m.mesNombre;
+        item.montoPagar = Number(m.saldo_pendiente) > 0 ? Number(m.saldo_pendiente) : (Number(item.montoPagar) || Number(m.monto) || 50000);
+      }
+    } else if (val.startsWith('mes:')) {
+      const parts = val.split(':');
+      const mes = parseInt(parts[1], 10);
+      const anio = parseInt(parts[2], 10);
+      item.mesDetectado = mes;
+      item.anioDetectado = anio;
+      item.mesNombre = `${this.getNombreMes(mes)} ${anio}`;
+
+      // Si el jugador ya tiene mensualidades cargadas en BD, ver si ya existe ese registro
+      if (item.mensualidadesDisponibles && item.mensualidadesDisponibles.length > 0) {
+        const m = item.mensualidadesDisponibles.find(x => x.mes === mes && x.anio === anio);
+        if (m) {
+          item.mensualidad = m;
+          item.montoPagar = Number(m.saldo_pendiente) > 0 ? Number(m.saldo_pendiente) : (Number(item.montoPagar) || Number(m.monto) || 50000);
+          return;
+        }
+      }
+
+      // No existe en BD para este jugador todavía
+      item.mensualidad = null;
+      if (item.jugador?.categoria?.valor_mensualidad) {
+        item.montoPagar = Number(item.jugador.categoria.valor_mensualidad);
+      }
+    }
+  }
+
   getJugadoresFiltrados(idTemporal: string): Jugador[] {
-    const query = (this.busquedaJugadorFila[idTemporal] || '').toLowerCase().trim();
-    if (!query) return this.todosJugadores.slice(0, 15);
-    return this.todosJugadores.filter(j =>
-      `${j.nombre} ${j.apellido}`.toLowerCase().includes(query) ||
-      j.documento.includes(query)
-    ).slice(0, 15);
+    const rawQuery = (this.busquedaJugadorFila[idTemporal] || '').toLowerCase().trim();
+    if (!this.todosJugadores || this.todosJugadores.length === 0) return [];
+    if (!rawQuery) return this.todosJugadores.slice(0, 20);
+
+    const queryNorm = rawQuery.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    return this.todosJugadores.filter(j => {
+      const nombreCompleto = `${j.nombre || ''} ${j.apellido || ''}`
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+      const doc = (j.documento ? String(j.documento) : '').toLowerCase();
+      const cat = (j.categoria?.nombre || '').toLowerCase();
+      return nombreCompleto.includes(queryNorm) || doc.includes(queryNorm) || cat.includes(queryNorm);
+    }).slice(0, 20);
   }
 
   cambiarMetodoFila(item: ItemPagoRapido, metodo: 'efectivo' | 'nequi' | 'transferencia') {
@@ -1642,34 +1737,34 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
   }
 
   todosRapidosSeleccionados(): boolean {
-    const validos = this.itemsPagosRapidos.filter(it => it.jugador && it.mensualidad);
+    const validos = this.itemsPagosRapidos.filter(it => it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1) || it.mesDetectado));
     return validos.length > 0 && validos.every(it => it.incluir);
   }
 
   contarRapidosSeleccionados(): number {
-    return this.itemsPagosRapidos.filter(it => it.incluir && it.jugador && it.mensualidad).length;
+    return this.itemsPagosRapidos.filter(it => it.incluir && it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1) || it.mesDetectado)).length;
   }
 
   totalMontoRapido(): number {
     return this.itemsPagosRapidos
-      .filter(it => it.incluir && it.jugador && it.mensualidad)
+      .filter(it => it.incluir && it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1) || it.mesDetectado))
       .reduce((sum, it) => sum + (Number(it.montoPagar) || 0), 0);
   }
 
   totalEfectivoRapido(): number {
     return this.itemsPagosRapidos
-      .filter(it => it.incluir && it.jugador && it.mensualidad && it.metodoPago === 'efectivo')
+      .filter(it => it.incluir && it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1) || it.mesDetectado) && it.metodoPago === 'efectivo')
       .reduce((sum, it) => sum + (Number(it.montoPagar) || 0), 0);
   }
 
   totalNequiRapido(): number {
     return this.itemsPagosRapidos
-      .filter(it => it.incluir && it.jugador && it.mensualidad && it.metodoPago === 'nequi')
+      .filter(it => it.incluir && it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1) || it.mesDetectado) && it.metodoPago === 'nequi')
       .reduce((sum, it) => sum + (Number(it.montoPagar) || 0), 0);
   }
 
   registrarLoteRapido() {
-    const itemsValidos = this.itemsPagosRapidos.filter(it => it.incluir && it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1)));
+    const itemsValidos = this.itemsPagosRapidos.filter(it => it.incluir && it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1) || it.mesDetectado));
 
     if (itemsValidos.length === 0) {
       this.toast.error('No hay pagos seleccionados con jugador y mensualidad válidos.');
@@ -1701,7 +1796,9 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
         });
       } else {
         pagosPayload.push({
-          mensualidad_id: it.mensualidad!.id,
+          mensualidad_id: it.mensualidad ? it.mensualidad.id : undefined,
+          mes: it.mesDetectado || (it.mensualidad ? (it.mensualidad as any).mes : (new Date().getMonth() + 1)),
+          anio: it.anioDetectado || (it.mensualidad ? (it.mensualidad as any).anio : this.anioActual),
           monto_pagado: Number(it.montoPagar),
           metodo_pago: it.metodoPago,
           observaciones: it.observaciones || undefined,

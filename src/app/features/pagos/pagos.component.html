@@ -1219,13 +1219,14 @@
 
                       <!-- Dropdown de búsqueda rápida de jugador -->
                       @if (item.mostrarDropdownJugadores) {
-                        <div class="dropdown-jugadores card">
+                        <div class="dropdown-jugadores card" (click)="$event.stopPropagation()">
                           <div class="dropdown-search">
                             <input
                               type="text"
                               class="form-control form-control-sm"
-                              placeholder="Escribe nombre o doc..."
+                              placeholder="Escribe nombre o documento..."
                               [(ngModel)]="busquedaJugadorFila[item.idTemporal]"
+                              (click)="$event.stopPropagation()"
                             />
                           </div>
                           @if (item.sugerencias && item.sugerencias.length > 0 && !busquedaJugadorFila[item.idTemporal]) {
@@ -1242,18 +1243,26 @@
                               }
                             </div>
                           }
-                          <div class="sugerencias-label">Todos los jugadores:</div>
-                          <div class="dropdown-list">
-                            @for (j of getJugadoresFiltrados(item.idTemporal); track j.id) {
-                              <div
-                                class="dropdown-item"
-                                (click)="seleccionarJugadorFila(item, j)"
-                              >
-                                <span class="item-name">{{ j.nombre }} {{ j.apellido }}</span>
-                                <span class="item-doc">{{ j.documento }} - {{ j.categoria?.nombre }}</span>
-                              </div>
-                            }
+                          <div class="sugerencias-label">
+                            {{ busquedaJugadorFila[item.idTemporal] ? 'Resultados de búsqueda:' : 'Todos los jugadores:' }}
                           </div>
+                          @if (cargandoTodosJugadores) {
+                            <div class="dropdown-empty-state">⏳ Cargando jugadores...</div>
+                          } @else if (getJugadoresFiltrados(item.idTemporal).length === 0) {
+                            <div class="dropdown-empty-state">No se encontró ningún jugador con "{{ busquedaJugadorFila[item.idTemporal] }}"</div>
+                          } @else {
+                            <div class="dropdown-list">
+                              @for (j of getJugadoresFiltrados(item.idTemporal); track j.id) {
+                                <div
+                                  class="dropdown-item"
+                                  (click)="seleccionarJugadorFila(item, j)"
+                                >
+                                  <span class="item-name">{{ j.nombre }} {{ j.apellido }}</span>
+                                  <span class="item-doc">{{ j.documento || 'Sin doc' }} - {{ j.categoria?.nombre || 'Sin categoría' }}</span>
+                                </div>
+                              }
+                            </div>
+                          }
                           <button type="button" class="btn btn-xs btn-ghost w-100" (click)="cerrarDropdownJugadores(item)">
                             Cerrar
                           </button>
@@ -1317,17 +1326,38 @@
                         </div>
                       } @else {
                         <div class="single-mes-box">
+                          <select
+                            class="form-control form-control-xs select-mes-single"
+                            [value]="getMesSingleValue(item)"
+                            (change)="onMesSingleChange(item, $event)"
+                            title="Modificar mes de pago"
+                          >
+                            @if (item.mensualidadesDisponibles && item.mensualidadesDisponibles.length > 0) {
+                              <optgroup label="Mensualidades del Jugador">
+                                @for (m of item.mensualidadesDisponibles; track m.id) {
+                                  <option [value]="'id:' + m.id">
+                                    {{ m.mesNombre }} (${{ formatNumber(m.saldo_pendiente) }}) {{ m.estado === 'pagado' ? '✓' : '' }}
+                                  </option>
+                                }
+                              </optgroup>
+                            }
+                            <optgroup label="Meses calendario ({{ anioActual }})">
+                              @for (m of mesesDelAnio; track m.num) {
+                                <option [value]="'mes:' + m.num + ':' + anioActual">
+                                  {{ m.nombre }} {{ anioActual }}
+                                </option>
+                              }
+                            </optgroup>
+                          </select>
+
                           @if (item.mensualidad) {
-                            <span class="badge-mes">
-                              {{ item.mesNombre || ('Mes ' + item.mensualidad.mes) }}
-                            </span>
                             <div class="saldo-hint">
                               Saldo: ${{ formatNumber(item.mensualidad.saldo_pendiente) }}
                             </div>
-                          } @else {
-                            <span class="badge-mes text-muted">
-                              {{ item.mesNombre || 'Mes actual' }}
-                            </span>
+                          } @else if (item.mesDetectado) {
+                            <div class="saldo-hint text-info">
+                              Se creará registro
+                            </div>
                           }
                           <button
                             type="button"
