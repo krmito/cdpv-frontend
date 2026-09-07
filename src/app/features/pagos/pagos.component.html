@@ -1192,14 +1192,14 @@
                               {{ item.jugador.nombre }} {{ item.jugador.apellido }}
                             </span>
                             <span class="jugador-meta">
-                              Doc: {{ item.jugador.documento }} | {{ item.jugador.categoria?.nombre || 'Sin categoría' }}
+                              Doc: {{ item.jugador.documento || 'Sin doc' }} | {{ item.jugador.categoria?.nombre || 'Sin categoría' }}
                             </span>
                           </div>
                           <button
                             type="button"
                             class="btn-icon-xs text-muted"
-                            (click)="toggleDropdownJugadores(item)"
-                            title="Cambiar jugador"
+                            (click)="abrirModalBuscarJugador(item)"
+                            title="Cambiar o buscar otro jugador"
                           >
                             ✏️
                           </button>
@@ -1209,62 +1209,10 @@
                           <span class="tag-sin-jugador">❓ Sin jugador</span>
                           <button
                             type="button"
-                            class="btn btn-xs btn-outline"
-                            (click)="toggleDropdownJugadores(item)"
+                            class="btn btn-xs btn-primary btn-asignar-jugador"
+                            (click)="abrirModalBuscarJugador(item)"
                           >
-                            Buscar y Asignar
-                          </button>
-                        </div>
-                      }
-
-                      <!-- Dropdown de búsqueda rápida de jugador -->
-                      @if (item.mostrarDropdownJugadores) {
-                        <div class="dropdown-jugadores card" (click)="$event.stopPropagation()">
-                          <div class="dropdown-search">
-                            <input
-                              type="text"
-                              class="form-control form-control-sm"
-                              placeholder="Escribe nombre o documento..."
-                              [(ngModel)]="busquedaJugadorFila[item.idTemporal]"
-                              (click)="$event.stopPropagation()"
-                            />
-                          </div>
-                          @if (item.sugerencias && item.sugerencias.length > 0 && !busquedaJugadorFila[item.idTemporal]) {
-                            <div class="sugerencias-label">Sugerencias encontradas:</div>
-                            <div class="dropdown-list">
-                              @for (sug of item.sugerencias; track sug.id) {
-                                <div
-                                  class="dropdown-item sug-item"
-                                  (click)="seleccionarJugadorFila(item, sug)"
-                                >
-                                  <span class="item-name">{{ sug.nombre }}</span>
-                                  <span class="item-cat">{{ sug.categoria }}</span>
-                                </div>
-                              }
-                            </div>
-                          }
-                          <div class="sugerencias-label">
-                            {{ busquedaJugadorFila[item.idTemporal] ? 'Resultados de búsqueda:' : 'Todos los jugadores:' }}
-                          </div>
-                          @if (cargandoTodosJugadores) {
-                            <div class="dropdown-empty-state">⏳ Cargando jugadores...</div>
-                          } @else if (getJugadoresFiltrados(item.idTemporal).length === 0) {
-                            <div class="dropdown-empty-state">No se encontró ningún jugador con "{{ busquedaJugadorFila[item.idTemporal] }}"</div>
-                          } @else {
-                            <div class="dropdown-list">
-                              @for (j of getJugadoresFiltrados(item.idTemporal); track j.id) {
-                                <div
-                                  class="dropdown-item"
-                                  (click)="seleccionarJugadorFila(item, j)"
-                                >
-                                  <span class="item-name">{{ j.nombre }} {{ j.apellido }}</span>
-                                  <span class="item-doc">{{ j.documento || 'Sin doc' }} - {{ j.categoria?.nombre || 'Sin categoría' }}</span>
-                                </div>
-                              }
-                            </div>
-                          }
-                          <button type="button" class="btn btn-xs btn-ghost w-100" (click)="cerrarDropdownJugadores(item)">
-                            Cerrar
+                            🔍 Buscar y Asignar
                           </button>
                         </div>
                       }
@@ -1574,6 +1522,115 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" (click)="cerrarModalExitoLote()">
             Ver en Historial de Pagos
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal para Buscar y Asignar Jugador a una fila de Pago Rápido -->
+  @if (modalBuscarJugadorVisible && itemParaAsignarJugador) {
+    <div class="modal-overlay" (click)="cerrarModalBuscarJugador()">
+      <div class="modal-content modal-buscar-jugador" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">🔍 Asignar Jugador</h3>
+            <p class="modal-subtitle">
+              Para fila: <strong>{{ itemParaAsignarJugador.lineaOriginal || 'Pago rápido' }}</strong>
+            </p>
+          </div>
+          <button type="button" class="btn-close" (click)="cerrarModalBuscarJugador()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          @if (itemParaAsignarJugador.nombreCandidato) {
+            <div class="pista-detectada-box">
+              <span class="pista-label">Nombre extraído por OCR:</span>
+              <span class="pista-valor">{{ itemParaAsignarJugador.nombreCandidato }}</span>
+              @if (itemParaAsignarJugador.categoriaPista) {
+                <span class="pista-cat-pill">{{ itemParaAsignarJugador.categoriaPista }}</span>
+              }
+            </div>
+          }
+
+          <!-- Buscador -->
+          <div class="search-box-modal">
+            <label class="search-label">Buscar por Nombre, Apellido o Documento:</label>
+            <div class="search-input-wrapper">
+              <span class="search-icon">🔎</span>
+              <input
+                type="text"
+                class="form-control form-control-search"
+                placeholder="Escribe para buscar..."
+                [(ngModel)]="busquedaJugadorModal"
+                autofocus
+              />
+              @if (busquedaJugadorModal) {
+                <button type="button" class="btn-clear-search" (click)="busquedaJugadorModal = ''">✕</button>
+              }
+            </div>
+          </div>
+
+          <!-- Sugerencias del OCR si existen y no hay búsqueda activa -->
+          @if (itemParaAsignarJugador.sugerencias && itemParaAsignarJugador.sugerencias.length > 0 && !busquedaJugadorModal) {
+            <div class="seccion-sugerencias-modal">
+              <div class="seccion-subtitulo text-warning">✨ Coincidencias sugeridas por OCR:</div>
+              <div class="sugerencias-modal-grid">
+                @for (sug of itemParaAsignarJugador.sugerencias; track sug.id) {
+                  <div class="card-sugerencia-modal" (click)="seleccionarJugadorDesdeModal(sug)">
+                    <div class="sug-info-col">
+                      <div class="sug-nombre">{{ sug.nombre }}</div>
+                      <div class="sug-meta">Doc: {{ sug.documento || 'Sin doc' }} • {{ sug.categoria }}</div>
+                    </div>
+                    <div class="sug-btn-col">
+                      <span class="badge-match-score">{{ Math.round(sug.score * 100) }}% match</span>
+                      <button type="button" class="btn btn-xs btn-primary">Seleccionar</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Lista de Jugadores -->
+          <div class="seccion-todos-modal">
+            <div class="seccion-subtitulo text-muted">
+              {{ busquedaJugadorModal ? 'Resultados (' + getJugadoresFiltradosModal().length + '):' : 'Todos los jugadores activos:' }}
+            </div>
+
+            @if (cargandoTodosJugadores) {
+              <div class="text-center py-4">
+                <p class="text-muted">⏳ Cargando base de datos de jugadores...</p>
+              </div>
+            } @else if (getJugadoresFiltradosModal().length === 0) {
+              <div class="empty-results-modal">
+                <div class="empty-icon-sm">🤷‍♂️</div>
+                <div>No se encontraron jugadores que coincidan con "<strong>{{ busquedaJugadorModal }}</strong>"</div>
+                <div class="text-muted small mt-1">Verifica la ortografía o intenta buscar por número de documento.</div>
+              </div>
+            } @else {
+              <div class="jugadores-modal-scroll">
+                @for (j of getJugadoresFiltradosModal(); track j.id) {
+                  <div class="jugador-modal-item" (click)="seleccionarJugadorDesdeModal(j)">
+                    <div class="jugador-modal-datos">
+                      <span class="j-nombre">{{ j.nombre }} {{ j.apellido }}</span>
+                      <span class="j-detalles">
+                        Doc: {{ j.documento || 'Sin doc' }} • Categoría: <strong>{{ j.categoria?.nombre || 'Sin categoría' }}</strong>
+                      </span>
+                    </div>
+                    <button type="button" class="btn btn-xs btn-outline-primary btn-elegir-modal">
+                      Seleccionar ✓
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" (click)="cerrarModalBuscarJugador()">
+            Cerrar
           </button>
         </div>
       </div>

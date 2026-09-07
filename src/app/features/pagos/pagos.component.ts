@@ -186,12 +186,16 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
     { num: 11, nombre: 'Noviembre' },
     { num: 12, nombre: 'Diciembre' },
   ];
+  Math = Math;
   modalComprobanteVisible = false;
   comprobanteModalUrl: string | null = null;
   comprobanteModalTitulo = '';
   modalExitoLoteVisible = false;
   resultadoLoteExitoso: any = null;
   arrastrandoArchivos = false;
+  modalBuscarJugadorVisible = false;
+  itemParaAsignarJugador: ItemPagoRapido | null = null;
+  busquedaJugadorModal = '';
 
   // Tab Registrar - Búsqueda de jugador
   documentoBusqueda = '';
@@ -1521,15 +1525,49 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
     return this.itemsPagosRapidos.filter(r => r.coincidencia === 'no_encontrado').length;
   }
 
+  abrirModalBuscarJugador(item: ItemPagoRapido) {
+    this.itemParaAsignarJugador = item;
+    this.busquedaJugadorModal = item.nombreCandidato || '';
+    this.modalBuscarJugadorVisible = true;
+    this.cargarTodosJugadores();
+  }
+
+  cerrarModalBuscarJugador() {
+    this.modalBuscarJugadorVisible = false;
+    this.itemParaAsignarJugador = null;
+    this.busquedaJugadorModal = '';
+  }
+
+  seleccionarJugadorDesdeModal(jugador: any) {
+    if (!this.itemParaAsignarJugador) return;
+    this.seleccionarJugadorFila(this.itemParaAsignarJugador, jugador);
+    this.cerrarModalBuscarJugador();
+  }
+
+  getJugadoresFiltradosModal(): Jugador[] {
+    const rawQuery = (this.busquedaJugadorModal || '').toLowerCase().trim();
+    if (!this.todosJugadores || this.todosJugadores.length === 0) return [];
+    if (!rawQuery) return this.todosJugadores.slice(0, 40);
+
+    const queryNorm = rawQuery.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+    return this.todosJugadores.filter(j => {
+      const nombreCompleto = `${j.nombre || ''} ${j.apellido || ''}`
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+      const doc = (j.documento ? String(j.documento) : '').toLowerCase();
+      const cat = (j.categoria?.nombre || '').toLowerCase();
+      return nombreCompleto.includes(queryNorm) || doc.includes(queryNorm) || cat.includes(queryNorm);
+    }).slice(0, 40);
+  }
+
   toggleDropdownJugadores(item: ItemPagoRapido) {
-    item.mostrarDropdownJugadores = !item.mostrarDropdownJugadores;
-    if (item.mostrarDropdownJugadores) {
-      this.cargarTodosJugadores();
-    }
+    this.abrirModalBuscarJugador(item);
   }
 
   cerrarDropdownJugadores(item: ItemPagoRapido) {
-    item.mostrarDropdownJugadores = false;
+    this.cerrarModalBuscarJugador();
   }
 
   seleccionarJugadorFila(item: ItemPagoRapido, jugadorInput: any) {
