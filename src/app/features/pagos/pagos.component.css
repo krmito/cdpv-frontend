@@ -2478,3 +2478,56 @@ textarea.form-control {
   white-space: nowrap;
 }
 
+/* Alertas y estilos de comprobantes duplicados y meses pagados */
+.row-duplicado {
+  background-color: #fff1f2 !important;
+  border-left: 4px solid #ef4444;
+}
+
+.row-mes-pagado {
+  background-color: #fffbeb !important;
+  border-left: 4px solid #f59e0b;
+}
+
+.alert-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.73rem;
+  padding: 3px 7px;
+  border-radius: 4px;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+.alert-danger-tag {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+  font-weight: 600;
+}
+
+.alert-warning-tag {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  font-weight: 600;
+}
+
+.badge-ref-duplicada {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #f87171 !important;
+  font-weight: 700;
+}
+
+.ref-dup-tag {
+  background-color: #dc2626;
+  color: #ffffff;
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-left: 3px;
+}
+
+

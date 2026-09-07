@@ -1163,13 +1163,19 @@
               </thead>
               <tbody>
                 @for (item of itemsPagosRapidos; track item.idTemporal) {
-                  <tr [class.row-unmatched]="item.coincidencia === 'no_encontrado'" [class.row-selected]="item.incluir">
+                  <tr
+                    [class.row-unmatched]="item.coincidencia === 'no_encontrado'"
+                    [class.row-selected]="item.incluir"
+                    [class.row-duplicado]="item.esDuplicado"
+                    [class.row-mes-pagado]="item.esMensualidadPagada && !item.esDuplicado"
+                  >
                     <!-- Checkbox -->
                     <td class="td-checkbox">
                       <input
                         type="checkbox"
                         [(ngModel)]="item.incluir"
-                        [disabled]="!item.jugador || !item.mensualidad"
+                        [disabled]="!item.jugador || (!item.mensualidad && !item.mesDetectado) || item.esDuplicado || item.esMensualidadPagada"
+                        [title]="item.esDuplicado ? 'Comprobante duplicado: no se puede procesar' : (item.esMensualidadPagada ? 'Mensualidad ya pagada: no se puede procesar' : '')"
                       />
                     </td>
 
@@ -1180,6 +1186,15 @@
                       </div>
                       @if (item.categoriaPista) {
                         <span class="pista-tag">{{ item.categoriaPista }}</span>
+                      }
+                      @if (item.esDuplicado) {
+                        <div class="alert-tag alert-danger-tag" [title]="item.alertaDuplicado || ''">
+                          🚫 <strong>Duplicado:</strong> {{ item.alertaDuplicado }}
+                        </div>
+                      } @else if (item.esMensualidadPagada) {
+                        <div class="alert-tag alert-warning-tag" [title]="item.alertaMensualidadPagada || ''">
+                          ⚠️ <strong>Al día:</strong> {{ item.alertaMensualidadPagada }}
+                        </div>
                       }
                     </td>
 
@@ -1404,8 +1419,15 @@
                     <td class="td-obs">
                       <div class="obs-container">
                         @if (item.referencia) {
-                          <span class="badge-ref-factura" title="Referencia / Factura Nequi detectada">
+                          <span
+                            class="badge-ref-factura"
+                            [class.badge-ref-duplicada]="item.esDuplicado"
+                            [title]="item.esDuplicado ? ('⚠️ Duplicado: ' + (item.alertaDuplicado || 'Ya registrado')) : 'Referencia / Factura Nequi detectada'"
+                          >
                             🧾 {{ item.referencia }}
+                            @if (item.esDuplicado) {
+                              <span class="ref-dup-tag">⚠️ Duplicado</span>
+                            }
                           </span>
                         }
                         <input

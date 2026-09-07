@@ -151,6 +151,11 @@ export interface ItemPagoRapido {
   mensualidadMes2?: Mensualidad | null;
   mensualidadesDisponibles?: any[];
   selectedMesKey?: string;
+  esDuplicado?: boolean;
+  alertaDuplicado?: string | null;
+  pagoDuplicadoRecibo?: string | null;
+  esMensualidadPagada?: boolean;
+  alertaMensualidadPagada?: string | null;
 }
 
 @Component({
@@ -1252,6 +1257,11 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
             filaDestino.jugador = itemEscaneado.jugador || filaDestino.jugador;
             filaDestino.mensualidad = itemEscaneado.mensualidad || filaDestino.mensualidad;
             filaDestino.sugerencias = itemEscaneado.sugerencias || [];
+            filaDestino.esDuplicado = itemEscaneado.esDuplicado || false;
+            filaDestino.alertaDuplicado = itemEscaneado.alertaDuplicado || null;
+            filaDestino.pagoDuplicadoRecibo = itemEscaneado.pagoDuplicadoRecibo || null;
+            filaDestino.esMensualidadPagada = itemEscaneado.esMensualidadPagada || false;
+            filaDestino.alertaMensualidadPagada = itemEscaneado.alertaMensualidadPagada || null;
             filaDestino.incluir = itemEscaneado.incluir;
             filaDestino.mostrarDropdownJugadores = !filaDestino.jugador;
 
@@ -1268,15 +1278,27 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
             filaDestino.selectedMesKey = this.determinarSelectedMesKey(filaDestino);
 
             const jugadorNom = filaDestino.jugador ? `${filaDestino.jugador.nombre} ${filaDestino.jugador.apellido}` : filaDestino.nombreCandidato;
-            this.toast.success(`Comprobante adjuntado: ${jugadorNom} - $${this.formatNumber(filaDestino.montoPagar)} ${itemEscaneado.referencia ? '(' + itemEscaneado.referencia + ')' : ''}`);
+            if (itemEscaneado.esDuplicado) {
+              this.toast.warning(`Comprobante duplicado: ${itemEscaneado.alertaDuplicado}`);
+            } else if (itemEscaneado.esMensualidadPagada) {
+              this.toast.warning(`Atención: ${itemEscaneado.alertaMensualidadPagada}`);
+            } else {
+              this.toast.success(`Comprobante adjuntado: ${jugadorNom} - $${this.formatNumber(filaDestino.montoPagar)} ${itemEscaneado.referencia ? '(' + itemEscaneado.referencia + ')' : ''}`);
+            }
           } else {
             itemEscaneado.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
             itemEscaneado.selectedMesKey = this.determinarSelectedMesKey(itemEscaneado);
             this.itemsPagosRapidos.push(itemEscaneado);
-            const msg = itemEscaneado.jugador
-              ? `Comprobante leído: ${itemEscaneado.jugador.nombre} ${itemEscaneado.jugador.apellido} - $${this.formatNumber(itemEscaneado.montoPagar)}`
-              : `Comprobante leído: $${this.formatNumber(itemEscaneado.montoPagar)} - ${itemEscaneado.lineaOriginal}`;
-            this.toast.success(msg);
+            if (itemEscaneado.esDuplicado) {
+              this.toast.warning(`Comprobante duplicado: ${itemEscaneado.alertaDuplicado}`);
+            } else if (itemEscaneado.esMensualidadPagada) {
+              this.toast.warning(`Atención: ${itemEscaneado.alertaMensualidadPagada}`);
+            } else {
+              const msg = itemEscaneado.jugador
+                ? `Comprobante leído: ${itemEscaneado.jugador.nombre} ${itemEscaneado.jugador.apellido} - $${this.formatNumber(itemEscaneado.montoPagar)}`
+                : `Comprobante leído: $${this.formatNumber(itemEscaneado.montoPagar)} - ${itemEscaneado.lineaOriginal}`;
+              this.toast.success(msg);
+            }
           }
         },
         error: (err) => {
@@ -1353,6 +1375,13 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
             item.sugerencias = itemEscaneado.sugerencias;
           }
           item.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
+          item.esDuplicado = itemEscaneado.esDuplicado || false;
+          item.alertaDuplicado = itemEscaneado.alertaDuplicado || null;
+          item.pagoDuplicadoRecibo = itemEscaneado.pagoDuplicadoRecibo || null;
+          item.esMensualidadPagada = itemEscaneado.esMensualidadPagada || false;
+          item.alertaMensualidadPagada = itemEscaneado.alertaMensualidadPagada || null;
+          item.incluir = itemEscaneado.incluir;
+
           if (itemEscaneado.esDobleMes) {
             item.esDobleMes = true;
             item.montoMes1 = itemEscaneado.montoMes1 || 50000;
@@ -1367,11 +1396,16 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
             item.mensualidad = itemEscaneado.mensualidad;
             item.coincidencia = itemEscaneado.coincidencia;
             item.score = itemEscaneado.score;
-            item.incluir = itemEscaneado.incluir;
             item.mostrarDropdownJugadores = false;
           }
           item.selectedMesKey = this.determinarSelectedMesKey(item);
-          this.toast.success(`Datos extraídos: $${this.formatNumber(item.montoPagar)} ${item.referencia ? '(' + item.referencia + ')' : ''}`);
+          if (itemEscaneado.esDuplicado) {
+            this.toast.warning(`Comprobante duplicado: ${itemEscaneado.alertaDuplicado}`);
+          } else if (itemEscaneado.esMensualidadPagada) {
+            this.toast.warning(`Atención: ${itemEscaneado.alertaMensualidadPagada}`);
+          } else {
+            this.toast.success(`Datos extraídos: $${this.formatNumber(item.montoPagar)} ${item.referencia ? '(' + item.referencia + ')' : ''}`);
+          }
         },
         error: (err) => {
           console.error('Error al escanear comprobante fila:', err);
@@ -1660,11 +1694,21 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
           }
         }
         item.selectedMesKey = this.determinarSelectedMesKey(item);
-        item.incluir = true;
+
+        const esPagada = item.mensualidad ? (item.mensualidad.estado === 'pagado' || Number(item.mensualidad.saldo_pendiente) <= 0) : false;
+        if (esPagada) {
+          item.esMensualidadPagada = true;
+          item.alertaMensualidadPagada = `La mensualidad de ${item.mesNombre} ya está pagada ($0 pendiente)`;
+          item.incluir = false;
+        } else {
+          item.esMensualidadPagada = false;
+          item.alertaMensualidadPagada = null;
+          item.incluir = !item.esDuplicado;
+        }
       },
       error: () => {
         item.selectedMesKey = this.determinarSelectedMesKey(item);
-        item.incluir = true;
+        item.incluir = !item.esDuplicado;
         if (!item.montoPagar || item.montoPagar <= 0) {
           item.montoPagar = item.jugador?.categoria?.valor_mensualidad || 50000;
         }
@@ -1718,14 +1762,31 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
           item.mensualidad = m;
           item.selectedMesKey = `id:${m.id}`;
           item.montoPagar = Number(m.saldo_pendiente) > 0 ? Number(m.saldo_pendiente) : (Number(item.montoPagar) || Number(m.monto) || 50000);
-          return;
+        } else {
+          item.mensualidad = null;
+          if (item.jugador?.categoria?.valor_mensualidad) {
+            item.montoPagar = Number(item.jugador.categoria.valor_mensualidad);
+          }
+        }
+      } else {
+        // No existe en BD para este jugador todavía
+        item.mensualidad = null;
+        if (item.jugador?.categoria?.valor_mensualidad) {
+          item.montoPagar = Number(item.jugador.categoria.valor_mensualidad);
         }
       }
+    }
 
-      // No existe en BD para este jugador todavía
-      item.mensualidad = null;
-      if (item.jugador?.categoria?.valor_mensualidad) {
-        item.montoPagar = Number(item.jugador.categoria.valor_mensualidad);
+    // Verificar si la mensualidad seleccionada ya está totalmente pagada
+    if (item.mensualidad && (item.mensualidad.estado === 'pagado' || Number(item.mensualidad.saldo_pendiente) <= 0)) {
+      item.esMensualidadPagada = true;
+      item.alertaMensualidadPagada = `La mensualidad de ${item.mesNombre} ya está pagada ($0 pendiente)`;
+      item.incluir = false;
+    } else {
+      item.esMensualidadPagada = false;
+      item.alertaMensualidadPagada = null;
+      if (!item.esDuplicado && item.jugador) {
+        item.incluir = true;
       }
     }
   }
@@ -1784,14 +1845,14 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
   toggleTodosRapidos(event: any) {
     const checked = event.target?.checked;
     this.itemsPagosRapidos.forEach(it => {
-      if (it.jugador && it.mensualidad) {
+      if (it.jugador && (it.mensualidad || it.mesDetectado) && !it.esDuplicado && !it.esMensualidadPagada) {
         it.incluir = checked;
       }
     });
   }
 
   todosRapidosSeleccionados(): boolean {
-    const validos = this.itemsPagosRapidos.filter(it => it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1) || it.mesDetectado));
+    const validos = this.itemsPagosRapidos.filter(it => it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1) || it.mesDetectado) && !it.esDuplicado && !it.esMensualidadPagada);
     return validos.length > 0 && validos.every(it => it.incluir);
   }
 
@@ -1818,10 +1879,16 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
   }
 
   registrarLoteRapido() {
-    const itemsValidos = this.itemsPagosRapidos.filter(it => it.incluir && it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1) || it.mesDetectado));
+    const itemsValidos = this.itemsPagosRapidos.filter(it => it.incluir && it.jugador && (it.mensualidad || (it.esDobleMes && it.idMensualidadMes1) || it.mesDetectado) && !it.esDuplicado && !it.esMensualidadPagada);
 
     if (itemsValidos.length === 0) {
-      this.toast.error('No hay pagos seleccionados con jugador y mensualidad válidos.');
+      if (this.itemsPagosRapidos.some(it => it.esDuplicado)) {
+        this.toast.warning('Los comprobantes duplicados no pueden ser registrados.');
+      } else if (this.itemsPagosRapidos.some(it => it.esMensualidadPagada)) {
+        this.toast.warning('Las mensualidades que ya están totalmente pagadas no pueden volver a registrarse.');
+      } else {
+        this.toast.error('No hay pagos seleccionados con jugador y mensualidad válidos.');
+      }
       return;
     }
 
