@@ -1083,6 +1083,28 @@
               </div>
             </div>
           </div>
+
+          <!-- Campo de Descripción Opcional para Comprobantes de Nequi -->
+          <div class="nequi-desc-card-box">
+            <div class="desc-card-label-row">
+              <label class="desc-card-label">
+                💬 Mensaje o descripción del chat (opcional):
+              </label>
+              <span class="desc-card-hint">Ej: Pago Carlos mes de agosto</span>
+            </div>
+            <div class="desc-card-input-wrapper">
+              <input
+                type="text"
+                class="form-control form-control-sm desc-card-input"
+                placeholder="Escribe el mensaje de WhatsApp si el comprobante no tiene el nombre o mes..."
+                [(ngModel)]="descripcionNequi"
+              />
+              @if (descripcionNequi) {
+                <button type="button" class="btn-clear-desc-card" (click)="descripcionNequi = ''" title="Limpiar">✕</button>
+              }
+            </div>
+          </div>
+
           <div class="dropzone-area">
             <div class="dropzone-content">
               <span class="dropzone-icon">🧾</span>
@@ -1514,10 +1536,14 @@
 
   <!-- Modal de Éxito de Pagos en Lote -->
   @if (modalExitoLoteVisible && resultadoLoteExitoso) {
-    <div class="modal-overlay">
-      <div class="modal-content modal-exito-lote">
+    <div class="modal-overlay" (click)="cerrarModalExitoLote(true)">
+      <div class="modal-content modal-exito-lote" (click)="$event.stopPropagation()">
         <div class="modal-header header-success">
-          <h3>🎉 ¡Pagos Registrados con Éxito!</h3>
+          <div class="header-success-title">
+            <span class="icon-success-bubble">🎉</span>
+            <h3>¡Pagos Registrados con Éxito!</h3>
+          </div>
+          <button type="button" class="btn-close" (click)="cerrarModalExitoLote(true)" title="Cerrar y quedar en Pagos Rápidos">✕</button>
         </div>
         <div class="modal-body">
           <p class="exito-resumen-text">
@@ -1541,9 +1567,12 @@
             }
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" (click)="cerrarModalExitoLote()">
-            Ver en Historial de Pagos
+        <div class="modal-footer modal-footer-actions">
+          <button type="button" class="btn btn-outline" (click)="cerrarModalExitoLote(true)">
+            Continuar en Pagos Rápidos
+          </button>
+          <button type="button" class="btn btn-primary" (click)="cerrarModalExitoLote(false)">
+            Ver en Historial de Pagos →
           </button>
         </div>
       </div>
@@ -1561,7 +1590,17 @@
               Para fila: <strong>{{ itemParaAsignarJugador.lineaOriginal || 'Pago rápido' }}</strong>
             </p>
           </div>
-          <button type="button" class="btn-close" (click)="cerrarModalBuscarJugador()">✕</button>
+          <div class="modal-header-actions-group">
+            <button
+              type="button"
+              class="btn btn-xs btn-success btn-crear-nuevo-jugador"
+              (click)="abrirModalCrearJugadorRapido()"
+              title="Crear un jugador que aún no existe en el club"
+            >
+              ➕ Crear Nuevo Jugador
+            </button>
+            <button type="button" class="btn-close" (click)="cerrarModalBuscarJugador()">✕</button>
+          </div>
         </div>
 
         <div class="modal-body">
@@ -1628,7 +1667,14 @@
               <div class="empty-results-modal">
                 <div class="empty-icon-sm">🤷‍♂️</div>
                 <div>No se encontraron jugadores que coincidan con "<strong>{{ busquedaJugadorModal }}</strong>"</div>
-                <div class="text-muted small mt-1">Verifica la ortografía o intenta buscar por número de documento.</div>
+                <div class="text-muted small mt-1">¿El jugador es nuevo en la academia? Créalo y asígnalo directamente aquí:</div>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-success mt-3 btn-empty-create"
+                  (click)="abrirModalCrearJugadorRapido()"
+                >
+                  ➕ Crear a "{{ busquedaJugadorModal || itemParaAsignarJugador.nombreCandidato || 'Nuevo Jugador' }}" y Asignar a Este Pago
+                </button>
               </div>
             } @else {
               <div class="jugadores-modal-scroll">
@@ -1650,10 +1696,234 @@
           </div>
         </div>
 
-        <div class="modal-footer">
+        <div class="modal-footer modal-footer-actions">
+          <button
+            type="button"
+            class="btn btn-outline-success btn-sm mr-auto"
+            (click)="abrirModalCrearJugadorRapido()"
+          >
+            ➕ Crear Nuevo Jugador
+          </button>
           <button type="button" class="btn btn-ghost" (click)="cerrarModalBuscarJugador()">
             Cerrar
           </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal para Crear Nuevo Jugador Rápido -->
+  @if (modalCrearJugadorRapidoVisible) {
+    <div class="modal-overlay modal-overlay-top" (click)="cerrarModalCrearJugadorRapido()">
+      <div class="modal-content modal-crear-jugador-rapido" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">➕ Crear Nuevo Jugador</h3>
+            <p class="modal-subtitle">
+              El jugador se registrará y asignará de inmediato a este pago rápido
+            </p>
+          </div>
+          <button type="button" class="btn-close" (click)="cerrarModalCrearJugadorRapido()">✕</button>
+        </div>
+
+        <form (ngSubmit)="guardarNuevoJugadorRapido()" class="crear-jugador-form">
+          <div class="modal-body">
+            <div class="form-grid-2col">
+              <div class="form-group">
+                <label class="form-label required">Nombre *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: Carlos"
+                  [(ngModel)]="nuevoJugadorRapido.nombre"
+                  name="nombre"
+                  required
+                  autofocus
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label required">Apellido *</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: Pérez"
+                  [(ngModel)]="nuevoJugadorRapido.apellido"
+                  name="apellido"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-grid-2col">
+              <div class="form-group">
+                <label class="form-label required">Categoría *</label>
+                <select
+                  class="form-control"
+                  [(ngModel)]="nuevoJugadorRapido.categoria_id"
+                  name="categoria_id"
+                  required
+                >
+                  <option [ngValue]="null" disabled>Selecciona una categoría...</option>
+                  @for (cat of categorias; track cat.id) {
+                    <option [ngValue]="cat.id">
+                      {{ cat.nombre }} (${{ formatNumber(cat.valor_mensualidad) }})
+                    </option>
+                  }
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Día de vencimiento:</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  min="1"
+                  max="31"
+                  [(ngModel)]="nuevoJugadorRapido.dia_vencimiento"
+                  name="dia_vencimiento"
+                />
+              </div>
+            </div>
+
+            <div class="form-grid-2col">
+              <div class="form-group">
+                <label class="form-label">Tipo de documento:</label>
+                <select
+                  class="form-control"
+                  [(ngModel)]="nuevoJugadorRapido.tipo_documento"
+                  name="tipo_documento"
+                >
+                  <option value="TI">Tarjeta de Identidad (TI)</option>
+                  <option value="CC">Cédula de Ciudadanía (CC)</option>
+                  <option value="RC">Registro Civil (RC)</option>
+                  <option value="CE">Cédula de Extranjería (CE)</option>
+                  <option value="PASAPORTE">Pasaporte</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Número de documento (opcional):</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: 1012345678"
+                  [(ngModel)]="nuevoJugadorRapido.documento"
+                  name="documento"
+                />
+              </div>
+            </div>
+
+            <div class="form-grid-2col">
+              <div class="form-group">
+                <label class="form-label">Teléfono jugador (opcional):</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: 3001234567"
+                  [(ngModel)]="nuevoJugadorRapido.telefono"
+                  name="telefono"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Teléfono acudiente (opcional):</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: 3109876543"
+                  [(ngModel)]="nuevoJugadorRapido.telefono_acudiente"
+                  name="telefono_acudiente"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer modal-footer-actions">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              (click)="cerrarModalCrearJugadorRapido()"
+              [disabled]="guardandoNuevoJugadorRapido"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="guardandoNuevoJugadorRapido || !nuevoJugadorRapido.nombre || !nuevoJugadorRapido.apellido || !nuevoJugadorRapido.categoria_id"
+            >
+              @if (guardandoNuevoJugadorRapido) {
+                <span>⏳ Guardando...</span>
+              } @else {
+                <span>💾 Guardar y Asignar a Pago</span>
+              }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+  <!-- Modal para Subir Comprobante Nequi con Descripción -->
+  @if (modalSubirNequiVisible && previewNequiPendiente) {
+    <div class="modal-overlay" (click)="cerrarModalSubirNequi()">
+      <div class="modal-content modal-subir-nequi" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-header-icon-title">
+            <span class="icon-bubble nequi-icon">📲</span>
+            <div>
+              <h3 class="modal-title">Subir Comprobante de Nequi</h3>
+              <p class="modal-subtitle">
+                {{ itemFilaNequiPendiente ? 'Adjuntar a fila de pago' : 'Procesar captura de Nequi con OCR' }}
+              </p>
+            </div>
+          </div>
+          <button type="button" class="btn-close" (click)="cerrarModalSubirNequi()">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="subir-nequi-grid">
+            <div class="comprobante-preview-pane">
+              <img [src]="previewNequiPendiente" alt="Vista previa comprobante" class="preview-img-nequi" />
+              <div class="preview-filename">{{ archivoNequiPendiente?.name }}</div>
+            </div>
+
+            <div class="comprobante-info-pane">
+              <div class="info-bubble-tip">
+                💡 <strong>¿El comprobante no tiene el nombre o el mes?</strong>
+                <p>Si en la captura no aparece el nombre del alumno o el mes correspondiente (por ejemplo, cuando paga la mamá/papá o lo envían por WhatsApp), escribe o pega aquí el mensaje del chat para identificar los campos automáticamente.</p>
+              </div>
+
+              <div class="form-group mt-3">
+                <label class="form-label font-bold">
+                  💬 Mensaje o descripción del chat (opcional):
+                </label>
+                <input
+                  type="text"
+                  class="form-control form-control-lg input-desc-nequi"
+                  placeholder="Ej: Pago Carlos mes de agosto - Sub 15"
+                  [(ngModel)]="descripcionModalNequi"
+                  (keydown.enter)="confirmarSubidaNequiConDescripcion()"
+                  autofocus
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer modal-footer-flex">
+          <button type="button" class="btn btn-ghost" (click)="cerrarModalSubirNequi()">
+            Cancelar
+          </button>
+          <div class="footer-action-buttons">
+            <button type="button" class="btn btn-outline" (click)="confirmarSubidaNequiSinDescripcion()">
+              Escanear sin descripción
+            </button>
+            <button type="button" class="btn btn-primary btn-scan-nequi" (click)="confirmarSubidaNequiConDescripcion()">
+              ⚡ Escanear e Identificar
+            </button>
+          </div>
         </div>
       </div>
     </div>

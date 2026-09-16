@@ -2530,4 +2530,280 @@ textarea.form-control {
   margin-left: 3px;
 }
 
+/* Campo de descripción en tarjeta Nequi */
+.nequi-desc-card-box {
+  background: #fdf4ff;
+  border: 1px solid #f0abfc;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 16px 4px 16px;
+}
+
+.desc-card-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.desc-card-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #701a75;
+  margin: 0;
+}
+
+.desc-card-hint {
+  font-size: 0.72rem;
+  color: #a21caf;
+  font-style: italic;
+}
+
+.desc-card-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.desc-card-input {
+  width: 100%;
+  background: #ffffff;
+  border: 1.5px solid #e879f9;
+  border-radius: 6px;
+  padding: 6px 30px 6px 10px;
+  font-size: 0.82rem;
+  color: #3b0764;
+  transition: all 0.2s;
+}
+
+.desc-card-input:focus {
+  border-color: #c026d3;
+  box-shadow: 0 0 0 3px rgba(217, 70, 239, 0.2);
+  outline: none;
+}
+
+.btn-clear-desc-card {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: #a21caf;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+/* Modal de éxito: cabecera y acciones */
+.modal-header.header-success {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-success-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-success-title h3 {
+  margin: 0;
+  color: #166534;
+  font-size: 1.2rem;
+}
+
+.modal-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Modal búsqueda de jugador: botón crear jugador */
+.modal-header-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-crear-nuevo-jugador {
+  background: #10b981;
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-crear-nuevo-jugador:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.btn-empty-create {
+  margin-top: 12px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+/* Modal Crear Jugador Rápido */
+.modal-overlay-top {
+  z-index: 1100;
+}
+
+.modal-crear-jugador-rapido {
+  width: 100%;
+  max-width: 560px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.crear-jugador-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+  .form-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.required::after {
+  content: ' *';
+  color: #ef4444;
+}
+
+/* Modal Subir Comprobante Nequi con Descripción */
+.modal-subir-nequi {
+  width: 100%;
+  max-width: 650px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+.modal-header-icon-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.subir-nequi-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+@media (max-width: 640px) {
+  .subir-nequi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comprobante-preview-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.preview-img-nequi {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.preview-filename {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 8px;
+  word-break: break-all;
+  text-align: center;
+}
+
+.comprobante-info-pane {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.info-bubble-tip {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #1e40af;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.info-bubble-tip p {
+  margin: 4px 0 0 0;
+  font-size: 0.78rem;
+  color: #3b82f6;
+}
+
+.input-desc-nequi {
+  border: 2px solid #c084fc !important;
+  border-radius: 8px !important;
+  font-size: 0.92rem !important;
+  padding: 10px 12px !important;
+}
+
+.input-desc-nequi:focus {
+  border-color: #7e22ce !important;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.25) !important;
+}
+
+.modal-footer-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.footer-action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-scan-nequi {
+  background: linear-gradient(135deg, #7e22ce 0%, #a855f7 100%);
+  border: none;
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(126, 34, 206, 0.3);
+}
+
+.btn-scan-nequi:hover {
+  background: linear-gradient(135deg, #6b21a8 0%, #9333ea 100%);
+  transform: translateY(-1px);
+}
+
 

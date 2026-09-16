@@ -36,6 +36,14 @@ interface Jugador {
   };
 }
 
+export interface Categoria {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  valor_mensualidad: number;
+  activo?: boolean;
+}
+
 interface Mensualidad {
   id: number;
   mes: number;
@@ -203,6 +211,29 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
   itemParaAsignarJugador: ItemPagoRapido | null = null;
   busquedaJugadorModal = '';
 
+  // Categorías y creación rápida de jugador
+  categorias: Categoria[] = [];
+  modalCrearJugadorRapidoVisible = false;
+  guardandoNuevoJugadorRapido = false;
+  nuevoJugadorRapido = {
+    nombre: '',
+    apellido: '',
+    categoria_id: null as number | null,
+    tipo_documento: 'TI',
+    documento: '',
+    telefono: '',
+    telefono_acudiente: '',
+    dia_vencimiento: 5,
+  };
+
+  // Subida y escaneo de Nequi con descripción
+  descripcionNequi = '';
+  modalSubirNequiVisible = false;
+  archivoNequiPendiente: File | null = null;
+  previewNequiPendiente: string | null = null;
+  descripcionModalNequi = '';
+  itemFilaNequiPendiente: ItemPagoRapido | null = null;
+
   // Tab Registrar - Búsqueda de jugador
   documentoBusqueda = '';
   busquedaNombre = '';
@@ -324,6 +355,7 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
 
   ngOnInit() {
     this.generarNumeroRecibo();
+    this.cargarCategorias();
     this.route.queryParams.subscribe(params => {
       const jugadorId = params['jugadorId'];
       if (jugadorId) {
@@ -351,6 +383,7 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
       this.loadEstadisticas();
     } else if (tab === 'rapido') {
       this.cargarTodosJugadores();
+      this.cargarCategorias();
     }
   }
 
@@ -1117,6 +1150,16 @@ export class PagosComponent implements OnInit, CanComponentDeactivate {
     });
   }
 
+  cargarCategorias() {
+    if (this.categorias.length > 0) return;
+    this.api.get<Categoria[]>('categorias/active').subscribe({
+      next: (data) => {
+        this.categorias = data || [];
+      },
+      error: (err) => console.error('Error al cargar categorías:', err),
+    });
+  }
+
   interpretarTextoWhatsApp() {
     if (!this.textoWhatsApp.trim()) {
       this.toast.error('Por favor escribe o pega texto del chat de WhatsApp');
@@ -1175,7 +1218,7 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
   onComprobantesSeleccionados(event: any) {
     const files: FileList = event.target?.files;
     if (files && files.length > 0) {
-      this.procesarArchivosComprobantes(files);
+      this.prepararSubidaComprobantes(files);
       event.target.value = '';
     }
   }
@@ -1198,11 +1241,86 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
     this.arrastrandoArchivos = false;
     const files = event.dataTransfer?.files;
     if (files && files.length > 0) {
-      this.procesarArchivosComprobantes(files);
+      this.prepararSubidaComprobantes(files);
     }
   }
 
-  procesarArchivosComprobantes(files: FileList | File[]) {
+  prepararSubidaComprobantes(files: FileList | File[]) {
+    const imageFiles: File[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type.startsWith('image/')) {
+        imageFiles.push(file);
+      }
+    }
+
+    if (imageFiles.length === 0) {
+      this.toast.error('Solo se admiten archivos de imagen (capturas de Nequi)');
+      return;
+    }
+
+    // Si ya se escribió una descripción en la tarjeta:
+    if (this.descripcionNequi && this.descripcionNequi.trim()) {
+      const desc = this.descripcionNequi.trim();
+      this.descripcionNequi = '';
+      this.procesarArchivosComprobantes(imageFiles, desc);
+      return;
+    }
+
+    // Si es 1 archivo, abrir modal para permitir escribir descripción si se desea:
+    if (imageFiles.length === 1) {
+      this.archivoNequiPendiente = imageFiles[0];
+      this.descripcionModalNequi = '';
+      this.itemFilaNequiPendiente = null;
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.previewNequiPendiente = e.target.result;
+        this.modalSubirNequiVisible = true;
+      };
+      reader.readAsDataURL(imageFiles[0]);
+      return;
+    }
+
+    // Múltiples comprobantes sin descripción previa:
+    this.procesarArchivosComprobantes(imageFiles);
+  }
+
+  confirmarSubidaNequiConDescripcion() {
+    if (!this.archivoNequiPendiente) return;
+    const file = this.archivoNequiPendiente;
+    const desc = this.descripcionModalNequi.trim();
+    const itemFila = this.itemFilaNequiPendiente;
+    this.cerrarModalSubirNequi();
+
+    if (itemFila) {
+      this.ejecutarEscaneoComprobanteFila(itemFila, file, desc);
+    } else {
+      this.procesarArchivosComprobantes([file], desc);
+    }
+  }
+
+  confirmarSubidaNequiSinDescripcion() {
+    if (!this.archivoNequiPendiente) return;
+    const file = this.archivoNequiPendiente;
+    const itemFila = this.itemFilaNequiPendiente;
+    this.cerrarModalSubirNequi();
+
+    if (itemFila) {
+      this.ejecutarEscaneoComprobanteFila(itemFila, file, '');
+    } else {
+      this.procesarArchivosComprobantes([file], '');
+    }
+  }
+
+  cerrarModalSubirNequi() {
+    this.modalSubirNequiVisible = false;
+    this.archivoNequiPendiente = null;
+    this.previewNequiPendiente = null;
+    this.descripcionModalNequi = '';
+    this.itemFilaNequiPendiente = null;
+  }
+
+  procesarArchivosComprobantes(files: FileList | File[], descripcion?: string) {
     const imageFiles: File[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -1221,6 +1339,9 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
     imageFiles.forEach((file) => {
       const formData = new FormData();
       formData.append('file', file);
+      if (descripcion && descripcion.trim()) {
+        formData.append('descripcion', descripcion.trim());
+      }
 
       this.api.post<any>('pagos/escanear-nequi', formData).subscribe({
         next: (itemEscaneado) => {
@@ -1309,10 +1430,10 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
             const base64Data = e.target.result;
             const nuevaFila: ItemPagoRapido = {
               idTemporal: Math.random().toString(36).substring(2, 9),
-              lineaOriginal: `Comprobante Nequi (${file.name})`,
+              lineaOriginal: (descripcion && descripcion.trim()) || `Comprobante Nequi (${file.name})`,
               nombreCandidato: '',
               metodoPago: 'nequi',
-              observaciones: 'Pago Nequi',
+              observaciones: (descripcion && descripcion.trim()) || 'Pago Nequi',
               montoPagar: 0,
               coincidencia: 'no_encontrado',
               score: 0,
@@ -1336,93 +1457,113 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
   asociarComprobanteFila(item: ItemPagoRapido, event: any) {
     const file: File = event.target?.files?.[0];
     if (file) {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      this.toast.info('Extrayendo datos del comprobante con OCR...');
-
-      this.api.post<any>('pagos/escanear-nequi', formData).subscribe({
-        next: (itemEscaneado) => {
-          item.comprobanteBase64 = itemEscaneado.comprobanteBase64;
-          item.comprobanteNombre = file.name;
-          item.comprobantePreview = itemEscaneado.comprobantePreview;
-          item.metodoPago = 'nequi';
-
-          if (itemEscaneado.montoPagar > 0) {
-            item.montoPagar = itemEscaneado.montoPagar;
-          }
-          if (itemEscaneado.observaciones) {
-            item.observaciones = itemEscaneado.observaciones;
-          }
-          if (itemEscaneado.referencia) {
-            item.referencia = itemEscaneado.referencia;
-          }
-          if (itemEscaneado.lineaOriginal) {
-            item.lineaOriginal = itemEscaneado.lineaOriginal;
-          }
-          if (itemEscaneado.nombreCandidato) {
-            item.nombreCandidato = itemEscaneado.nombreCandidato;
-          }
-          if (itemEscaneado.categoriaPista) {
-            item.categoriaPista = itemEscaneado.categoriaPista;
-          }
-          if (itemEscaneado.mesNombre) {
-            item.mesNombre = itemEscaneado.mesNombre;
-            item.mesDetectado = itemEscaneado.mesDetectado;
-            item.anioDetectado = itemEscaneado.anioDetectado;
-          }
-          if (itemEscaneado.sugerencias && itemEscaneado.sugerencias.length > 0) {
-            item.sugerencias = itemEscaneado.sugerencias;
-          }
-          item.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
-          item.esDuplicado = itemEscaneado.esDuplicado || false;
-          item.alertaDuplicado = itemEscaneado.alertaDuplicado || null;
-          item.pagoDuplicadoRecibo = itemEscaneado.pagoDuplicadoRecibo || null;
-          item.esMensualidadPagada = itemEscaneado.esMensualidadPagada || false;
-          item.alertaMensualidadPagada = itemEscaneado.alertaMensualidadPagada || null;
-          item.incluir = itemEscaneado.incluir;
-
-          if (itemEscaneado.esDobleMes) {
-            item.esDobleMes = true;
-            item.montoMes1 = itemEscaneado.montoMes1 || 50000;
-            item.montoMes2 = itemEscaneado.montoMes2 || 50000;
-            item.idMensualidadMes1 = itemEscaneado.idMensualidadMes1;
-            item.idMensualidadMes2 = itemEscaneado.idMensualidadMes2;
-            item.mensualidadMes1 = itemEscaneado.mensualidadMes1;
-            item.mensualidadMes2 = itemEscaneado.mensualidadMes2;
-          }
-          if (!item.jugador && itemEscaneado.jugador) {
-            item.jugador = itemEscaneado.jugador;
-            item.mensualidad = itemEscaneado.mensualidad;
-            item.coincidencia = itemEscaneado.coincidencia;
-            item.score = itemEscaneado.score;
-            item.mostrarDropdownJugadores = false;
-          }
-          item.selectedMesKey = this.determinarSelectedMesKey(item);
-          if (itemEscaneado.esDuplicado) {
-            this.toast.warning(`Comprobante duplicado: ${itemEscaneado.alertaDuplicado}`);
-          } else if (itemEscaneado.esMensualidadPagada) {
-            this.toast.warning(`Atención: ${itemEscaneado.alertaMensualidadPagada}`);
-          } else {
-            this.toast.success(`Datos extraídos: $${this.formatNumber(item.montoPagar)} ${item.referencia ? '(' + item.referencia + ')' : ''}`);
-          }
-        },
-        error: (err) => {
-          console.error('Error al escanear comprobante fila:', err);
-          this.toast.error(err.error?.message || 'Error al procesar el comprobante mediante OCR.');
-          const reader = new FileReader();
-          reader.onload = (e: any) => {
-            item.comprobanteBase64 = e.target.result;
-            item.comprobanteNombre = file.name;
-            item.comprobantePreview = e.target.result;
-            item.metodoPago = 'nequi';
-            this.toast.success('Comprobante adjuntado (sin OCR)');
-          };
-          reader.readAsDataURL(file);
-        }
-      });
+      this.itemFilaNequiPendiente = item;
+      this.archivoNequiPendiente = file;
+      this.descripcionModalNequi = (item.lineaOriginal && item.lineaOriginal !== 'Registro Manual' && !item.lineaOriginal.startsWith('Comprobante Nequi') ? item.lineaOriginal : '') || '';
+      const reader = new FileReader();
+      reader.onload = (e: any) => {
+        this.previewNequiPendiente = e.target.result;
+        this.modalSubirNequiVisible = true;
+      };
+      reader.readAsDataURL(file);
       event.target.value = '';
     }
+  }
+
+  ejecutarEscaneoComprobanteFila(item: ItemPagoRapido, file: File, descripcion?: string) {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (descripcion && descripcion.trim()) {
+      formData.append('descripcion', descripcion.trim());
+    }
+
+    this.toast.info('Extrayendo datos del comprobante con OCR...');
+
+    this.api.post<any>('pagos/escanear-nequi', formData).subscribe({
+      next: (itemEscaneado) => {
+        item.comprobanteBase64 = itemEscaneado.comprobanteBase64;
+        item.comprobanteNombre = file.name;
+        item.comprobantePreview = itemEscaneado.comprobantePreview;
+        item.metodoPago = 'nequi';
+
+        if (itemEscaneado.montoPagar > 0) {
+          item.montoPagar = itemEscaneado.montoPagar;
+        }
+        if (itemEscaneado.observaciones) {
+          item.observaciones = itemEscaneado.observaciones;
+        }
+        if (itemEscaneado.referencia) {
+          item.referencia = itemEscaneado.referencia;
+        }
+        if (itemEscaneado.lineaOriginal) {
+          item.lineaOriginal = itemEscaneado.lineaOriginal;
+        }
+        if (itemEscaneado.nombreCandidato) {
+          item.nombreCandidato = itemEscaneado.nombreCandidato;
+        }
+        if (itemEscaneado.categoriaPista) {
+          item.categoriaPista = itemEscaneado.categoriaPista;
+        }
+        if (itemEscaneado.mesNombre) {
+          item.mesNombre = itemEscaneado.mesNombre;
+          item.mesDetectado = itemEscaneado.mesDetectado;
+          item.anioDetectado = itemEscaneado.anioDetectado;
+        }
+        if (itemEscaneado.sugerencias && itemEscaneado.sugerencias.length > 0) {
+          item.sugerencias = itemEscaneado.sugerencias;
+        }
+        item.mensualidadesDisponibles = itemEscaneado.mensualidadesDisponibles || [];
+        item.esDuplicado = itemEscaneado.esDuplicado || false;
+        item.alertaDuplicado = itemEscaneado.alertaDuplicado || null;
+        item.pagoDuplicadoRecibo = itemEscaneado.pagoDuplicadoRecibo || null;
+        item.esMensualidadPagada = itemEscaneado.esMensualidadPagada || false;
+        item.alertaMensualidadPagada = itemEscaneado.alertaMensualidadPagada || null;
+        item.incluir = itemEscaneado.incluir;
+
+        if (itemEscaneado.esDobleMes) {
+          item.esDobleMes = true;
+          item.montoMes1 = itemEscaneado.montoMes1 || 50000;
+          item.montoMes2 = itemEscaneado.montoMes2 || 50000;
+          item.idMensualidadMes1 = itemEscaneado.idMensualidadMes1;
+          item.idMensualidadMes2 = itemEscaneado.idMensualidadMes2;
+          item.mensualidadMes1 = itemEscaneado.mensualidadMes1;
+          item.mensualidadMes2 = itemEscaneado.mensualidadMes2;
+        }
+        if (!item.jugador && itemEscaneado.jugador) {
+          item.jugador = itemEscaneado.jugador;
+          item.mensualidad = itemEscaneado.mensualidad;
+          item.coincidencia = itemEscaneado.coincidencia;
+          item.score = itemEscaneado.score;
+          item.mostrarDropdownJugadores = false;
+        }
+        item.selectedMesKey = this.determinarSelectedMesKey(item);
+
+        if (item.jugador) {
+          this.cargarMensualidadesJugador(item);
+        }
+
+        if (itemEscaneado.esDuplicado) {
+          this.toast.warning(`Comprobante duplicado: ${itemEscaneado.alertaDuplicado}`);
+        } else if (itemEscaneado.esMensualidadPagada) {
+          this.toast.warning(`Atención: ${itemEscaneado.alertaMensualidadPagada}`);
+        } else {
+          this.toast.success(`Datos extraídos: $${this.formatNumber(item.montoPagar)} ${item.referencia ? '(' + item.referencia + ')' : ''}`);
+        }
+      },
+      error: (err) => {
+        console.error('Error al escanear comprobante fila:', err);
+        this.toast.error(err.error?.message || 'Error al procesar el comprobante mediante OCR.');
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          item.comprobanteBase64 = e.target.result;
+          item.comprobanteNombre = file.name;
+          item.comprobantePreview = e.target.result;
+          item.metodoPago = 'nequi';
+          this.toast.success('Comprobante adjuntado (sin OCR)');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
   }
 
   toggleDobleMes(item: ItemPagoRapido) {
@@ -1581,6 +1722,109 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
     if (!this.itemParaAsignarJugador) return;
     this.seleccionarJugadorFila(this.itemParaAsignarJugador, jugador);
     this.cerrarModalBuscarJugador();
+  }
+
+  abrirModalCrearJugadorRapido() {
+    this.cargarCategorias();
+    let nombreSugerido = '';
+    let apellidoSugerido = '';
+
+    const fuente = (this.busquedaJugadorModal || this.itemParaAsignarJugador?.nombreCandidato || '').trim();
+    if (fuente) {
+      const partes = fuente.split(/\s+/);
+      if (partes.length === 1) {
+        nombreSugerido = partes[0];
+      } else if (partes.length === 2) {
+        nombreSugerido = partes[0];
+        apellidoSugerido = partes[1];
+      } else if (partes.length >= 3) {
+        nombreSugerido = partes.slice(0, partes.length - 2).join(' ');
+        apellidoSugerido = partes.slice(partes.length - 2).join(' ');
+      }
+    }
+
+    let categoriaIdSugerida: number | null = null;
+    if (this.itemParaAsignarJugador?.categoriaPista && this.categorias.length > 0) {
+      const pistaNorm = this.itemParaAsignarJugador.categoriaPista.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const catMatch = this.categorias.find(c => {
+        const catNorm = c.nombre.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return catNorm.includes(pistaNorm) || pistaNorm.includes(catNorm);
+      });
+      if (catMatch) {
+        categoriaIdSugerida = catMatch.id;
+      }
+    }
+    if (!categoriaIdSugerida && this.categorias.length > 0) {
+      categoriaIdSugerida = this.categorias[0].id;
+    }
+
+    this.nuevoJugadorRapido = {
+      nombre: nombreSugerido,
+      apellido: apellidoSugerido,
+      categoria_id: categoriaIdSugerida,
+      tipo_documento: 'TI',
+      documento: '',
+      telefono: '',
+      telefono_acudiente: '',
+      dia_vencimiento: 5,
+    };
+    this.modalCrearJugadorRapidoVisible = true;
+  }
+
+  cerrarModalCrearJugadorRapido() {
+    this.modalCrearJugadorRapidoVisible = false;
+    this.guardandoNuevoJugadorRapido = false;
+  }
+
+  guardarNuevoJugadorRapido() {
+    if (!this.nuevoJugadorRapido.nombre.trim()) {
+      this.toast.error('El nombre del jugador es requerido');
+      return;
+    }
+    if (!this.nuevoJugadorRapido.apellido.trim()) {
+      this.toast.error('El apellido del jugador es requerido');
+      return;
+    }
+    if (!this.nuevoJugadorRapido.categoria_id) {
+      this.toast.error('Selecciona una categoría');
+      return;
+    }
+
+    this.guardandoNuevoJugadorRapido = true;
+    const payload = {
+      nombre: this.nuevoJugadorRapido.nombre.trim(),
+      apellido: this.nuevoJugadorRapido.apellido.trim(),
+      categoria_id: Number(this.nuevoJugadorRapido.categoria_id),
+      tipo_documento: this.nuevoJugadorRapido.tipo_documento || 'TI',
+      documento: this.nuevoJugadorRapido.documento.trim() || undefined,
+      telefono: this.nuevoJugadorRapido.telefono.trim() || undefined,
+      telefono_acudiente: this.nuevoJugadorRapido.telefono_acudiente.trim() || undefined,
+      dia_vencimiento: Number(this.nuevoJugadorRapido.dia_vencimiento) || 5,
+      activo: true,
+    };
+
+    this.api.post<any>('jugadores', payload).subscribe({
+      next: (res) => {
+        this.guardandoNuevoJugadorRapido = false;
+        const jugadorCreado: Jugador = res.data || res;
+        this.toast.success(`Jugador ${jugadorCreado.nombre} ${jugadorCreado.apellido} creado con éxito`);
+
+        // Agregar a la lista local
+        this.todosJugadores.unshift(jugadorCreado);
+
+        // Si tenemos un item seleccionado, vincularlo inmediatamente
+        if (this.itemParaAsignarJugador) {
+          this.seleccionarJugadorFila(this.itemParaAsignarJugador, jugadorCreado);
+        }
+
+        this.cerrarModalCrearJugadorRapido();
+        this.cerrarModalBuscarJugador();
+      },
+      error: (err) => {
+        this.guardandoNuevoJugadorRapido = false;
+        this.toast.error(err.error?.message || 'Error al registrar nuevo jugador');
+      }
+    });
   }
 
   getJugadoresFiltradosModal(): Jugador[] {
@@ -1950,9 +2194,11 @@ Favid Torres Eatacio Sub 8 paga Uniforme y SEPTIEMBRE`;
     });
   }
 
-  cerrarModalExitoLote() {
+  cerrarModalExitoLote(quedarseEnPagosRapidos: boolean = true) {
     this.modalExitoLoteVisible = false;
     this.resultadoLoteExitoso = null;
-    this.changeTab('historial');
+    if (!quedarseEnPagosRapidos) {
+      this.changeTab('historial');
+    }
   }
 }
