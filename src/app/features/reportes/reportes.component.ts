@@ -329,6 +329,10 @@ interface CumplimientoCategoria {
                       <option [ngValue]="cat.id">{{ cat.nombre }}</option>
                     }
                   </select>
+                  <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #4b5563; cursor: pointer; user-select: none; margin-left: 4px;">
+                    <input type="checkbox" [(ngModel)]="filtrosMorosos.incluirInactivos" (change)="cargarMorosos()">
+                    Incluir inactivos
+                  </label>
                   <button class="btn btn-primary" (click)="cargarMorosos()">Consultar</button>
                   <button class="btn btn-outline" (click)="limpiarFiltrosMorosos()">Limpiar</button>
                 </div>
@@ -875,7 +879,12 @@ export class ReportesComponent implements OnInit {
   // Morosos
   reporteMorosos: ReporteMorosos | null = null;
   loadingMorosos = false;
-  filtrosMorosos: { mes: number | null; anio: number | null; categoriaId: number | null } = { mes: null, anio: null, categoriaId: null };
+  filtrosMorosos: {
+    mes: number | null;
+    anio: number | null;
+    categoriaId: number | null;
+    incluirInactivos: boolean;
+  } = { mes: null, anio: null, categoriaId: null, incluirInactivos: false };
   categorias: { id: number; nombre: string }[] = [];
 
   // Proyección
@@ -1008,6 +1017,7 @@ export class ReportesComponent implements OnInit {
     if (this.filtrosMorosos.mes) params.set('mes', String(this.filtrosMorosos.mes));
     if (this.filtrosMorosos.anio) params.set('anio', String(this.filtrosMorosos.anio));
     if (this.filtrosMorosos.categoriaId) params.set('categoriaId', String(this.filtrosMorosos.categoriaId));
+    if (this.filtrosMorosos.incluirInactivos) params.set('incluirInactivos', 'true');
     const query = params.toString() ? `?${params.toString()}` : '';
     this.api.get<ReporteMorosos>(`reportes/morosos${query}`).subscribe({
       next: (data) => {
@@ -1026,7 +1036,7 @@ export class ReportesComponent implements OnInit {
   }
 
   limpiarFiltrosMorosos() {
-    this.filtrosMorosos = { mes: null, anio: null, categoriaId: null };
+    this.filtrosMorosos = { mes: null, anio: null, categoriaId: null, incluirInactivos: false };
     this.cargarMorosos();
   }
 
