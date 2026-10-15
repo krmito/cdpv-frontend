@@ -118,6 +118,8 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
   // Tab Resumen
   resumen: ResumenMensual | null = null;
   loadingResumen = false;
+  descargandoExcel = false;
+  enviandoEmail = false;
   mesResumen = new Date().getMonth() + 1;
   anioResumen = new Date().getFullYear();
 
@@ -373,6 +375,55 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
   onResumenChange() {
     console.log('📅 Mes/Año cambió, recargando resumen...');
     this.loadResumen();
+  }
+
+  descargarExcelMorososDosMeses() {
+    this.descargandoExcel = true;
+    const mes = Number(this.mesResumen);
+    const anio = Number(this.anioResumen);
+    this.api.getBlob(`reportes/morosos-ultimos-dos-meses/exportar?mes=${mes}&anio=${anio}`).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Morosos_Ultimos_2_Meses_${mes}_${anio}.xlsx`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        this.descargandoExcel = false;
+      },
+      error: (err) => {
+        this.descargandoExcel = false;
+        console.error('Error descargando Excel:', err);
+        alert('Error al descargar el archivo Excel');
+      }
+    });
+  }
+
+  enviarResumenPorEmail() {
+    const mes = Number(this.mesResumen);
+    const anio = Number(this.anioResumen);
+    const emailPrompt = prompt(
+      'Ingresa el correo al que deseas enviar el resumen mensual con el Excel adjunto (deja vacío para enviar a todos los administradores):'
+    );
+    if (emailPrompt === null) return; // Usuario canceló
+
+    this.enviandoEmail = true;
+    const emailQuery = emailPrompt.trim() ? `?email=${encodeURIComponent(emailPrompt.trim())}` : '';
+    const endpoint = `mensualidades/resumen/${mes}/${anio}/enviar-email${emailQuery}`;
+
+    this.api.post<any>(endpoint, {}).subscribe({
+      next: (res) => {
+        this.enviandoEmail = false;
+        alert(
+          `✅ ${res.message || 'Resumen enviado exitosamente'}\n\nDestinatarios: ${res.destinatarios?.join(', ')}\nArchivo adjunto: ${res.archivoAdjunto}\nMorosos incluidos: ${res.morososEnArchivo}`
+        );
+      },
+      error: (err) => {
+        this.enviandoEmail = false;
+        console.error('Error enviando resumen por email:', err);
+        alert('❌ Error al enviar el correo: ' + (err.error?.message || err.message));
+      }
+    });
   }
 
   // Navegar al listado con filtro aplicado

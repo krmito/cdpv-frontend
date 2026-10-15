@@ -367,31 +367,55 @@
             <div class="card">
               <h2>📊 Resumen Mensual</h2>
 
-              <!-- Selector de mes/año -->
-              <div class="resumen-filters">
-                <div class="form-group">
-                  <label>Mes</label>
-                  <select
-                    class="form-control"
-                    [(ngModel)]="mesResumen"
-                    (ngModelChange)="onResumenChange()"
-                  >
-                    @for (mes of meses; track mes.value) {
-                      <option [value]="mes.value">{{ mes.label }}</option>
-                    }
-                  </select>
+              <!-- Selector de mes/año y acciones -->
+              <div class="resumen-filters" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>Mes</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="mesResumen"
+                      (ngModelChange)="onResumenChange()"
+                    >
+                      @for (mes of meses; track mes.value) {
+                        <option [value]="mes.value">{{ mes.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="form-group" style="margin-bottom: 0;">
+                    <label>Año</label>
+                    <input
+                      type="number"
+                      class="form-control"
+                      [(ngModel)]="anioResumen"
+                      (ngModelChange)="onResumenChange()"
+                      min="2020"
+                      max="2030"
+                    />
+                  </div>
                 </div>
 
-                <div class="form-group">
-                  <label>Año</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    [(ngModel)]="anioResumen"
-                    (ngModelChange)="onResumenChange()"
-                    min="2020"
-                    max="2030"
-                  />
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    (click)="descargarExcelMorososDosMeses()"
+                    [disabled]="descargandoExcel"
+                    title="Descargar listado en Excel de los jugadores morosos de los últimos 2 meses"
+                  >
+                    {{ descargandoExcel ? '⏳ Descargando...' : '📥 Excel Morosos (2 meses)' }}
+                  </button>
+
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="enviarResumenPorEmail()"
+                    [disabled]="enviandoEmail"
+                    title="Enviar resumen mensual por correo con el Excel de morosos adjunto"
+                  >
+                    {{ enviandoEmail ? '⏳ Enviando...' : '📧 Enviar Resumen por Correo' }}
+                  </button>
                 </div>
               </div>
 
