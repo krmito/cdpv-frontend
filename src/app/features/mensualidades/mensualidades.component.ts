@@ -41,6 +41,42 @@ interface Mensualidad {
   jugador: Jugador;
 }
 
+interface AuditoriaEmail {
+  id: number;
+  destinatario: string;
+  asunto: string;
+  tipo: 'NUEVA_MENSUALIDAD' | 'RECORDATORIO_VENCIMIENTO' | 'REENVIO_MANUAL';
+  estado: 'ENVIADO' | 'FALLIDO';
+  error: string | null;
+  resend_id: string | null;
+  detalles: {
+    jugador_nombre?: string;
+    jugador_documento?: string;
+    categoria?: string;
+    mes?: number;
+    mes_nombre?: string;
+    anio?: number;
+    monto?: number;
+    saldo_pendiente?: number;
+  } | null;
+  fecha_envio: string;
+  jugador?: {
+    id: number;
+    nombre: string;
+    apellido: string;
+    documento: string;
+    categoria?: {
+      id: number;
+      nombre: string;
+    };
+  } | null;
+  mensualidad?: {
+    id: number;
+    mes: number;
+    anio: number;
+  } | null;
+}
+
 interface GenerarMensualidadesDto {
   mes: number;
   anio: number;
@@ -71,7 +107,7 @@ interface ResumenMensual {
 })
 export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
   // Tabs
-  activeTab: 'generar' | 'listado' | 'resumen' = 'generar';
+  activeTab: 'generar' | 'listado' | 'resumen' | 'auditoria' = 'generar';
 
   // Tab Generar
   generarData: GenerarMensualidadesDto = {
@@ -123,6 +159,31 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
   mesResumen = new Date().getMonth() + 1;
   anioResumen = new Date().getFullYear();
 
+  // Tab Auditoría
+  auditoriaList: AuditoriaEmail[] = [];
+  auditoriaLoading = false;
+  auditoriaTotal = 0;
+  auditoriaPage = 1;
+  auditoriaLimit = 15;
+  auditoriaTotalPages = 1;
+  auditoriaResumen = {
+    total: 0,
+    enviados: 0,
+    fallidos: 0,
+  };
+  auditoriaFiltros = {
+    search: '',
+    tipo: '',
+    estado: '',
+    mes: '',
+    anio: '',
+  };
+  anios: number[] = [
+    new Date().getFullYear() - 1,
+    new Date().getFullYear(),
+    new Date().getFullYear() + 1,
+  ];
+
   // General
   successMessage = '';
   meses = [
@@ -155,12 +216,14 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
   }
 
   // ===== TAB MANAGEMENT =====
-  changeTab(tab: 'generar' | 'listado' | 'resumen') {
+  changeTab(tab: 'generar' | 'listado' | 'resumen' | 'auditoria') {
     this.activeTab = tab;
     if (tab === 'listado') {
       this.loadMensualidades();
     } else if (tab === 'resumen') {
       this.loadResumen();
+    } else if (tab === 'auditoria') {
+      this.cargarAuditoriaEmails(1);
     }
   }
 
@@ -678,4 +741,109 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
       }
     });
   }
+
+  // ===== AUDITORÍA DE CORREOS =====
+  cargarAuditoriaEmails(page = 1) {
+    this.auditoriaPage = page;
+    this.auditoriaLoading = true;
+
+    let endpoint = `auditoria-emails?page=${this.auditoriaPage}&limit=${this.auditoriaLimit}`;
+
+    if (this.auditoriaFiltros.search && this.auditoriaFiltros.search.trim()) {
+      endpoint += `&search=${encodeURIComponent(this.auditoriaFiltros.search.trim())}`;
+    }
+    if (this.auditoriaFiltros.tipo) {
+      endpoint += `&tipo=${this.auditoriaFiltros.tipo}`;
+    }
+    if (this.auditoriaFiltros.estado) {
+      endpoint += `&estado=${this.auditoriaFiltros.estado}`;
+    }
+    if (this.auditoriaFiltros.mes) {
+      endpoint += `&mes=${Number(this.auditoriaFiltros.mes)}`;
+    }
+    if (this.auditoriaFiltros.anio) {
+      endpoint += `&anio=${Number(this.auditoriaFiltros.anio)}`;
+    }
+
+    this.api.get<any>(endpoint).subscribe({
+      next: (response) => {
+        this.auditoriaList = response.data || [];
+        if (response.meta) {
+          this.auditoriaTotal = response.meta.total || 0;
+          this.auditoriaTotalPages = response.meta.totalPages || 1;
+          if (response.meta.resumen) {
+            this.auditoriaResumen = response.meta.resumen;
+          }
+        }
+        this.auditoriaLoading = false;
+      },
+      error: (err) => {
+        console.error('Error cargando auditoría de correos:', err);
+        this.toast.error('No se pudo cargar el historial de auditoría de correos');
+        this.auditoriaLoading = false;
+      },
+    });
+  }
+
+  cambiarPaginaAuditoria(delta: number) {
+    const nuevaPagina = this.auditoriaPage + delta;
+    if (nuevaPagina >= 1 && nuevaPagina <= this.auditoriaTotalPages) {
+      this.cargarAuditoriaEmails(nuevaPagina);
+    }
+  }
+
+  limpiarFiltrosAuditoria() {
+    this.auditoriaFiltros = {
+      search: '',
+      tipo: '',
+      estado: '',
+      mes: '',
+      anio: '',
+    };
+    this.cargarAuditoriaEmails(1);
+  }
+
+  getTipoBadgeClass(tipo: string): string {
+    switch (tipo) {
+      case 'NUEVA_MENSUALIDAD':
+        return 'badge-tipo-nueva';
+      case 'RECORDATORIO_VENCIMIENTO':
+        return 'badge-tipo-recordatorio';
+      case 'REENVIO_MANUAL':
+        return 'badge-tipo-reenvio';
+      default:
+        return 'badge-secondary';
+    }
+  }
+
+  getTipoLabel(tipo: string): string {
+    switch (tipo) {
+      case 'NUEVA_MENSUALIDAD':
+        return 'Nueva Mensualidad';
+      case 'RECORDATORIO_VENCIMIENTO':
+        return 'Recordatorio Vencimiento';
+      case 'REENVIO_MANUAL':
+        return 'Reenvío Manual';
+      default:
+        return tipo;
+    }
+  }
+
+  getEstadoBadgeClass(estado: string): string {
+    return estado === 'ENVIADO' ? 'estado-pagado' : 'estado-vencido';
+  }
+
+  formatFechaHora(fecha: string): string {
+    if (!fecha) return 'N/A';
+    const d = new Date(fecha);
+    if (isNaN(d.getTime())) return fecha;
+    return d.toLocaleString('es-CO', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
 }
+

@@ -35,6 +35,13 @@
           >
             📊 Resumen
           </button>
+          <button
+            class="tab"
+            [class.active]="activeTab === 'auditoria'"
+            (click)="changeTab('auditoria')"
+          >
+            📬 Auditoría de Correos
+          </button>
         </div>
 
         <!-- TAB: GENERAR MENSUALIDADES -->
@@ -508,6 +515,253 @@
                   </p>
                   <div class="click-hint">
                     <small>👆 Click para ver el listado completo</small>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- TAB: AUDITORÍA DE CORREOS -->
+        @if (activeTab === 'auditoria') {
+          <div class="tab-content">
+            <!-- Métricas de Auditoría -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon">📬</div>
+                <div class="stat-content">
+                  <div class="stat-label">Total Correos Auditados</div>
+                  <div class="stat-value">{{ auditoriaResumen.total }}</div>
+                </div>
+              </div>
+
+              <div class="stat-card success">
+                <div class="stat-icon">✅</div>
+                <div class="stat-content">
+                  <div class="stat-label">Envíos Exitosos</div>
+                  <div class="stat-value">{{ auditoriaResumen.enviados }}</div>
+                </div>
+              </div>
+
+              <div class="stat-card danger">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-content">
+                  <div class="stat-label">Envíos Fallidos</div>
+                  <div class="stat-value">{{ auditoriaResumen.fallidos }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Filtros y Tabla de Auditoría -->
+            <div class="card">
+              <div class="card-header-actions">
+                <div>
+                  <h2>📬 Registro de Auditoría de Correos</h2>
+                  <p class="description">Historial de notificaciones enviadas a acudientes por registro de mensualidades, recordatorios y reenvíos.</p>
+                </div>
+                <button class="btn btn-secondary" (click)="cargarAuditoriaEmails(auditoriaPage)" [disabled]="auditoriaLoading">
+                  🔄 {{ auditoriaLoading ? 'Cargando...' : 'Actualizar' }}
+                </button>
+              </div>
+
+              <div class="filters-section">
+                <div class="filters-row">
+                  <div class="filter-item">
+                    <label>Buscar</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Jugador, documento, correo..."
+                      [(ngModel)]="auditoriaFiltros.search"
+                      (keyup.enter)="cargarAuditoriaEmails(1)"
+                    />
+                  </div>
+
+                  <div class="filter-item">
+                    <label>Tipo de Notificación</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="auditoriaFiltros.tipo"
+                      (change)="cargarAuditoriaEmails(1)"
+                    >
+                      <option value="">Todos los tipos</option>
+                      <option value="NUEVA_MENSUALIDAD">Nueva Mensualidad</option>
+                      <option value="RECORDATORIO_VENCIMIENTO">Recordatorio Vencimiento</option>
+                      <option value="REENVIO_MANUAL">Reenvío Manual</option>
+                    </select>
+                  </div>
+
+                  <div class="filter-item">
+                    <label>Estado de Envío</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="auditoriaFiltros.estado"
+                      (change)="cargarAuditoriaEmails(1)"
+                    >
+                      <option value="">Todos los estados</option>
+                      <option value="ENVIADO">✅ Exitoso / Enviado</option>
+                      <option value="FALLIDO">❌ Fallido / Error</option>
+                    </select>
+                  </div>
+
+                  <div class="filter-item">
+                    <label>Mes</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="auditoriaFiltros.mes"
+                      (change)="cargarAuditoriaEmails(1)"
+                    >
+                      <option value="">Todos los meses</option>
+                      @for (m of meses; track m.value) {
+                        <option [value]="m.value">{{ m.label }}</option>
+                      }
+                    </select>
+                  </div>
+
+                  <div class="filter-item">
+                    <label>Año</label>
+                    <select
+                      class="form-control"
+                      [(ngModel)]="auditoriaFiltros.anio"
+                      (change)="cargarAuditoriaEmails(1)"
+                    >
+                      <option value="">Todos los años</option>
+                      @for (a of anios; track a) {
+                        <option [value]="a">{{ a }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+
+                <div class="filters-actions">
+                  <button class="btn btn-secondary btn-sm" (click)="limpiarFiltrosAuditoria()">
+                    🧹 Limpiar Filtros
+                  </button>
+                </div>
+              </div>
+
+              <!-- Loading Skeleton -->
+              @if (auditoriaLoading) {
+                <div class="skeleton-table">
+                  <div class="skeleton-row" *ngFor="let i of [1,2,3,4,5]">
+                    <div class="skeleton-line skeleton-md"></div>
+                    <div class="skeleton-line skeleton-md" style="flex:1"></div>
+                    <div class="skeleton-line skeleton-sm"></div>
+                  </div>
+                </div>
+              } @else if (auditoriaList.length === 0) {
+                <!-- Empty state -->
+                <div class="empty-state">
+                  <div class="empty-icon">📭</div>
+                  <h4>No se encontraron registros de auditoría</h4>
+                  <p>No hay registros de correos que coincidan con los filtros seleccionados.</p>
+                </div>
+              } @else {
+                <!-- Tabla de Auditoría -->
+                <div class="table-responsive">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Fecha y Hora</th>
+                        <th>Jugador</th>
+                        <th>Destinatario</th>
+                        <th>Tipo Notificación</th>
+                        <th>Período / Detalle</th>
+                        <th>Estado</th>
+                        <th>Detalle / Entrega</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of auditoriaList; track item.id) {
+                        <tr>
+                          <td>
+                            <strong>{{ formatFechaHora(item.fecha_envio) }}</strong>
+                          </td>
+                          <td>
+                            <div class="jugador-cell">
+                              <span class="jugador-nombre">
+                                {{ item.jugador ? (item.jugador.nombre + ' ' + item.jugador.apellido) : (item.detalles?.jugador_nombre || 'N/A') }}
+                              </span>
+                              @if (item.jugador?.categoria?.nombre || item.detalles?.categoria) {
+                                <small class="text-muted d-block">
+                                  {{ item.jugador?.categoria?.nombre || item.detalles?.categoria }}
+                                </small>
+                              }
+                            </div>
+                          </td>
+                          <td>
+                            <span class="destinatario-badge">
+                              ✉️ {{ item.destinatario }}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="badge" [ngClass]="getTipoBadgeClass(item.tipo)">
+                              {{ getTipoLabel(item.tipo) }}
+                            </span>
+                          </td>
+                          <td>
+                            @if (item.detalles?.mes && item.detalles?.anio) {
+                              <span>
+                                {{ getNombreMes(item.detalles.mes) }} {{ item.detalles.anio }}
+                                @if (item.detalles?.monto) {
+                                  <span class="text-muted"> - ${{ formatNumber(item.detalles.monto) }}</span>
+                                }
+                              </span>
+                            } @else {
+                              <span>{{ item.asunto }}</span>
+                            }
+                          </td>
+                          <td>
+                            <span class="estado-badge" [ngClass]="getEstadoBadgeClass(item.estado)">
+                              {{ item.estado === 'ENVIADO' ? '✅ Enviado' : '❌ Fallido' }}
+                            </span>
+                          </td>
+                          <td>
+                            <div class="detalle-entrega">
+                              @if (item.estado === 'ENVIADO') {
+                                @if (item.resend_id) {
+                                  <span class="resend-id" [title]="'ID Resend: ' + item.resend_id">
+                                    ID: {{ item.resend_id.substring(0, 8) }}...
+                                  </span>
+                                } @else {
+                                  <span class="text-success">Entregado</span>
+                                }
+                              } @else {
+                                <span class="error-msg" [title]="item.error || 'Error desconocido'">
+                                  ⚠️ {{ item.error || 'Error en envío' }}
+                                </span>
+                              }
+                            </div>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Paginación -->
+                <div class="pagination">
+                  <div class="pagination-info">
+                    Mostrando {{ auditoriaList.length }} de {{ auditoriaTotal }} correos auditados
+                  </div>
+                  <div class="pagination-controls">
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      (click)="cambiarPaginaAuditoria(-1)"
+                      [disabled]="auditoriaPage <= 1 || auditoriaLoading"
+                    >
+                      ◀ Anterior
+                    </button>
+                    <span class="pagination-pages">
+                      Página {{ auditoriaPage }} de {{ auditoriaTotalPages }}
+                    </span>
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      (click)="cambiarPaginaAuditoria(1)"
+                      [disabled]="auditoriaPage >= auditoriaTotalPages || auditoriaLoading"
+                    >
+                      Siguiente ▶
+                    </button>
                   </div>
                 </div>
               }
