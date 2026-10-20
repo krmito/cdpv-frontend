@@ -306,6 +306,15 @@
                             </span>
                           </td>
                           <td data-label="" class="actions-cell">
+                            <button
+                              class="btn btn-small btn-notify"
+                              (click)="notificarMensualidad(mens)"
+                              [disabled]="notificandoId === mens.id"
+                              title="Notificar mensualidad por correo al acudiente"
+                              [attr.aria-label]="'Enviar correo a ' + mens.jugador.nombre"
+                            >
+                              {{ notificandoId === mens.id ? '⏳' : '✉️' }}
+                            </button>
                             @if (permisosService.canEdit('mensualidades')) {
                               <button
                                 class="btn btn-small btn-edit"
@@ -557,11 +566,16 @@
               <div class="card-header-actions">
                 <div>
                   <h2>📬 Registro de Auditoría de Correos</h2>
-                  <p class="description">Historial de notificaciones enviadas a acudientes por registro de mensualidades, recordatorios y reenvíos.</p>
+                  <p class="description">Historial de notificaciones enviadas a acudientes por registro de mensualidades, recordatorios, reenvíos y pruebas.</p>
                 </div>
-                <button class="btn btn-secondary" (click)="cargarAuditoriaEmails(auditoriaPage)" [disabled]="auditoriaLoading">
-                  🔄 {{ auditoriaLoading ? 'Cargando...' : 'Actualizar' }}
-                </button>
+                <div class="header-buttons" style="display:flex;gap:10px;">
+                  <button class="btn btn-primary" (click)="enviarEmailPrueba()" [disabled]="enviandoPrueba">
+                    🧪 {{ enviandoPrueba ? 'Enviando...' : 'Enviar Correo de Prueba' }}
+                  </button>
+                  <button class="btn btn-secondary" (click)="cargarAuditoriaEmails(auditoriaPage)" [disabled]="auditoriaLoading">
+                    🔄 {{ auditoriaLoading ? 'Cargando...' : 'Actualizar' }}
+                  </button>
+                </div>
               </div>
 
               <div class="filters-section">
@@ -588,6 +602,8 @@
                       <option value="NUEVA_MENSUALIDAD">Nueva Mensualidad</option>
                       <option value="RECORDATORIO_VENCIMIENTO">Recordatorio Vencimiento</option>
                       <option value="REENVIO_MANUAL">Reenvío Manual</option>
+                      <option value="RESUMEN_MENSUAL">Resumen Mensual</option>
+                      <option value="PRUEBA">Prueba de Sistema</option>
                     </select>
                   </div>
 

@@ -17,6 +17,8 @@ interface Jugador {
   apellido: string;
   documento: string;
   activo: boolean;
+  email?: string;
+  email_acudiente?: string;
   categoria: {
     id: number;
     nombre: string;
@@ -45,7 +47,7 @@ interface AuditoriaEmail {
   id: number;
   destinatario: string;
   asunto: string;
-  tipo: 'NUEVA_MENSUALIDAD' | 'RECORDATORIO_VENCIMIENTO' | 'REENVIO_MANUAL';
+  tipo: 'NUEVA_MENSUALIDAD' | 'RECORDATORIO_VENCIMIENTO' | 'REENVIO_MANUAL' | 'RESUMEN_MENSUAL' | 'PRUEBA';
   estado: 'ENVIADO' | 'FALLIDO';
   error: string | null;
   resend_id: string | null;
@@ -183,6 +185,8 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
     new Date().getFullYear(),
     new Date().getFullYear() + 1,
   ];
+  enviandoPrueba = false;
+  notificandoId: number | null = null;
 
   // General
   successMessage = '';
@@ -803,6 +807,60 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
     this.cargarAuditoriaEmails(1);
   }
 
+  enviarEmailPrueba() {
+    const defaultEmail = 'krmito891123@gmail.com';
+    const email = prompt(
+      'Ingresa el correo al que deseas enviar la prueba de conexión (Resend):\n\nRecuerda: si usas la cuenta de pruebas de Resend sin dominio verificado, solo funcionará con tu correo de registro.',
+      defaultEmail
+    );
+    if (!email || !email.trim()) return;
+
+    this.enviandoPrueba = true;
+    this.api.post<any>('auditoria-emails/test', { email: email.trim() }).subscribe({
+      next: (res) => {
+        this.enviandoPrueba = false;
+        this.toast.success(`✅ Correo de prueba enviado exitosamente a ${email.trim()}.\nRevisa también tu bandeja de Spam o Correo no deseado.`);
+        this.cargarAuditoriaEmails(1);
+      },
+      error: (err) => {
+        this.enviandoPrueba = false;
+        console.error('Error enviando prueba:', err);
+        const msg = err.error?.message || err.message || 'Error al enviar correo de prueba';
+        this.toast.error(`❌ Falló el envío: ${msg}`);
+        this.cargarAuditoriaEmails(1);
+      }
+    });
+  }
+
+  notificarMensualidad(mens: Mensualidad) {
+    const jugadorNombre = `${mens.jugador.nombre} ${mens.jugador.apellido}`;
+    const destinatario = mens.jugador.email_acudiente || mens.jugador.email || 'Sin correo registrado';
+
+    if (!confirm(`¿Deseas enviar la notificación de la cuota de ${this.getNombreMes(mens.mes)} ${mens.anio} ($${this.formatNumber(mens.monto)}) a ${jugadorNombre} (${destinatario})?`)) {
+      return;
+    }
+
+    this.notificandoId = mens.id;
+    this.api.post<any>(`mensualidades/${mens.id}/notificar`, {}).subscribe({
+      next: (res) => {
+        this.notificandoId = null;
+        this.toast.success(res.message || 'Notificación enviada correctamente');
+        if (this.activeTab === 'auditoria') {
+          this.cargarAuditoriaEmails(1);
+        }
+      },
+      error: (err) => {
+        this.notificandoId = null;
+        console.error('Error notificando mensualidad:', err);
+        const msg = err.error?.message || err.message || 'Error al enviar notificación';
+        this.toast.error(`❌ ${msg}`);
+        if (this.activeTab === 'auditoria') {
+          this.cargarAuditoriaEmails(1);
+        }
+      }
+    });
+  }
+
   getTipoBadgeClass(tipo: string): string {
     switch (tipo) {
       case 'NUEVA_MENSUALIDAD':
@@ -811,6 +869,10 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
         return 'badge-tipo-recordatorio';
       case 'REENVIO_MANUAL':
         return 'badge-tipo-reenvio';
+      case 'RESUMEN_MENSUAL':
+        return 'badge-tipo-resumen';
+      case 'PRUEBA':
+        return 'badge-tipo-prueba';
       default:
         return 'badge-secondary';
     }
@@ -824,6 +886,10 @@ export class MensualidadesComponent implements OnInit, CanComponentDeactivate {
         return 'Recordatorio Vencimiento';
       case 'REENVIO_MANUAL':
         return 'Reenvío Manual';
+      case 'RESUMEN_MENSUAL':
+        return 'Resumen Mensual';
+      case 'PRUEBA':
+        return 'Prueba de Sistema';
       default:
         return tipo;
     }
